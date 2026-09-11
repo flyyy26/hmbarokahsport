@@ -1,0 +1,450 @@
+.header_section{
+    width: 100%;
+    position:sticky;
+    top: 0;
+    left: 0;
+    z-index:80;
+}
+.top_section{
+    width:100%;
+    background-color:#076694;
+    padding:.54vw 5.4vw;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items:center;
+}
+.text_top_section{
+    text-align:center;
+}
+.text_top_section p{
+    color:white;
+    font-size:.76vw;
+    font-weight:300;
+}
+.text_top_section:nth-child(1){
+    text-align:start;
+}
+.text_top_section_link{
+    display:flex;
+    gap:.3vw;
+    align-items:center;
+    justify-content:end;
+    color:white;
+    font-size:.76vw;
+    font-weight:300;
+}
+.text_top_section_link a{
+    color:white;
+    text-decoration:none;
+    font-size:.76vw;
+    font-weight:300;
+}
+
+.bottom_section{
+    display:grid;
+    grid-template-columns: 20% 60% 20%;
+    width:100%;
+    justify-content: space-between;
+    padding:.93vw 7.7vw;
+    padding-top: 1.1vw;
+    background-color:white;
+}
+.bottom_section img{
+    width:10.6vw;
+}
+.logo_dekstop{
+    display:block;
+}
+.logo_mobile{
+    display:none;
+}
+.bottom_section ul{
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    list-style: none;
+    gap: 2vw;
+}
+.bottom_section ul a{
+    text-decoration:none;
+}
+.bottom_section ul li{
+    font-size:.85vw;
+    text-transform:uppercase;
+    color: black;
+    font-weight: 500;
+}
+.bottom_section ul li iconify-icon{
+    display:none;
+}
+.bottom_section ul a.active li{
+    color: #DE161F;
+}
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.logo_mobile_nav{
+    display:none;
+}
+.hamburger-btn{
+    display:none;
+}
+.mobile-nav-footer{
+    display:none;
+}
+.icon-btn{
+    display: flex;
+}
+
+.btn_header_bottom{
+    display:flex;
+    justify-content: end;
+    align-items: center;
+    gap:1.1vw;
+}
+.btn_header_bottom button{
+    background-color:transparent;
+    outline:none;
+    border:none;
+    position:relative;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+}
+.btn_header_bottom button iconify-icon{
+    font-size:1.45vw;
+}
+.btn_header_bottom button span{
+    position:absolute;
+    right:-.2vw;
+    top:0;
+    background-color:#DE161F;
+    width:.8vw;
+    height:.8vw;
+    border-radius:100vw;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.5vw;
+}
+#wishlist-toggle{
+    display:flex;
+}
+
+@media (max-width: 768px) {
+    .header_section {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+    }
+
+    /* Top Section */
+    .top_section {
+        padding: 1.2vw 3vw;
+        grid-template-columns: 1fr;
+        gap: 0.5vw;
+    }
+
+    .text_top_section {
+        text-align: center !important;
+    }
+
+    .text_top_section p {
+        font-size: 1.8vw;
+        font-weight: 400;
+    }
+
+    .text_top_section:nth-child(1) {
+        text-align: center !important;
+    }
+    .text_top_section:nth-child(3) {
+        display: none;
+
+    }
+
+    .text_top_section_link {
+        justify-content: center;
+        gap: 2vw;
+        font-size: 1.8vw;
+        flex-wrap: wrap;
+    }
+
+    .text_top_section_link a {
+        font-size: 1.8vw;
+    }
+
+    /* Bottom Section - Mobile */
+    .bottom_section {
+        grid-template-columns: repeat(3, 1fr);
+        align-items: center;
+        padding: 1.5vw 4vw;
+        gap: 0;
+        position: relative;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+
+    .bottom_section img {
+        width: 11vw;
+        margin: 0 auto;
+    }
+
+    .logo-wrapper{
+        text-align: center;
+    }
+
+    .logo_dekstop{
+        display:none;
+    }
+    .logo_mobile{
+        display:block;
+    }
+
+    /* Hamburger Button - show on mobile */
+    .hamburger-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2vw;
+        width: 8vw;
+        height: 6vw;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 20;
+        position: relative;
+    }
+
+    .hamburger-line {
+        display: block;
+        width: 6vw;
+        height: 0.5vw;
+        background-color: #1a1a2e;
+        border-radius: .3vw;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center;
+    }
+
+    /* Animasi Perubahan Hamburger ke Tombol X yang Sempurna */
+    .hamburger-btn.active .hamburger-line:nth-child(1) {
+        transform: translateY(1.9vw) rotate(45deg);
+        background-color: #DE161F;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(3) {
+        transform: translateY(-1.9vw) rotate(-45deg);
+        background-color: #DE161F;
+    }
+
+    /* Right Icons - tetap di kanan */
+    .btn_header_bottom {
+        grid-column: 3;
+        justify-content: flex-end;
+        gap: 2.3vw;
+    }
+    .btn_header_bottom button {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn_header_bottom button iconify-icon {
+        font-size: 5.8vw;
+    }
+
+    .btn_header_bottom button span {
+        width: 3.5vw;
+        height: 3.5vw;
+        font-size: 1.8vw;
+        right: -.7vw;
+        top: -0.5vw;
+    }
+
+    
+
+    /* === NAV MENU - Full Screen Overlay === */
+    .nav-menu {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: #ffffff;
+        padding: 0 0;
+        transform: translateX(-100%); /* Diubah jadi dari kiri agar natural */
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 90;
+        overflow-y: auto;
+        box-sizing: border-box;
+        box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+    }
+
+    .nav-menu.open {
+        transform: translateX(0);
+    }
+
+    .nav-menu ul {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5vw;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .logo_mobile_nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4vw 5vw;
+        background-color:#076694;
+    }
+    .logo_mobile_nav img{
+        width: 28vw;
+        margin:0 0;
+        filter: brightness(0) invert(1); /* Membuat logo putih */
+    }
+    .close-btn-nav {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        font-size: 6vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color:white;
+    }
+    .nav-menu ul {
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        gap: 1.5vw;
+        list-style: none;
+        padding: 0 4.8vw;
+        margin: 0;
+    }
+
+    .nav-menu ul a {
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        border-radius: 0;
+        transition: background 0.2s ease;
+    }
+
+    .nav-menu ul a li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4vw;
+        font-size: 4.1vw;
+        font-weight: 400;
+        color: #1a1a2e;
+        text-transform: none;
+        padding: 3.2vw 0;
+        border-radius: 0;
+        transition: all 0.25s ease;
+        border-bottom: .1vw solid #0000001c;
+    }
+    .nav-menu ul a li iconify-icon {
+        font-size: 6vw;
+        color: #303030;
+        display: flex;
+    }
+
+    .nav-menu ul a.active li {
+        color: #DE161F;
+        font-weight: 600;
+    }
+
+    .nav-menu ul a:not(.active):hover li {
+        background-color: #f8f9fa;
+        color: #DE161F;
+    }
+
+    /* Mobile Nav Footer (Auth) */
+    .mobile-nav-footer {
+        margin-top: 8vw;
+        padding-top: 5vw;
+        border-top: 1px solid #f1f3f5;
+        display: flex;
+    }
+
+    .mobile-auth {
+        display: flex;
+        flex-direction: column;
+        gap: 2vw;
+    }
+
+    .mobile-auth a {
+        display: flex;
+        align-items: center;
+        gap: 4vw;
+        text-decoration: none;
+        color: #1a1a2e;
+        font-size: 4vw;
+        font-weight: 500;
+        padding: 3.5vw;
+        border-radius: 2vw;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-auth a:active {
+        background: #e9ecef;
+    }
+
+    .mobile-auth a iconify-icon {
+        font-size: 5.5vw;
+        color: #6b7280;
+    }
+
+    /* Overlay Background Gelap Semi-Transparan */
+    .nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 85;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .nav-overlay.show {
+        display: none;
+        opacity: 1;
+    }
+
+    /* Sembunyikan elemen desktop */
+    .bottom_section > ul {
+        display: none;
+    }
+
+    #wishlist-toggle{
+        display:none;
+    }
+
+    .icon-btn-profile{
+        display: none !important;
+    }
+}

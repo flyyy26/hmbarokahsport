@@ -1,0 +1,605 @@
+/* ============================================
+   VARIANT MODAL - CSS NATIVE WITH VW
+   ============================================ */
+
+/* Overlay */
+.variant-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(0.2vw);
+    -webkit-backdrop-filter: blur(0.2vw);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 2vw;
+    pointer-events: none; /* Tambahkan ini */
+}
+
+/* Saat aktif (tidak hidden) */
+.variant-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-price-current.discounted{
+    color: #ef4444;
+    font-size: .86vw;
+}
+.modal-price-original {
+    font-size: .75vw;
+    color: #94a3b8;
+    font-weight: 500;
+    text-decoration: line-through;
+}
+
+.modal-discount-badge {
+    background: #ef4444;
+    color: white;
+    font-size: .5vw;
+    font-weight: 400;
+    padding: .1vw .3vw;
+    border-radius: .5vw;
+    margin-bottom:.6vw;
+    display: inline-block;
+}
+
+.modal-product-discount-badge {
+    background: #16a34a;
+    color: white;
+    font-size: .5vw;
+    font-weight: 400;
+    padding: .1vw .3vw;
+    border-radius: .5vw;
+    margin-bottom:.6vw;
+    display: inline-block;
+}
+
+/* Product info di modal */
+.variant-product-price {
+    margin: .2vw 0 0 0;
+}
+
+/* Saat hidden */
+.variant-modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Box Modal */
+.variant-modal-box {
+    width: 100%;
+    max-width: 36vw;
+    background: #ffffff;
+    border-radius: 1.2vw;
+    padding: 1.8vw 2vw;
+    box-shadow: 0 1vw 3vw rgba(0, 0, 0, 0.2);
+    transform: scale(0.95) translateY(2vw);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    opacity: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.variant-modal-overlay.active .variant-modal-box {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* Scrollbar */
+.variant-modal-box::-webkit-scrollbar {
+    width: 0.3vw;
+}
+
+.variant-modal-box::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 0.4vw;
+}
+
+.variant-modal-box::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 0.4vw;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.variant-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.1vw solid #ecbc42;
+    padding-bottom: 1vw;
+}
+
+.variant-modal-title {
+    font-size: 1.4vw;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.variant-modal-close {
+    background: none;
+    border: none;
+    padding: 0.4vw;
+    cursor: pointer;
+    color: #94a3b8;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.variant-modal-close:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.variant-modal-close-icon {
+    width: 1.6vw;
+    height: 1.6vw;
+}
+
+/* ============================================
+   PRODUCT INFO
+   ============================================ */
+.variant-product-info {
+    display: flex;
+    align-items: center;
+    gap: 1vw;
+    margin-top: 1.2vw;
+}
+
+.variant-product-image-wrapper {
+    width: 5vw;
+    height: 5vw;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 0.6vw;
+    background: #f1f5f9;
+}
+
+.variant-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.variant-product-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.variant-product-name {
+    font-size: 1.1vw;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.variant-product-price {
+    font-size: 1.1vw;
+    font-weight: 700;
+    color:rgb(102, 72, 9);
+}
+
+.variant-product-stock {
+    font-size: 0.8vw;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* ============================================
+   VARIAN OPTIONS
+   ============================================ */
+.variant-options-wrapper {
+    margin-top: 1.2vw;
+    max-height: 20vw;
+    overflow-y: auto;
+}
+
+.variant-options-wrapper::-webkit-scrollbar {
+    width: 0.2vw;
+}
+
+.variant-options-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 0.3vw;
+}
+
+.variant-options-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 0.3vw;
+}
+
+.variant-option-group {
+    margin-bottom: 1vw;
+}
+
+.variant-option-group:last-child {
+    margin-bottom: 0;
+}
+
+.variant-option-label {
+    display: block;
+    font-size: 0.9vw;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 0.5vw;
+}
+
+.variant-option-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5vw;
+}
+
+.variant-option-btn {
+    padding: 0.5vw 1.2vw;
+    border-radius: 0.5vw;
+    border: 0.1vw solid #e2e8f0;
+    background-color: #ffffff;
+    color: #374151;
+    font-size: 0.85vw;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.variant-option-btn:hover:not(:disabled) {
+    border-color: #ecbc42;
+    background: #faf9f8;
+}
+
+.variant-option-btn.active {
+    border-color: rgb(102, 72, 9) !important;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%) !important;
+    color: rgb(102, 72, 9) !important;
+    font-weight: 600 !important;
+}
+
+.variant-option-btn:disabled,
+.variant-option-btn.disabled {
+    background-color: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+    color: #9ca3af !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+    text-decoration: line-through !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
+.variant-option-stock-badge {
+    font-size: 0.7vw;
+    color: #94a3b8;
+    margin-left: 0.3vw;
+}
+
+.variant-option-stock-badge.out-of-stock {
+    color: #ef4444;
+}
+
+/* Loading State */
+.variant-loading {
+    text-align: center;
+    padding: 2vw 0;
+}
+
+.variant-spinner {
+    display: inline-block;
+    width: 2vw;
+    height: 2vw;
+    border: 0.25vw solid #e2e8f0;
+    border-top: 0.25vw solid #ecbc42;
+    border-radius: 50%;
+    animation: variant-spin 0.8s linear infinite;
+}
+
+@keyframes variant-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.variant-loading-text {
+    margin-top: 0.5vw;
+    font-size: 0.85vw;
+    color: #94a3b8;
+}
+
+/* Empty State */
+.variant-empty-state {
+    padding: 1.5vw;
+    text-align: center;
+    border-radius: 0.6vw;
+    background: #fefce8;
+    color: #ca8a04;
+    font-size: 0.85vw;
+}
+
+.variant-empty-state.error {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.variant-empty-state .variant-retry-btn {
+    margin-top: 0.5vw;
+    color: #ecbc42;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85vw;
+    text-decoration: underline;
+}
+
+.variant-empty-state .variant-retry-btn:hover {
+    color: #ecbc42;
+}
+
+/* ============================================
+   QUANTITY
+   ============================================ */
+.variant-quantity-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.2vw;
+    border-top: 0.1vw solid #ecbc42;
+    padding-top: 1.2vw;
+}
+
+.variant-quantity-control {
+    display: flex;
+    align-items: center;
+    border: 0.1vw solid #ecbc42;
+    border-radius: 0.6vw;
+    overflow: hidden;
+}
+
+.variant-qty-btn {
+    padding: 0.5vw 1vw;
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 1.2vw;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 2.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.variant-qty-btn:hover {
+    background: #f1f5f9;
+}
+
+.variant-qty-input {
+    width: 3vw;
+    text-align: center;
+    border: none;
+    border-left: 0.1vw solid #ecbc42;
+    border-right: 0.1vw solid #ecbc42;
+    padding: 0.5vw 0;
+    font-size: 0.95vw;
+    font-weight: 600;
+    color: #0f172a;
+    background: #ffffff;
+    -moz-appearance: textfield;
+}
+
+.variant-qty-input::-webkit-outer-spin-button,
+.variant-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.variant-qty-input:focus {
+    outline: none;
+}
+
+.variant-add-to-cart-btn {
+    padding: 0.6vw 2vw;
+    border-radius: 0.6vw;
+    border: none;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    color:rgb(102, 72, 9);
+    font-size: 0.9vw;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.variant-add-to-cart-btn:disabled {
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    color:rgb(102, 72, 9);
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.variant-error-message {
+    margin-top: 0.6vw;
+    font-size: 0.85vw;
+    color: #ef4444;
+    padding: 0.5vw 1vw;
+    background: #fef2f2;
+    border-radius: 0.4vw;
+    border: 0.1vw solid #fecaca;
+}
+
+.variant-error-message.hidden {
+    display: none;
+}
+
+/* ============================================
+   UTILITY
+   ============================================ */
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .variant-modal-box {
+        max-width: 92vw;
+        border-radius: 4.2vw;
+        padding: 4vw 4vw;
+        max-height: 90vh;
+    }
+    .variant-modal-title {
+        font-size: 4.5vw;
+    }
+    .variant-modal-close-icon {
+        width: 5.6vw;
+        height: 5.6vw;
+    }
+    .variant-product-info {
+        gap: 3vw;
+        margin-top: 4.2vw;
+    }
+    .variant-product-price {
+        font-size: 3vw;
+        font-weight: 500;
+        color: #ecbc42;
+    }
+    .variant-product-image-wrapper {
+        width: 23vw;
+        height: 23vw;
+        border-radius: 3.6vw;
+    }
+    .variant-product-name {
+        font-size: 3.5vw;
+        margin-bottom: .8vw;
+        font-weight: 500;
+    }
+    .modal-price-wrapper {
+        display: flex;
+        gap: 1.6vw;
+        margin-bottom: 1vw;
+        align-items: center;
+    }
+    .modal-price-current.discounted {
+        color: #ef4444;
+        font-size: 3.5vw;
+        font-weight:400;
+    }
+    .modal-price-original {
+        font-size: 2.3vw;
+        color: #94a3b8;
+        font-weight: 500;
+        text-decoration: line-through;
+    }
+    .modal-discount-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 2vw;
+        font-weight: 400;
+        padding: .4vw 1.3vw;
+        border-radius: 1vw;
+        margin-bottom: 0.6vw;
+        display: inline-block;
+    }
+    .modal-product-discount-badge{
+        font-size: 2vw;
+        font-weight: 400;
+        padding: .4vw 1.3vw;
+        border-radius: 1vw;
+    }
+    .variant-product-stock {
+        font-size: 3vw;
+        color: #94a3b8;
+        margin: 0;
+    }
+    .variant-options-wrapper {
+    margin-top: 4.2vw;
+    max-height: max-content;
+    overflow-y: auto;
+}
+.variant-option-group {
+    margin-bottom: 3vw;
+}
+.variant-option-label {
+    display: block;
+    font-size: 3.5vw;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 1.5vw;
+}
+.variant-option-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2vw;
+}
+.variant-option-btn {
+    padding: 1.5vw 3.2vw;
+    border-radius: 1.5vw;
+    border: 0.1vw solid #e2e8f0;
+    background-color: #ffffff;
+    color: #374151;
+    font-size: 3.5vw;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.variant-quantity-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4.2vw;
+    border-top: 0.1vw solid #ecbc42;
+    padding-top: 4.2vw;
+}
+.variant-quantity-control {
+    display: flex;
+    align-items: center;
+    border: 0.1vw solid #ecbc42;
+    border-radius: 1.6vw;
+    overflow: hidden;
+}
+.variant-qty-btn {
+    padding: 1.5vw 3vw;
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 4.5vw;
+    cursor: pointer;
+    transition: background 0.2s;
+    min-width: 2.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.variant-qty-input {
+    width: 11vw;
+    text-align: center;
+    border: none;
+    border-left: 0.1vw solid #ecbc42;
+    border-right: 0.1vw solid #ecbc42;
+    padding: 0.5vw 0;
+    font-size: 3.95vw;
+    font-weight: 600;
+    color: #0f172a;
+    background: #ffffff;
+    -moz-appearance: textfield;
+}
+.variant-add-to-cart-btn {
+    padding: 2.6vw 4vw;
+    border-radius: 1.6vw;
+    border: none;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    color:rgb(102, 72, 9);
+    font-size: 3.5vw;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+}

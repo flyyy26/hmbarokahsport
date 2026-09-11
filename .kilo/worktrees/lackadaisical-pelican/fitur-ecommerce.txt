@@ -1,0 +1,249 @@
+📋 DAFTAR FITUR DASHBOARD ADMIN E-COMMERCE CLOTHING - LARAVEL
+🎯 PRIORITAS TINGGI (SEGERA IMPLEMENTASI)
+1. MANAJEMEN PRODUK
+A. Informasi Dasar Produk
+☑ Nama Produk
+☑ Deskripsi (TinyMCE)
+☑ Kategori
+☑ Gender (Pria/Wanita/Unisex)
+☑ Bahan / Material
+☑ Berat (gram/kilogram)
+B. Gambar Produk
+☑ Upload multiple gambar
+☑ Hapus gambar
+☑ Gambar Utama (Primary Image) - thumbnail
+C. Varian Produk
+☑ Warna
+☑ Ukuran
+☑ Varian Image - setiap warna punya gambar sendiri
+☑ SKU per varian (sudah ada tapi perlu unik)
+□ Barcode per varian
+☑ Berat per varian (untuk ongkir)
+☑ Dimensi per varian
+□ Bulk Edit Harga - update semua varian sekaligus
+□ Copy Varian - duplikat dari produk lain
+□ Disable Varian tertentu (tanpa hapus)
+D. Stok Management
+☑ Stok per varian
+☑ Stok Minimum (alert)
+☑ History Stok - track perubahan stok dengan alasan
+□ Stok Dipesan (Reserved) - untuk order pending
+□ Stok Tersedia = Total - Dipesan
+□ Auto Notifikasi (Email/WA) saat stok di bawah minimum
+2. DISKON & PROMO
+A. Diskon Produk
+☑ Diskon per varian (% atau nominal)
+☑ Diskon per Produk (semua varian)
+□ Diskon Flash Sale - dengan timer
+□ Diskon Kategori - semua produk di kategori tertentu
+□ Diskon Minimum Pembelian - diskon jika beli di atas jumlah tertentu
+□ Diskon Member - diskon untuk member level tertentu
+B. Promo Lainnya
+□ Buy X Get Y (Beli 3 gratis 1)
+□ Bundle Product - paket produk
+□ Free Ongkir - syarat minimum pembelian
+□ Voucher / Kupon - generate kode diskon
+□ Promo Periode - setting waktu promo
+3. KATEGORI
+A. Manajemen Kategori
+☑ CRUD Kategori
+□ Kategori Bertingkat (Parent-Child)
+☑ Slug otomatis
+☑ Gambar / Icon per kategori
+☑ Deskripsi Kategori
+□ Urutan Tampilan (Sort Order)
+☑ Status (Aktif/Nonaktif)
+4. FITUR PRODUK
+☑ CRUD Fitur
+☑ Assign fitur ke produk
+5. ORDER MANAGEMENT
+A. Daftar Order
+☑ List semua order
+☑ Detail Order
+☑ Update Status Order (Pending, Diproses, Dikirim, Selesai, Dibatalkan)
+☑ Update Status Pembayaran
+☑ Update Status Pengiriman
+B. Tambahan Order
+□ Filter Order (by status, tanggal, customer)
+□ Export Order (Excel/CSV)
+□ Invoice Generator (PDF)
+□ Label Pengiriman (Biteship)
+□ Tracking Number - input no resi
+□ Kirim Notifikasi ke customer (Email/WA)
+□ Order Notes - catatan internal
+□ History Status - track perubahan status
+□ Cancel Order - dengan alasan
+C. Status Order yang Dibutuhkan (Clothing)
+text
+- Pending (menunggu pembayaran)
+- Paid (sudah bayar, menunggu verifikasi)
+- Processing (sedang diproses)
+- Packing (dikemas)
+- Ready to Ship (siap dikirim)
+- Shipped (dikirim)
+- Delivered (diterima)
+- Completed (selesai)
+- Canceled (dibatalkan)
+- Returned (dikembalikan)
+- Refunded (dana dikembalikan)
+6. CUSTOMER MANAGEMENT
+A. Manajemen Customer
+☑ Auto-register checkout
+☑ Login/Register
+□ Daftar Customer - semua customer
+□ Detail Customer - lihat profil
+□ Filter Customer (by status, tanggal registrasi)
+□ Customer Level (Regular, Silver, Gold)
+□ Total Order customer
+□ Total Belanja customer
+□ Banned Customer - nonaktifkan customer
+B. Alamat Customer
+☑ CRUD Alamat
+☑ Alamat Default
+□ Validasi Alamat - cek Biteship
+7. MANAJEMEN KERANJANG
+☑ CRUD Keranjang
+☑ Popup Keranjang
+□ Convert Keranjang ke Order - jika checkout gagal
+□ Abandoned Cart - keranjang ditinggalkan
+□ Email Reminder - notifikasi cart ditinggalkan
+🎯 PRIORITAS MENENGAH
+8. PEMBAYARAN & CHECKOUT
+A. Metode Pembayaran
+☑ Biteship (ongkir)
+□ Manual Transfer (BCA, Mandiri, BRI, BNI)
+□ QRIS
+□ E-Wallet (GoPay, OVO, DANA, ShopeePay)
+□ Kartu Kredit / Debit
+B. Manajemen Pembayaran
+□ Konfirmasi Pembayaran - upload bukti transfer
+□ Verifikasi Manual (Admin approve)
+□ Auto Verifikasi (jika ada payment gateway)
+□ History Pembayaran per order
+9. REVIEW & RATING
+A. Manajemen Review
+□ Daftar Review - semua review produk
+□ Rating (1-5 bintang)
+□ Review dengan Gambar
+□ Approve / Reject Review (moderasi)
+□ Reply to Review (admin)
+□ Verified Purchase badge
+□ Report Review - laporkan review tidak pantas
+B. Statistik Review
+□ Total Review per produk
+□ Rata-rata Rating per produk
+□ Distribusi Rating (5 bintang, 4 bintang, dll)
+10. WISHLIST
+☑ CRUD Wishlist
+☑ Popup Wishlist
+□ Statistik Wishlist - produk paling banyak di-wishlist
+□ Email Notifikasi - produk di wishlist stok kembali
+□ Promo Wishlist - kirim promo ke customer yang wishlist produk
+11. ARTIKEL & BLOG
+☑ CRUD Artikel
+☑ Kategori Artikel
+☑ Like Artikel
+☑ Komentar Artikel
+□ Auto Publish Schedule - jadwal publish
+□ Slug otomatis
+□ Meta SEO per artikel
+□ Featured Image - gambar utama artikel
+□ Tags Artikel
+□ Related Articles
+12. BANNER & SLIDER
+☑ CRUD Banner
+□ Link per banner
+□ Urutan (Sort Order)
+□ Status (Aktif/Nonaktif)
+□ Periode (mulai - selesai)
+□ Tipe Banner (Homepage, Category, Product)
+13. FAQ
+☑ CRUD FAQ
+☑ Kategori FAQ
+☑ Toggle Status
+□ Urutan per kategori
+□ Search FAQ - untuk customer
+🎯 PRIORITAS RENDAH (NANTI)
+14. ANALYTICS & REPORT
+A. Dashboard Analytics
+□ Total Revenue - hari ini, minggu, bulan
+□ Total Orders - hari ini, minggu, bulan
+□ Total Customers - baru & total
+□ Conversion Rate - view ke purchase
+□ Average Order Value (AOV)
+□ Best Selling Products - top 10
+□ Trending Products - paling banyak dilihat
+□ Sales by Category - grafik
+□ Sales by Gender - grafik
+□ Sales by Size - grafik
+□ Sales by Color - grafik
+B. Report & Export
+□ Sales Report (Excel/PDF)
+□ Product Report - stok, penjualan
+□ Customer Report - demografi
+□ Revenue Report - harian, mingguan, bulanan, tahunan
+15. SEO MANAGEMENT
+A. SEO Produk
+□ Meta Title per produk
+□ Meta Description per produk
+□ Meta Keywords per produk
+□ Sitemap - generate otomatis
+□ SEO Friendly URL - slug optimization
+B. SEO Kategori
+□ Meta Title per kategori
+□ Meta Description per kategori
+□ Meta Keywords per kategori
+16. SETTINGS & KONFIGURASI
+A. Pengaturan Umum
+☑ Setting toko (nama, email, telepon, alamat)
+□ Logo & Favicon
+□ Social Media (Facebook, Instagram, TikTok, YouTube)
+□ Google Analytics ID
+□ Google Tag Manager ID
+□ Meta Pixel ID
+B. Pengiriman
+☑ Biteship API
+☑ Ongkir
+□ Free Ongkir - setting minimum pembelian
+□ Zona Pengiriman - dalam/ luar kota
+□ Tarif Pengiriman - manual override
+C. Pembayaran
+□ Payment Gateway - setting (Xendit/Midtrans)
+□ Manual Transfer - daftar rekening toko
+□ COD - setting fee
+D. Email
+□ SMTP Settings
+□ Email Templates - order confirmation, shipping, dll
+17. USER MANAGEMENT
+A. Admin Management
+□ Multi User - admin, staff, warehouse
+□ Role & Permission - akses per menu
+□ Activity Log - track aktivitas admin
+□ Reset Password - admin
+B. Customer Management (Lanjutan)
+□ Import Customer (Excel/CSV)
+□ Export Customer (Excel/CSV)
+□ Bulk Email - kirim email ke customer
+□ Customer Group - grouping customer
+18. TOKOPEDIA / MARKETPLACE
+A. Integrasi Marketplace
+□ Tokopedia - sync produk
+□ Shopee - sync produk
+□ Lazada - sync produk
+□ TikTok Shop - sync produk
+□ Blibli - sync produk
+19. MOBILE APP
+A. Mobile Features
+□ API Endpoints untuk mobile app
+□ Push Notification - order update, promo
+□ Barcode Scanner - untuk admin
+20. DISKON LEVEL LANJUTAN
+A. Diskon Kustom
+□ Diskon Waktu Tertentu (Hari Jam)
+□ Diskon Akhir Tahun / Bulan
+□ Diskon Hari Spesial (Hari Pahlawan, Tahun Baru)
+□ Member Level Diskon (Gold: 10%, Silver: 5%)
+□ Diskon Minimal Pembelian (misal: beli 5 dapat diskon 10%)
+□ Diskon Kategori Tertentu (misal: semua kaos diskon 20%)
+□ Diskon Produk Tertentu
+□ Voucher Kode - generate kustom

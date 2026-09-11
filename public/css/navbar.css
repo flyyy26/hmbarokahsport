@@ -1,0 +1,693 @@
+/* ============================================
+   HEADER SECTION
+   ============================================ */
+.header_section {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    background-color: white;
+}
+
+/* ============================================
+   TOP SECTION (Promo Bar Desktop)
+   ============================================ */
+.top_section {
+    width: 100%;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    padding: 0.54vw 5.4vw;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+}
+
+.text_top_section {
+    text-align: center;
+}
+
+.text_top_section p {
+    color: rgb(102, 72, 9);
+    font-size: 0.76vw;
+    font-weight: 500;
+}
+
+.text_top_section:nth-child(1) {
+    text-align: start;
+}
+
+.text_top_section_link {
+    display: flex;
+    gap: 0.3vw;
+    align-items: center;
+    justify-content: end;
+    color: rgb(102, 72, 9);
+    font-size: 0.76vw;
+    font-weight: 500;
+}
+
+.text_top_section_link a {
+    color: rgb(102, 72, 9);
+    text-decoration: none;
+    font-size: 0.76vw;
+    font-weight: 500;
+}
+
+/* ============================================
+   BOTTOM SECTION (Navbar Utama)
+   ============================================ */
+.bottom_section {
+    display: grid;
+    grid-template-columns: 20% 60% 20%;
+    width: 100%;
+    align-items: center;
+    padding: 0.93vw 7.7vw;
+    padding-top: 1.1vw;
+    background-color: white;
+}
+
+.bottom_section img {
+    width: 10.6vw;
+}
+
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.logo_dekstop {
+    display: block;
+}
+
+.logo_mobile {
+    display: none;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottom_section ul {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    list-style: none;
+    gap: 2vw;
+    margin: 0;
+    padding: 0;
+}
+
+.bottom_section ul a {
+    text-decoration: none;
+}
+
+.bottom_section ul li {
+    font-size: 0.85vw;
+    text-transform: uppercase;
+    color: black;
+    font-weight: 500;
+}
+
+.bottom_section ul li iconify-icon {
+    display: none;
+}
+
+.bottom_section ul a.active li {
+    color: #ECB62F;
+}
+
+.logo_mobile_nav {
+    display: none;
+}
+
+.hamburger-btn {
+    display: none;
+}
+
+.mobile-nav-footer {
+    display: none;
+}
+
+.mobile-account-menu {
+    display: none;
+}
+
+/* ============================================
+   RIGHT ICONS
+   ============================================ */
+.btn_header_bottom {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: 1.1vw;
+}
+
+.btn_header_bottom button {
+    background-color: transparent;
+    outline: none;
+    border: none;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.btn_header_bottom button iconify-icon {
+    font-size: 1.45vw;
+    color: #1a1a2e;
+}
+
+.btn_header_bottom button span {
+    position: absolute;
+    right: -0.2vw;
+    top: 0;
+    background-color: #ECB62F;
+    width: 0.8vw;
+    height: 0.8vw;
+    border-radius: 100vw;
+    color: rgb(102, 72, 9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5vw;
+    font-weight: 600;
+}
+
+#wishlist-toggle {
+    display: flex;
+}
+
+.marquee-wrapper {
+    display: none;
+}
+
+/* ============================================
+   RESPONSIVE - MAX WIDTH 768px
+   ============================================ */
+@media (max-width: 768px) {
+
+    /* --------------------------------------------
+       MARQUEE (Promo Bar Mobile)
+       -------------------------------------------- */
+    .marquee-wrapper {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+        width: 100%;
+        background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+        padding: 2vw 0;
+        border-bottom: 0.1vw solid #e9ecef;
+    }
+
+    .marquee-content {
+        display: flex;
+        animation: marqueeScroll 25s linear infinite;
+        width: max-content;
+    }
+
+    .marquee-item {
+        display: flex;
+        align-items: center;
+        gap: 6vw;
+        padding: 0 4vw;
+        font-size: 3.2vw;
+        font-weight: 500;
+        color: rgb(102, 72, 9);
+    }
+
+    .marquee-item .separator {
+        color: rgb(102, 72, 9);
+        font-weight: 300;
+        font-size: 4.5vw;
+    }
+
+    .marquee-item .highlight {
+        color: #d32f2f;
+        font-weight: 700;
+    }
+
+    @keyframes marqueeScroll {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    /* --------------------------------------------
+       TOP SECTION (Disembunyikan di mobile)
+       -------------------------------------------- */
+    .top_section {
+        display: none;
+    }
+
+    /* --------------------------------------------
+       BOTTOM SECTION (Navbar)
+       -------------------------------------------- */
+    .bottom_section {
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: center;
+        padding: 2.5vw 4vw;
+        gap: 0;
+        position: relative;
+        box-shadow: 0 0.3vw 4vw rgba(0, 0, 0, 0.08);
+    }
+
+    .bottom_section img {
+        width: 16vw;
+        margin: 0 auto;
+    }
+
+    .logo-wrapper {
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .logo_dekstop {
+        display: none;
+    }
+
+    .logo_mobile {
+        display: block;
+        width: 16vw;
+    }
+
+    /* --------------------------------------------
+       HAMBURGER BUTTON
+       -------------------------------------------- */
+    .hamburger-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.6vw;
+        width: 10vw;
+        height: 10vw;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 20;
+        position: relative;
+        justify-self: start;
+    }
+
+    .hamburger-line {
+        display: block;
+        width: 7vw;
+        height: 0.7vw;
+        background-color: #1a1a2e;
+        border-radius: 0.35vw;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center;
+    }
+
+    /* Animasi X */
+    .hamburger-btn.active .hamburger-line:nth-child(1) {
+        transform: translateY(2.3vw) rotate(45deg);
+        background-color: #DE161F;
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+
+    .hamburger-btn.active .hamburger-line:nth-child(3) {
+        transform: translateY(-2.3vw) rotate(-45deg);
+        background-color: #DE161F;
+    }
+
+    /* --------------------------------------------
+       RIGHT ICONS
+       -------------------------------------------- */
+    .btn_header_bottom {
+        justify-content: flex-end;
+        gap: 3.5vw;
+        grid-column: 3;
+    }
+
+    .btn_header_bottom button {
+        justify-content: center;
+    }
+
+    .btn_header_bottom button iconify-icon {
+        font-size: 6.5vw;
+    }
+
+    .btn_header_bottom button span {
+        width: 4.2vw;
+        height: 4.2vw;
+        font-size: 2.6vw;
+        right: -0.8vw;
+        top: -0.5vw;
+    }
+
+    /* Sembunyikan tombol profile desktop */
+    .icon-btn-profile {
+        display: none !important;
+    }
+
+    /* Sembunyikan wishlist di mobile (opsional) */
+    #wishlist-toggle {
+        display: none;
+    }
+
+    /* --------------------------------------------
+       NAV MENU (Full Screen Overlay)
+       -------------------------------------------- */
+    .nav-menu {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: #ffffff;
+        padding: 0;
+        margin: 0;
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 90;
+        overflow-y: auto;
+        box-sizing: border-box;
+        box-shadow: 0.5vw 0 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-menu.open {
+        transform: translateX(0);
+    }
+
+    /* Header di dalam menu mobile */
+    .logo_mobile_nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 3vw 5vw;
+        background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+        flex-shrink: 0;
+    }
+
+    .logo_mobile_nav img {
+        width: 28vw;
+        margin: 0;
+        filter: brightness(0);
+    }
+
+    .close-btn-nav {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        font-size: 6vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgb(102, 72, 9);
+        cursor: pointer;
+        padding: 0;
+    }
+
+    /* List menu utama */
+    .nav-menu ul {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        list-style: none;
+        padding: 0 5vw;
+        margin: 0;
+    }
+
+    .nav-menu ul a {
+        text-decoration: none;
+        display: block;
+        width: 100%;
+    }
+
+    .nav-menu ul a li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        
+        gap: 4vw;
+        font-size: 4.2vw;
+        font-weight: 400;
+        color: #1a1a2e;
+        text-transform: none;
+        padding: 3.8vw 0;
+        border-bottom: 0.2vw solid #0000001c;
+        transition: all 0.25s ease;
+    }
+    .mobile-account-menu ul li{
+        flex-direction: row-reverse;
+    }
+
+    .nav-menu ul a li iconify-icon {
+        font-size: 5.5vw;
+        color: #303030;
+        display: flex;
+    }
+
+    .nav-menu ul a.active li {
+        color: #ecbc42;
+        font-weight: 600;
+    }
+
+    .nav-menu ul a:not(.active):active li {
+        color: #ecbc42;
+    }
+
+    /* --------------------------------------------
+       MOBILE ACCOUNT SUBMENU
+       -------------------------------------------- */
+    .mobile-account-menu {
+        display: block;
+        width: 100%;
+        margin-top: 8vw;
+        padding: 0 0;
+        box-sizing: border-box;
+    }
+
+    .account-divider {
+        padding: 0 5vw;
+        margin-bottom: 4vw;
+    }
+
+    .account-divider-label {
+        display: block;
+        font-size: 3.6vw;
+        font-weight: 700;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .account-submenu {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .account-submenu a {
+        display: block;
+        text-decoration: none;
+        color: #1a1a2e;
+        border-bottom: 0.2vw solid #0000001c;
+        transition: all 0.25s ease;
+    }
+
+    .account-submenu a li {
+        display: flex;
+        align-items: center;
+        gap: 4vw;
+        font-size: 4.2vw;
+        font-weight: 400;
+        padding: 3.5vw 0;
+        list-style: none;
+    }
+
+    .account-submenu a.active {
+        color: #076694;
+    }
+
+    .account-submenu a.active li {
+        color: #076694;
+        font-weight: 600;
+    }
+
+    .account-submenu iconify-icon {
+        font-size: 5.5vw;
+        color: #6b7280;
+        flex-shrink: 0;
+    }
+
+    /* --------------------------------------------
+       MOBILE NAV FOOTER (Auth)
+       -------------------------------------------- */
+    .mobile-nav-footer {
+        display: flex;
+        padding: 4vw 4vw;
+        border-top: 0.2vw solid #f1f3f5;
+        flex-shrink: 0;
+    }
+
+    .mobile-auth {
+        display: flex;
+        flex-direction: column;
+        gap: 3vw;
+        width: 100%;
+    }
+
+    .mobile-auth a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3vw;
+        text-decoration: none;
+        color:rgb(102, 72, 9);
+        font-size: 3.8vw;
+        font-weight: 600;
+        padding: 3.5vw 5vw;
+        border-radius: 2vw;
+        background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+        transition: all 0.2s ease;
+    }
+
+    .mobile-auth a iconify-icon {
+        font-size: 5vw;
+        color:rgb(102, 72, 9);
+    }
+
+    /* --------------------------------------------
+       OVERLAY
+       -------------------------------------------- */
+    .nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 85;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        display:none
+    }
+    .mobile-account-profile {
+        display: flex;
+        align-items: center;
+        gap: 4vw;
+        padding: 4vw 5vw;
+        background: linear-gradient(135deg, #ecbc42 0%, #ecbc42 100%);
+        border-radius: 3vw;
+        margin-left: 5vw;
+        margin-right: 5vw;
+        border: 0.2vw solid #ecbc42;
+    }
+
+    .mobile-account-avatar {
+        width: 14vw;
+        height: 14vw;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ecbc42 0%, #ecbc42 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 6vw;
+        font-weight: 700;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+        border: 0.6vw solid #ffffff;
+        box-shadow: 0 0.5vw 2vw rgba(7, 102, 148, 0.2);
+    }
+
+    .mobile-account-avatar img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .mobile-account-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .mobile-account-name {
+        font-size: 4vw;
+        font-weight: 700;
+        color:rgb(102, 72, 9);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+    }
+
+    .mobile-account-email {
+        font-size: 3vw;
+        color:rgb(102, 72, 9);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 0.5vw;
+        line-height: 1.3;
+    }
+
+    .nav-overlay.show {
+        display: none;
+        opacity: 1;
+    }
+
+    /* Sembunyikan elemen desktop */
+    .bottom_section > ul {
+        display: none;
+    }
+    .mobile-logout-form {
+        margin-top: 0;
+        padding: 0;
+    }
+
+    .mobile-logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3vw;
+        padding: 3.5vw 5vw;
+        border-radius: 2vw;
+        border: 0.3vw solid #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
+        font-size: 3.8vw;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-logout-btn:active {
+        background: #fee2e2;
+        transform: scale(0.98);
+    }
+
+    .mobile-logout-btn iconify-icon {
+        font-size: 5vw;
+        color: #dc2626;
+    }
+}

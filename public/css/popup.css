@@ -1,0 +1,1074 @@
+/* ============================================
+   POPUP SLIDE (CART & WISHLIST)
+   ============================================ */
+.popup-slide {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 88;
+    height: 100vh;
+    height: 100dvh; /* ✅ Fix iOS address bar */
+    width: 100%;
+    visibility: hidden;
+    transition: visibility 0s 0.4s;
+}
+
+.popup-slide.active {
+    visibility: visible;
+    transition: visibility 0s 0s;
+}
+
+.popup_slide_overlay {
+    background: rgba(0, 0, 0, 0.55);
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 80;
+    animation: animasi_overlay_out 0.4s ease forwards;
+}
+
+.popup-slide.active .popup_slide_overlay {
+    animation: animasi_overlay 0.4s ease forwards;
+    animation-delay: .3s;
+    opacity: 0;
+}
+
+@keyframes animasi_overlay {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes animasi_overlay_out {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.popup-slide-box {
+    width: 100%;
+    max-width: 25vw;
+    background: #ffffff;
+    height: 100vh;
+    height: 100dvh; /* ✅ Fix iOS */
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 99;
+    animation: popup_slide_out 0.4s ease forwards;
+    overflow: hidden;
+}
+
+.popup-slide.active .popup-slide-box {
+    animation: popup_slide_in 0.4s ease forwards;
+}
+
+@keyframes popup_slide_in {
+    0%   { transform: translateX(100%); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes popup_slide_out {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(100%); }
+}
+
+/* ============================================
+   POPUP HEADER
+   ============================================ */
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7vw 1vw;
+    border-bottom: 0.1vw solid rgb(102, 72, 9);
+    flex-shrink: 0; /* ✅ Fix: header tidak mengecil */
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    z-index: 2;
+}
+
+.popup-header h2 {
+    font-size: 0.85vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4vw;
+}
+
+.popup-header h2 iconify-icon {
+    font-size: 0.9vw;
+}
+
+.popup-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4vw;
+}
+
+.popup-header-actions .btn-clear {
+    font-size: 0.75vw;
+    color: rgb(102, 72, 9);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.2vw 0.6vw;
+    border-radius: 0.4vw;
+    transition: all 0.2s;
+    display: none;
+    align-items: center;
+    gap: 0.3vw;
+    font-weight: 600;
+}
+
+.popup-header-actions .btn-clear:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.popup-header-actions .btn-clear.visible {
+    display: inline-flex !important;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    padding: 0.3vw;
+    cursor: pointer;
+    color: rgb(102, 72, 9);
+    transition: all 0.2s;
+    font-size: 1.2vw;
+    line-height: 1;
+    border-radius: 50%;
+    width: 1.8vw;
+    height: 1.8vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-close:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   POPUP BODY
+   ============================================ */
+.popup-body {
+    flex: 1 1 auto; /* ✅ Fix: body mengisi ruang */
+    min-height: 0;  /* ✅ Fix: penting agar flex child bisa scroll */
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.7vw 1vw;
+    background: #fafbfc;
+    -webkit-overflow-scrolling: touch;
+}
+
+.popup-body::-webkit-scrollbar { width: 4px; }
+.popup-body::-webkit-scrollbar-track { background: #f1f5f9; }
+.popup-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.popup-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.popup-body {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.popup-body-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    color: #94a3b8;
+    text-align: center;
+    padding: 1vw;
+}
+
+.popup-body-empty iconify-icon {
+    font-size: 3vw;
+    color: #ecbc42;
+    margin-bottom: 0.6vw;
+    opacity: 0.6;
+}
+
+.popup-body-empty p:first-of-type {
+    font-weight: 700;
+    color: #475569;
+    margin: 0 0 0.2vw 0;
+    font-size: 0.85vw;
+}
+
+.popup-body-empty p:last-of-type {
+    font-size: 0.7vw;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* ============================================
+   CART ITEMS
+   ============================================ */
+#cart-content .space-y-3 > * + * { margin-top: 12px; }
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7vw;
+    padding: 0.6vw 0.6vw 0.6vw 0;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+    border-radius: 0.4vw;
+}
+
+.cart-item:hover { background: #f8fafc; }
+.cart-item:last-child { border-bottom: none; }
+
+/* Product Image */
+.cart-item-image {
+    width: 3.4vw;
+    height: 3.4vw;
+    min-width: 3.4vw;
+    min-height: 3.4vw;
+    border-radius: 0.4vw;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.cart-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.cart-item-image .placeholder {
+    font-size: 1.3vw;
+    color: #cbd5e1;
+}
+
+/* Product Info */
+.cart-item-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 0.4vw;
+}
+
+.cart-item-name {
+    font-size: 0.76vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cart-item-variant {
+    font-size: 0.65vw;
+    color: #94a3b8;
+    margin: 0.2vw 0 0.1vw 0;
+}
+
+/* Quantity & Actions */
+.cart-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5vw;
+    flex-shrink: 0;
+}
+
+.cart-item-price-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4vw;
+    flex-wrap: wrap;
+    margin-top: 0.3vw;
+}
+
+.cart-item-price {
+    font-size: 0.7vw;
+    color: rgb(102, 72, 9);
+    font-weight: 600;
+    margin: 0;
+}
+
+.cart-item-price-discount { color: #dc2626; }
+
+.cart-item-price-original {
+    font-size: 0.6vw;
+    color: rgb(102, 72, 9);
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.qty-wrapper {
+    display: flex;
+    align-items: center;
+    border: 0.1vw solid #e2e8f0;
+    border-radius: 0.4vw;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.qty-btn {
+    width: 1.7vw;
+    height: 1.7vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.86vw;
+    font-weight: 600;
+    color: rgb(102, 72, 9);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    user-select: none;
+}
+
+.qty-btn:hover {
+    background: #fffbf0;
+    color: rgb(102, 72, 9);
+}
+
+.qty-btn:active { transform: scale(0.9); }
+
+.qty-input {
+    width: 2vw;
+    height: 1.7vw;
+    text-align: center;
+    font-size: 0.76vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    background: transparent;
+    border: none;
+    border-left: 0.1vw solid #e2e8f0;
+    border-right: 0.1vw solid #e2e8f0;
+    padding: 0;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qty-input:focus { background: #fffbf0; }
+
+/* Remove Button */
+.btn-remove {
+    width: 1.3vw;
+    height: 1.3vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(102, 72, 9);
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.btn-remove:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.btn-remove svg {
+    width: 0.87vw;
+    height: 0.87vw;
+}
+
+/* ============================================
+   POPUP FOOTER  ←  ✅ FIX UTAMA
+   ============================================ */
+.popup-footer {
+    border-top: 0.1vw solid #e2e8f0;
+    padding: 0.85vw 1vw;
+    background: #ffffff;
+    flex-shrink: 0; /* ✅ Fix: footer tidak mengecil */
+    display: none;
+    box-shadow: 0 -0.2vw 0.6vw rgba(0, 0, 0, 0.04); /* ✅ Bayangan untuk depth */
+}
+
+.popup-footer.visible {
+    display: block;
+}
+
+.popup-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1vw;
+}
+
+.popup-footer-total-label {
+    font-size: 0.7vw;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.popup-footer-total {
+    font-size: 1vw;
+    font-weight: 800;
+    color: rgb(102, 72, 9);
+    margin: 0.2vw 0 0 0;
+}
+
+.popup-footer-buttons {
+    display: flex;
+    gap: 0.5vw;
+}
+
+.btn-outline {
+    padding: 0.45vw 0.9vw;
+    border-radius: 0.5vw;
+    border: 0.1vw solid rgb(102, 72, 9);
+    background: #ffffff;
+    font-size: 0.75vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3vw;
+    white-space: nowrap;
+}
+
+.btn-outline:hover {
+    background: #fffbf0;
+}
+
+.btn-primary {
+    padding: 0.45vw 0.9vw;
+    border-radius: 0.5vw;
+    border: none;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    font-size: 0.75vw;
+    font-weight: 800;
+    color: rgb(102, 72, 9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3vw;
+    white-space: nowrap;
+    box-shadow: 0 0.15vw 0.5vw rgba(236, 188, 66, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-0.1vw);
+    box-shadow: 0 0.3vw 1vw rgba(236, 188, 66, 0.5);
+}
+
+.btn-primary:active { transform: scale(0.97); }
+
+/* ============================================
+   DISCOUNT BADGE
+   ============================================ */
+.wishlist-discount-badge {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 100%);
+    color: rgb(102, 72, 9);
+    font-size: 0.6vw;
+    font-weight: 800;
+    text-align: center;
+    padding: 0.1vw 0;
+    letter-spacing: 0.05em;
+}
+
+.wishlist-badge.hidden,
+.wishlist-count.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   WISHLIST ITEMS
+   ============================================ */
+.wishlist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wishlist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7vw;
+    padding: 0.6vw 0.6vw 0.6vw 0;
+    border-bottom: 0.1vw solid #f1f5f9;
+    transition: all 0.2s ease;
+    border-radius: 0.4vw;
+    position: relative;
+}
+.icon-btn-wishlist{
+    display:none !important;
+}
+
+.wishlist-item:last-child { border-bottom: none; }
+
+.wishlist-item-image {
+    width: 3.4vw;
+    height: 3.4vw;
+    min-width: 3.4vw;
+    min-height: 3.4vw;
+    border-radius: 0.4vw;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.wishlist-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.wishlist-item-image .placeholder {
+    font-size: 1.3vw;
+    color: #cbd5e1;
+}
+
+.wishlist-item-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 0.4vw;
+}
+
+.wishlist-item-name {
+    font-size: 0.76vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    display: block;
+    transition: color 0.2s ease;
+}
+
+.wishlist-item-name:hover {
+    color: #076694;
+}
+
+.wishlist-item-category {
+    font-size: 0.65vw;
+    color: #94a3b8;
+    margin: 0.2vw 0 0.1vw 0;
+}
+
+.wishlist-item-price-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4vw;
+    flex-wrap: wrap;
+    margin-top: 0.3vw;
+}
+
+.wishlist-item-price {
+    font-size: 0.7vw;
+    color: rgb(102, 72, 9);
+    font-weight: 600;
+}
+
+.wishlist-item-price.discounted {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.wishlist-item-price-original {
+    font-size: 0.6vw;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.wishlist-discount-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2vw;
+    font-size: 0.55vw;
+    font-weight: 700;
+    padding: 0.15vw 0.5vw;
+    background: #fffbf0;
+    color: rgb(102, 72, 9);
+    border: 0.1vw solid #fde68a;
+    border-radius: 100vw;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Wishlist Actions */
+.wishlist-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5vw;
+    flex-shrink: 0;
+}
+
+.wishlist-item-actions .btn-sm {
+    width: 2vw;
+    height: 2vw;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100vw;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-size: 0.7vw;
+}
+
+.wishlist-item-actions .btn-sm-primary {
+    background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
+    color: rgb(102, 72, 9);
+    box-shadow: 0 0.1vw 0.4vw rgba(236, 188, 66, 0.3);
+}
+
+.wishlist-item-actions .btn-sm-primary:hover {
+    transform: translateY(-0.1vw);
+    box-shadow: 0 0.25vw 0.8vw rgba(236, 188, 66, 0.5);
+}
+
+.wishlist-item-actions .btn-sm-primary:active {
+    transform: scale(0.95);
+}
+
+.wishlist-item-actions .btn-sm-danger {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.wishlist-item-actions .btn-sm-danger:hover {
+    background: #fee2e2;
+    transform: scale(1.08);
+}
+
+.wishlist-item-actions .btn-sm iconify-icon {
+    font-size: 0.95vw;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.popup-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: 200px;
+}
+
+.popup-spinner {
+    width: 2vw;
+    height: 2vw;
+    border: 0.2vw solid #fde68a;
+    border-top-color: #ecbc42;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.popup-loading p {
+    margin-top: 0.7vw;
+    font-size: 0.78vw;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+#cart-content.loading,
+#wishlist-content.loading {
+    min-height: 200px;
+}
+
+/* ============================================
+   UTILITY
+   ============================================ */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-2 { margin-top: 8px; }
+.shrink-0 { flex-shrink: 0; }
+
+/* ============================================
+   RESPONSIVE - TABLET (≤ 768px)
+   ============================================ */
+@media (max-width: 768px) {
+    .popup-slide-box {
+        max-width: 100vw;
+        border-radius: 0;
+        overflow: hidden;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+    }
+
+    /* ---------- Header ---------- */
+    .popup-header {
+        padding: 4vw 5vw;
+        padding-top: max(4vw, env(safe-area-inset-top)); /* ✅ Safe area iOS */
+    }
+
+    .popup-header h2 {
+        font-size: 4vw;
+        font-weight: 700;
+        gap: 2vw;
+    }
+
+    .popup-header h2 iconify-icon {
+        font-size: 5vw;
+    }
+
+    .popup-header-actions {
+        gap: 2.5vw;
+    }
+
+    .btn-close {
+        padding: 0;
+        font-size: 5vw;
+        width: 8vw;
+        height: 8vw;
+    }
+
+    /* ---------- Body ---------- */
+    .popup-body {
+        padding: 3vw 4vw 4vw;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    /* ---------- Cart Item ---------- */
+    .cart-item {
+        gap: 3vw;
+        padding: 3vw 0;
+    }
+
+    .cart-item-image {
+        width: 20vw;
+        height: 20vw;
+        min-width: 20vw;
+        min-height: 20vw;
+        border-radius: 3vw;
+    }
+
+    .cart-item-image .placeholder { font-size: 8vw; }
+
+    .cart-item-name {
+        font-size: 3.6vw;
+        font-weight: 700;
+    }
+
+    .cart-item-variant {
+        font-size: 3vw;
+        margin: 0.5vw 0 0.3vw 0;
+    }
+
+    .cart-item-price-wrapper {
+        gap: 2vw;
+        margin-top: 1vw;
+    }
+
+    .cart-item-price { font-size: 3.6vw; }
+    .cart-item-price-original { font-size: 3vw; }
+
+    /* ---------- Quantity ---------- */
+    .cart-item-actions {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2vw;
+    }
+
+    .qty-wrapper {
+        border-radius: 2vw;
+        border-width: 0.3vw;
+    }
+
+    .qty-btn {
+        width: 9vw;
+        height: 9vw;
+        font-size: 5vw;
+        font-weight: 600;
+    }
+
+    .qty-input {
+        width: 10vw;
+        height: 9vw;
+        font-size: 4vw;
+        font-weight: 700;
+        border-left-width: 0.3vw;
+        border-right-width: 0.3vw;
+    }
+
+    .btn-remove {
+        width: 8vw;
+        height: 8vw;
+        opacity: 1;
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .btn-remove svg {
+        width: 4.5vw;
+        height: 4.5vw;
+    }
+
+    /* ---------- Footer  ✅ FIX UTAMA ---------- */
+    .popup-footer {
+        padding: 4vw 5vw;
+        padding-bottom: max(4vw, env(safe-area-inset-bottom)); /* ✅ Safe area iOS */
+        flex-shrink: 0; /* ✅ PENTING: jangan mengecil */
+        display: none;
+        position: relative; /* ✅ Jangan sticky, biar flexbox bekerja */
+        z-index: 10;
+        background: #ffffff;
+        border-top: 0.3vw solid #f1f5f9;
+        box-shadow: 0 -1vw 3vw rgba(0, 0, 0, 0.08); /* ✅ Bayangan jelas */
+    }
+
+    .popup-footer.visible {
+        display: block;
+    }
+
+    .popup-footer-inner {
+        display: flex;
+        flex-direction: column; /* ✅ Stack vertikal di mobile */
+        gap: 3vw;
+    }
+
+    .popup-footer-total-label {
+        font-size: 3.2vw;
+    }
+
+    .popup-footer-total {
+        font-size: 5.5vw;
+        font-weight: 800;
+        margin: 0.5vw 0 0 0;
+    }
+
+    .popup-footer-buttons {
+        display: flex;
+        gap: 2.5vw;
+        width: 100%;
+    }
+
+    .btn-outline,
+    .btn-primary {
+        flex: 1;
+        justify-content: center;
+        padding: 3vw 4vw;
+        font-size: 3.4vw;
+        border-radius: 2.5vw;
+        gap: 1.2vw;
+        font-weight: 700;
+    }
+
+    .btn-outline iconify-icon,
+    .btn-primary iconify-icon {
+        font-size: 4vw;
+    }
+
+    /* ---------- Wishlist ---------- */
+    .wishlist-items { gap: 3vw; }
+
+    .wishlist-item {
+        gap: 3vw;
+        padding: 3vw 0;
+    }
+
+    .wishlist-item-image {
+        width: 20vw;
+        height: 20vw;
+        min-width: 20vw;
+        min-height: 20vw;
+        border-radius: 3vw;
+    }
+
+    .wishlist-item-image .placeholder { font-size: 8vw; }
+
+    .wishlist-discount-badge {
+        font-size: 2.8vw;
+        padding: 0.5vw 0;
+        font-weight: 800;
+    }
+
+    .wishlist-item-name {
+        font-size: 3.6vw;
+        font-weight: 700;
+    }
+
+    .wishlist-item-category {
+        font-size: 3vw;
+        margin: 0.5vw 0 0.3vw 0;
+    }
+
+    .wishlist-item-price-wrapper {
+        gap: 2vw;
+        margin-top: 1vw;
+    }
+
+    .wishlist-item-price { font-size: 3.6vw; }
+    .wishlist-item-price-original { font-size: 3vw; }
+
+    .wishlist-discount-label {
+        font-size: 2.4vw;
+        padding: 0.5vw 1.5vw;
+        border-radius: 100vw;
+        border-width: 0.2vw;
+    }
+
+    .wishlist-item-actions {
+        gap: 2vw;
+        flex-shrink: 0;
+        flex-direction: column; /* ✅ Tombol stack vertikal */
+    }
+
+    .wishlist-item-actions .btn-sm {
+        width: 10vw;
+        height: 10vw;
+    }
+
+    .wishlist-item-actions .btn-sm iconify-icon {
+        font-size: 5vw;
+    }
+
+    /* ---------- Empty State ---------- */
+    .popup-body-empty {
+        min-height: 60vh;
+        padding: 5vw;
+    }
+
+    .popup-body-empty iconify-icon {
+        font-size: 20vw;
+        margin-bottom: 5vw;
+    }
+
+    .popup-body-empty p:first-of-type {
+        font-size: 4.5vw;
+    }
+
+    .popup-body-empty p:last-of-type {
+        font-size: 3.5vw;
+        margin-top: 1vw;
+    }
+
+    /* ---------- Header Actions ---------- */
+    .popup-header-actions .btn-clear {
+        display: none;
+    }
+
+    .popup-header-actions .btn-clear.visible {
+        display: none !important;
+    }
+
+    .icon-btn-wishlist {
+        background-color: transparent;
+        outline: none;
+        border: none;
+        color: rgb(102, 72, 9);
+        font-size: 3.5vw;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 1vw;
+        font-weight: 600;
+    }
+
+    .icon-btn-wishlist iconify-icon {
+        font-size: 4.5vw;
+    }
+
+    /* ---------- Loading ---------- */
+    .popup-spinner {
+        width: 6vw;
+        height: 6vw;
+        border-width: 0.8vw;
+    }
+
+    .popup-loading {
+        padding: 30px 15px;
+        min-height: 150px;
+    }
+
+    .popup-loading p {
+        font-size: 3.5vw;
+        margin-top: 3vw;
+    }
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE KECIL (≤ 380px)
+   ============================================ */
+@media (max-width: 380px) {
+    .cart-item-image,
+    .wishlist-item-image {
+        width: 22vw;
+        height: 22vw;
+        min-width: 22vw;
+        min-height: 22vw;
+    }
+
+    .cart-item-name,
+    .wishlist-item-name {
+        font-size: 3.8vw;
+    }
+
+    .qty-btn {
+        width: 10vw;
+        height: 10vw;
+    }
+
+    .qty-input {
+        width: 11vw;
+        height: 10vw;
+    }
+
+    .btn-outline,
+    .btn-primary {
+        font-size: 3.6vw;
+        padding: 3.5vw 4vw;
+    }
+}
