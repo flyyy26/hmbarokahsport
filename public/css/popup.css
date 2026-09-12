@@ -1,6 +1,146 @@
 /* ============================================
    POPUP SLIDE (CART & WISHLIST)
    ============================================ */
+.whatsapp_fix {
+    position: fixed;
+    right: 2vw;
+    bottom: 2vw;
+    z-index: 80;
+    font-family: sans-serif;
+}
+
+.wa-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4vw;
+    height: 4vw;
+    border-radius: 100vw;
+    font-size: 2vw;
+    border: none;
+    cursor: pointer;
+    background-color: rgb(80, 156, 4);
+    color: white;
+    transition: 0.3s all;
+    box-shadow: 0 4px 15px rgba(80, 156, 4, 0.4);
+    animation: bounce 2s infinite;
+}
+
+.wa-trigger:hover {
+    transform: scale(1.1);
+    transition:.3s all;
+    animation: none;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.wa-card {
+    position: absolute;
+    bottom: 110%;
+    right: 0;
+    width: 280px;
+    background: white;
+    border-radius: 15px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.9);
+    transform-origin: bottom right;
+    transition: 0.3s all;
+}
+
+.wa-card::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 25px;
+    border: 10px solid transparent;
+    border-top-color: white;
+}
+
+.wa-card.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.wa-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.wa-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgb(80, 156, 4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.wa-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+}
+
+.wa-card-status {
+    font-size: 12px;
+    color: #25d366;
+}
+
+.wa-card-message {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.wa-card-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: rgb(80, 156, 4);
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.wa-card-button:hover {
+    background: rgb(65, 130, 3);
+}
+
+.wa-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+}
+
+@media (max-width: 768px) {
+    .wa-trigger { width: 60px; height: 60px; font-size: 30px; }
+    .wa-card { width: 260px; }
+}
 .popup-slide {
     position: fixed;
     top: 0;
@@ -10,12 +150,10 @@
     height: 100dvh; /* ✅ Fix iOS address bar */
     width: 100%;
     visibility: hidden;
-    transition: visibility 0s 0.4s;
 }
 
 .popup-slide.active {
     visibility: visible;
-    transition: visibility 0s 0s;
 }
 
 .popup_slide_overlay {

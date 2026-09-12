@@ -14,7 +14,6 @@
     backdrop-filter: blur(0.2vw);
     -webkit-backdrop-filter: blur(0.2vw);
     opacity: 0;
-    visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     padding: 2vw;
     pointer-events: none; /* Tambahkan ini */
@@ -22,6 +21,7 @@
 
 /* Saat aktif (tidak hidden) */
 .variant-modal-overlay.active {
+    display:flex;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
