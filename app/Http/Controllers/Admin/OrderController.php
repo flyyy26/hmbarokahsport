@@ -31,12 +31,17 @@ class OrderController extends Controller
 
         // Filter by shipping_status
         if ($request->filled('shipping_status')) {
-            if ($request->shipping_status === 'delivered') {
+            // 🔥 TAB BARU: Permintaan Pembatalan
+            if ($request->shipping_status === 'cancellation_requested') {
+                $query->where('cancellation_status', 'pending');
+            }
+            elseif ($request->shipping_status === 'delivered') {
                 $query->where(function ($q) {
                     $q->where('shipping_status', 'delivered')
                         ->orWhereNotNull('delivered_at');
                 });
-            } else {
+            }
+            else {
                 $query->where('shipping_status', $request->shipping_status);
             }
         }
@@ -69,6 +74,9 @@ class OrderController extends Controller
             'cancelled' => Order::where('shipping_status', 'cancelled')->count(),
             'unpaid' => Order::where('payment_status', 'unpaid')->count(),
             'paid' => Order::where('payment_status', 'paid')->count(),
+
+            // 🔥 TAB BARU
+            'cancellation_requested' => Order::where('cancellation_status', 'pending')->count(),
         ];
 
         return view('admin.orders.index', compact('orders', 'statusCounts'));
@@ -453,6 +461,8 @@ class OrderController extends Controller
                 'admin_id' => Auth::id(),
             ]);
 
+            Cache::forget('sidebar_badges');
+
             return redirect()
                 ->route('admin.orders.show', $order)
                 ->with('success', 'Permintaan pembatalan berhasil disetujui. Stok produk telah dikembalikan.');
@@ -503,6 +513,8 @@ class OrderController extends Controller
                 'admin_id' => Auth::id(),
             ]);
 
+            Cache::forget('sidebar_badges');
+
             return redirect()
                 ->route('admin.orders.show', $order)
                 ->with('success', 'Permintaan pembatalan berhasil ditolak.');
@@ -538,6 +550,8 @@ class OrderController extends Controller
         try {
             $order->approveReturn(Auth::id());
 
+            Cache::forget('sidebar_badges');
+
             return redirect()
                 ->route('admin.orders.show', $order)
                 ->with('success', 'Permintaan retur disetujui. Stok akan dikembalikan saat retur selesai.');
@@ -570,10 +584,11 @@ class OrderController extends Controller
         try {
             $order->rejectReturn(Auth::id());
 
+            Cache::forget('sidebar_badges');
+
             return redirect()
                 ->route('admin.orders.show', $order)
                 ->with('success', 'Permintaan retur berhasil ditolak.');
-
         } catch (\Exception $e) {
             Log::error('Error rejecting return:', [
                 'order_id' => $order->id,

@@ -21,29 +21,29 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
-            {{-- Periode Dropdown --}}
-            <div class="relative">
-                <select class="form-input text-xs font-semibold py-2 pl-9 pr-8 cursor-pointer"
-                        style="min-width: 220px;">
-                    <option>20 Mei 2026 - 27 Mei 2026</option>
-                    <option>1 Mei 2026 - 31 Mei 2026</option>
-                    <option>1 Jan 2026 - 31 Des 2026</option>
-                </select>
-                <iconify-icon icon="mdi:calendar-outline"
-                              class="absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none"
-                              style="color: var(--text-5);"></iconify-icon>
+            {{-- 🔥 Filter Bulan (hanya untuk 4 card stats) --}}
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider hidden sm:inline"
+                    style="color: var(--text-5);">
+                    Filter Stats:
+                </span>
+                <form method="GET" action="{{ route('admin.dashboard') }}" class="relative">
+                    <select name="month"
+                            onchange="this.form.submit()"
+                            class="form-input text-xs font-semibold py-2 pl-9 pr-8 cursor-pointer"
+                            style="min-width: 200px;">
+                        @foreach($monthOptions as $opt)
+                            <option value="{{ $opt['value'] }}"
+                                    {{ ($stats['month_param'] ?? '') === $opt['value'] ? 'selected' : '' }}>
+                                {{ $opt['label'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <iconify-icon icon="mdi:calendar-outline"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none"
+                                style="color: var(--text-5);"></iconify-icon>
+                </form>
             </div>
-
-            {{-- Export Button --}}
-            <button type="button"
-                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg
-                           text-xs font-bold transition-all active:scale-95 border"
-                    style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
-                    onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
-                    onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'">
-                <iconify-icon icon="mdi:download-outline"></iconify-icon>
-                Export
-            </button>
         </div>
     </div>
 
@@ -63,11 +63,15 @@
                 </p>
                 <div class="flex items-baseline gap-2 mt-2">
                     <p class="text-2xl font-bold" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['sales_7d'] ?? 28_450_000, 0, ',', '.') }}
+                        Rp {{ number_format($stats['sales_7d'] ?? 0, 0, ',', '.') }}
                     </p>
-                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400">
-                        <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                        18.6%
+                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold {{ ($stats['change_7d'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                        @if(($stats['change_7d'] ?? 0) >= 0)
+                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                        @else
+                            <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                        @endif
+                        {{ abs($stats['change_7d'] ?? 0) }}%
                     </span>
                 </div>
                 <p class="text-[10px] mt-1" style="color: var(--text-5);">
@@ -84,15 +88,17 @@
                             <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
-                    <path d="M0,45 C20,40 40,30 60,35 C80,40 100,25 120,20 C140,15 160,25 180,22 C200,19 220,30 240,25 C260,20 280,28 300,25 L300,60 L0,60 Z"
+                    @if($stats['sparkline_7d'] ?? '')
+                    <path d="{{ $stats['sparkline_7d'] }} L300,60 L0,60 Z"
                           fill="url(#spark1)"/>
-                    <path d="M0,45 C20,40 40,30 60,35 C80,40 100,25 120,20 C140,15 160,25 180,22 C200,19 220,30 240,25 C260,20 280,28 300,25"
+                    <path d="{{ $stats['sparkline_7d'] }}"
                           fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+                    @endif
                 </svg>
             </div>
             <div class="px-5 pb-3 flex justify-between text-[9px]" style="color: var(--text-5);">
-                <span>21 Mei</span>
-                <span>27 Mei</span>
+                <span>{{ $stats['chart_labels'][0] ?? 'N/A' }}</span>
+                <span>{{ $stats['chart_labels'][6] ?? 'N/A' }}</span>
             </div>
         </div>
 
@@ -107,11 +113,15 @@
                 </p>
                 <div class="flex items-baseline gap-2 mt-2">
                     <p class="text-2xl font-bold" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['sales_30d'] ?? 126_750_000, 0, ',', '.') }}
+                        Rp {{ number_format($stats['sales_30d'] ?? 0, 0, ',', '.') }}
                     </p>
-                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400">
-                        <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                        22.4%
+                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold {{ ($stats['change_30d'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                        @if(($stats['change_30d'] ?? 0) >= 0)
+                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                        @else
+                            <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                        @endif
+                        {{ abs($stats['change_30d'] ?? 0) }}%
                     </span>
                 </div>
                 <p class="text-[10px] mt-1" style="color: var(--text-5);">
@@ -127,15 +137,21 @@
                             <stop offset="100%" stop-color="#60a5fa" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
-                    <path d="M0,50 C20,35 40,45 60,30 C80,35 100,20 120,25 C140,30 160,15 180,18 C200,21 220,10 240,15 C260,20 280,12 300,10 L300,60 L0,60 Z"
+                    @if($stats['sparkline_30d'] ?? '')
+                    <path d="{{ $stats['sparkline_30d'] }} L300,60 L0,60 Z"
                           fill="url(#spark2)"/>
-                    <path d="M0,50 C20,35 40,45 60,30 C80,35 100,20 120,25 C140,30 160,15 180,18 C200,21 220,10 240,15 C260,20 280,12 300,10"
+                    <path d="{{ $stats['sparkline_30d'] }}"
                           fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/>
+                    @endif
                 </svg>
             </div>
             <div class="px-5 pb-3 flex justify-between text-[9px]" style="color: var(--text-5);">
-                <span>28 Apr</span>
-                <span>27 Mei</span>
+                @php
+                    $days30_ago = ($stats['chart_labels'] ? $stats['chart_labels'][0] : 'N/A');
+                    // For 30-day period, show month-level labels
+                @endphp
+                <span>{{ now()->subDays(29)->format('d M') }}</span>
+                <span>{{ now()->format('d M') }}</span>
             </div>
         </div>
 
@@ -150,11 +166,15 @@
                 </p>
                 <div class="flex items-baseline gap-2 mt-2">
                     <p class="text-2xl font-bold" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['sales_90d'] ?? 342_980_000, 0, ',', '.') }}
+                        Rp {{ number_format($stats['sales_90d'] ?? 0, 0, ',', '.') }}
                     </p>
-                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400">
-                        <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                        15.7%
+                    <span class="inline-flex items-center gap-0.5 text-[11px] font-bold {{ ($stats['change_90d'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                        @if(($stats['change_90d'] ?? 0) >= 0)
+                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                        @else
+                            <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                        @endif
+                        {{ abs($stats['change_90d'] ?? 0) }}%
                     </span>
                 </div>
                 <p class="text-[10px] mt-1" style="color: var(--text-5);">
@@ -170,139 +190,163 @@
                             <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
-                    <path d="M0,45 C20,48 40,35 60,38 C80,41 100,25 120,28 C140,31 160,20 180,22 C200,24 220,15 240,18 C260,21 280,10 300,8 L300,60 L0,60 Z"
+                    @if($stats['sparkline_90d'] ?? '')
+                    <path d="{{ $stats['sparkline_90d'] }} L300,60 L0,60 Z"
                           fill="url(#spark3)"/>
-                    <path d="M0,45 C20,48 40,35 60,38 C80,41 100,25 120,28 C140,31 160,20 180,22 C200,24 220,15 240,18 C260,21 280,10 300,8"
+                    <path d="{{ $stats['sparkline_90d'] }}"
                           fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>
+                    @endif
                 </svg>
             </div>
             <div class="px-5 pb-3 flex justify-between text-[9px]" style="color: var(--text-5);">
-                <span>28 Feb</span>
-                <span>27 Mei</span>
+                <span>{{ now()->subDays(89)->format('d M') }}</span>
+                <span>{{ now()->format('d M') }}</span>
             </div>
         </div>
     </div>
 
+    <div>
+        {{-- Label periode --}}
+        <div class="flex items-center gap-2 mb-3">
+            <iconify-icon icon="mdi:calendar-month-outline" class="text-[#ecbc42] text-base"></iconify-icon>
+            <span class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-4);">
+                Periode: <span style="color: #ecbc42;">{{ $stats['month_label'] }}</span>
+            </span>
+            <div class="flex-1 h-px" style="background: var(--border-1);"></div>
+        </div>
 
-    {{-- ============================================ --}}
-    {{-- STATS ROW 2: 4 Metrik Tambahan --}}
-    {{-- ============================================ --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-        {{-- Kas Masuk --}}
-        <div class="rounded-2xl border p-4 transition-colors"
-             style="background: var(--bg-card); border-color: var(--border-2);"
-             onmouseover="this.style.borderColor='rgba(52,211,153,0.3)'"
-             onmouseout="this.style.borderColor='var(--border-2)'">
-            <div class="flex items-start gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-                            bg-emerald-500/10 border border-emerald-500/30">
-                    <iconify-icon icon="mdi:wallet-outline" class="text-emerald-400 text-xl"></iconify-icon>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
-                        Kas Masuk
-                    </p>
-                    <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['cash_in'] ?? 315_200_000, 0, ',', '.') }}
-                    </p>
-                    <div class="flex items-center gap-1.5 mt-1.5">
-                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400">
-                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                            17.3%
-                        </span>
-                        <span class="text-[9px]" style="color: var(--text-5);">vs periode sebelumnya</span>
+            {{-- Card: Total Penjualan Online --}}
+            <div class="rounded-2xl border p-4 transition-colors"
+                style="background: var(--bg-card); border-color: var(--border-2);"
+                onmouseover="this.style.borderColor='rgba(52,211,153,0.3)'"
+                onmouseout="this.style.borderColor='var(--border-2)'">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
+                                bg-emerald-500/10 border border-emerald-500/30">
+                        <iconify-icon icon="mdi:wallet-outline" class="text-emerald-400 text-xl"></iconify-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
+                            Total Penjualan Online
+                        </p>
+                        <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
+                            Rp {{ number_format($stats['cash_in'] ?? 0, 0, ',', '.') }}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ ($stats['change_cash_in'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                                @if(($stats['change_cash_in'] ?? 0) >= 0)
+                                    <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                                @else
+                                    <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                                @endif
+                                {{ abs($stats['change_cash_in'] ?? 0) }}%
+                            </span>
+                            <span class="text-[9px]" style="color: var(--text-5);">vs bulan lalu</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Total Pencapaian SLS --}}
-        <div class="rounded-2xl border p-4 transition-colors"
-             style="background: var(--bg-card); border-color: var(--border-2);"
-             onmouseover="this.style.borderColor='rgba(167,139,250,0.3)'"
-             onmouseout="this.style.borderColor='var(--border-2)'">
-            <div class="flex items-start gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-                            bg-purple-500/10 border border-purple-500/30">
-                    <iconify-icon icon="mdi:trophy-outline" class="text-purple-400 text-xl"></iconify-icon>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
-                        Total Pencapaian SLS
-                    </p>
-                    <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['sls_total'] ?? 342_980_000, 0, ',', '.') }}
-                    </p>
-                    <div class="flex items-center gap-1.5 mt-1.5">
-                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400">
-                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                            15.7%
-                        </span>
-                        <span class="text-[9px]" style="color: var(--text-5);">vs periode sebelumnya</span>
+            {{-- Card: Total Penjualan Offline --}}
+            <div class="rounded-2xl border p-4 transition-colors"
+                style="background: var(--bg-card); border-color: var(--border-2);"
+                onmouseover="this.style.borderColor='rgba(167,139,250,0.3)'"
+                onmouseout="this.style.borderColor='var(--border-2)'">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
+                                bg-purple-500/10 border border-purple-500/30">
+                        <iconify-icon icon="mdi:storefront-outline" class="text-purple-400 text-xl"></iconify-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
+                            Total Penjualan Offline
+                        </p>
+                        <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
+                            Rp {{ number_format($stats['sales_offline'] ?? 0, 0, ',', '.') }}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ ($stats['change_offline'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                                @if(($stats['change_offline'] ?? 0) >= 0)
+                                    <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                                @else
+                                    <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                                @endif
+                                {{ abs($stats['change_offline'] ?? 0) }}%
+                            </span>
+                            <span class="text-[9px]" style="color: var(--text-5);">vs bulan lalu</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Total Order --}}
-        <div class="rounded-2xl border p-4 transition-colors"
-             style="background: var(--bg-card); border-color: var(--border-2);"
-             onmouseover="this.style.borderColor='rgba(236,188,66,0.3)'"
-             onmouseout="this.style.borderColor='var(--border-2)'">
-            <div class="flex items-start gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-                            bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
-                            shadow-md shadow-amber-500/20">
-                    <iconify-icon icon="mdi:cart-outline" class="text-slate-900 text-xl"></iconify-icon>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
-                        Total Order
-                    </p>
-                    <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
-                        {{ number_format($stats['total_orders'] ?? 1248, 0, ',', '.') }}
-                    </p>
-                    <div class="flex items-center gap-1.5 mt-1.5">
-                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-400">
-                            <iconify-icon icon="mdi:arrow-up"></iconify-icon>
-                            21.4%
-                        </span>
-                        <span class="text-[9px]" style="color: var(--text-5);">vs periode sebelumnya</span>
+            {{-- Card: Total Order --}}
+            <div class="rounded-2xl border p-4 transition-colors"
+                style="background: var(--bg-card); border-color: var(--border-2);"
+                onmouseover="this.style.borderColor='rgba(236,188,66,0.3)'"
+                onmouseout="this.style.borderColor='var(--border-2)'">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
+                                bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                shadow-md shadow-amber-500/20">
+                        <iconify-icon icon="mdi:cart-outline" class="text-slate-900 text-xl"></iconify-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
+                            Total Order
+                        </p>
+                        <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
+                            {{ number_format($stats['total_orders'] ?? 0, 0, ',', '.') }}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ ($stats['change_orders'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                                @if(($stats['change_orders'] ?? 0) >= 0)
+                                    <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                                @else
+                                    <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                                @endif
+                                {{ abs($stats['change_orders'] ?? 0) }}%
+                            </span>
+                            <span class="text-[9px]" style="color: var(--text-5);">vs bulan lalu</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Rata-rata Order Value --}}
-        <div class="rounded-2xl border p-4 transition-colors"
-             style="background: var(--bg-card); border-color: var(--border-2);"
-             onmouseover="this.style.borderColor='rgba(96,165,250,0.3)'"
-             onmouseout="this.style.borderColor='var(--border-2)'">
-            <div class="flex items-start gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
-                            bg-blue-500/10 border border-blue-500/30">
-                    <iconify-icon icon="mdi:chart-bar" class="text-blue-400 text-xl"></iconify-icon>
-                </div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
-                        Rata-rata Order Value
-                    </p>
-                    <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
-                        Rp {{ number_format($stats['aov'] ?? 274_827, 0, ',', '.') }}
-                    </p>
-                    <div class="flex items-center gap-1.5 mt-1.5">
-                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-400">
-                            <iconify-icon icon="mdi:arrow-down"></iconify-icon>
-                            2.1%
-                        </span>
-                        <span class="text-[9px]" style="color: var(--text-5);">vs periode sebelumnya</span>
+            {{-- Card: Rata-rata Order Value --}}
+            <div class="rounded-2xl border p-4 transition-colors"
+                style="background: var(--bg-card); border-color: var(--border-2);"
+                onmouseover="this.style.borderColor='rgba(96,165,250,0.3)'"
+                onmouseout="this.style.borderColor='var(--border-2)'">
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
+                                bg-blue-500/10 border border-blue-500/30">
+                        <iconify-icon icon="mdi:chart-bar" class="text-blue-400 text-xl"></iconify-icon>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
+                            Rata-rata Order Value
+                        </p>
+                        <p class="text-lg font-bold mt-0.5" style="color: var(--text-1);">
+                            Rp {{ number_format($stats['aov'] ?? 0, 0, ',', '.') }}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold {{ ($stats['change_aov'] ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400' }}">
+                                @if(($stats['change_aov'] ?? 0) >= 0)
+                                    <iconify-icon icon="mdi:arrow-up"></iconify-icon>
+                                @else
+                                    <iconify-icon icon="mdi:arrow-down"></iconify-icon>
+                                @endif
+                                {{ abs($stats['change_aov'] ?? 0) }}%
+                            </span>
+                            <span class="text-[9px]" style="color: var(--text-5);">vs bulan lalu</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     {{-- ============================================ --}}
     {{-- ROW 3: Grafik Penjualan + Produk Terlaris --}}
@@ -311,20 +355,25 @@
 
         {{-- Grafik Penjualan --}}
         <div class="lg:col-span-2 rounded-2xl border overflow-hidden"
-             style="background: var(--bg-card); border-color: var(--border-2);">
+            style="background: var(--bg-card); border-color: var(--border-2);">
 
             <div class="px-5 py-4 border-b flex flex-wrap items-center gap-3"
-                 style="background: var(--bg-input); border-color: var(--border-2);">
+                style="background: var(--bg-input); border-color: var(--border-2);">
                 <iconify-icon icon="mdi:chart-line" class="text-[#ecbc42] text-base"></iconify-icon>
                 <h3 class="font-bold text-sm flex-1" style="color: var(--text-1);">
                     Grafik Penjualan
                 </h3>
 
-                <select class="text-[10px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
-                        style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-3);">
-                    <option>7 Hari Terakhir</option>
-                    <option>30 Hari Terakhir</option>
-                    <option>90 Hari Terakhir</option>
+                {{-- 🔥 Filter Periode --}}
+                <select id="chartPeriodFilter"
+                        class="text-[10px] font-semibold rounded-lg px-3 py-1.5 cursor-pointer
+                            focus:outline-none transition-all"
+                        style="background: var(--bg-card);
+                            border: 1px solid var(--border-2);
+                            color: var(--text-3);">
+                    <option value="7" selected>7 Hari Terakhir</option>
+                    <option value="30">30 Hari Terakhir</option>
+                    <option value="90">90 Hari Terakhir</option>
                 </select>
             </div>
 
@@ -339,74 +388,96 @@
                         <span class="w-3 h-0.5 rounded" style="background: #34d399;"></span>
                         <span style="color: var(--text-4);">Order</span>
                     </div>
+
+                    {{-- Loading indicator --}}
+                    <div id="chartLoading" class="ml-auto hidden">
+                        <div class="flex items-center gap-1.5 text-[10px]" style="color: var(--text-5);">
+                            <div class="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin"
+                                style="border-color: #ecbc42; border-top-color: transparent;"></div>
+                            <span>Memuat...</span>
+                        </div>
+                    </div>
                 </div>
 
-                {{-- Chart SVG --}}
-                <div class="relative h-64">
-                    {{-- Y-axis labels --}}
-                    <div class="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[9px] pr-2 text-right"
-                         style="width: 40px; color: var(--text-5);">
-                        <span>50 Jt</span>
-                        <span>40 Jt</span>
-                        <span>30 Jt</span>
-                        <span>20 Jt</span>
-                        <span>10 Jt</span>
-                        <span>0</span>
+                {{-- Chart Area --}}
+                <div class="relative" style="height: 260px;">
+                    {{-- Y-axis Left --}}
+                    <div id="chartYAxisLeft"
+                        class="absolute left-0 top-0 flex flex-col justify-between text-[9px] pr-2 text-right"
+                        style="width: 48px; height: calc(100% - 24px); color: var(--text-5);">
+                        {{-- diisi JS --}}
                     </div>
 
-                    {{-- Y-axis right labels --}}
-                    <div class="absolute right-0 top-0 bottom-6 flex flex-col justify-between text-[9px] pl-2 text-left"
-                         style="width: 30px; color: var(--text-5);">
-                        <span>100</span>
-                        <span>80</span>
-                        <span>60</span>
-                        <span>40</span>
-                        <span>20</span>
-                        <span>0</span>
+                    {{-- Y-axis Right --}}
+                    <div id="chartYAxisRight"
+                        class="absolute right-0 top-0 flex flex-col justify-between text-[9px] pl-2 text-left"
+                        style="width: 40px; height: calc(100% - 24px); color: var(--text-5);">
+                        {{-- diisi JS --}}
                     </div>
 
-                    {{-- Chart Area --}}
-                    <div class="absolute left-12 right-8 top-0 bottom-6">
-                        <svg viewBox="0 0 700 220" preserveAspectRatio="none" class="w-full h-full">
-                            {{-- Horizontal grid lines --}}
-                            @for ($i = 0; $i <= 5; $i++)
-                                <line x1="0" y1="{{ $i * 44 }}" x2="700" y2="{{ $i * 44 }}"
-                                      stroke="currentColor" stroke-width="0.5" stroke-dasharray="3,3"
-                                      style="color: var(--border-2); opacity: 0.5;"/>
-                            @endfor
+                    {{-- Chart Container --}}
+                    <div class="absolute left-12 right-10 top-0"
+                        style="bottom: 24px;"
+                        id="chartContainer">
+                        <svg id="salesChart" viewBox="0 0 700 220"
+                            preserveAspectRatio="none" class="w-full h-full">
+                            {{-- Grid lines --}}
+                            <g id="chartGrid">
+                                @for ($i = 0; $i <= 5; $i++)
+                                    <line x1="0" y1="{{ $i * 44 }}" x2="700" y2="{{ $i * 44 }}"
+                                        stroke="var(--border-2)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+                                @endfor
+                            </g>
 
-                            {{-- Sales line (blue) --}}
-                            <path d="M0,180 L100,160 L200,90 L300,110 L400,80 L500,120 L600,60 L700,40"
-                                  fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            @foreach ([0,100,200,300,400,500,600,700] as $i => $x)
-                                @php $y = [180,160,90,110,80,120,60,40][$i]; @endphp
-                                <circle cx="{{ $x }}" cy="{{ $y }}" r="4" fill="#60a5fa" stroke="#0a0a0a" stroke-width="2"/>
-                            @endforeach
+                            {{-- Sales path (blue) --}}
+                            <path id="chartSalesPath" d=""
+                                fill="none" stroke="#60a5fa" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round"/>
+                            <g id="chartSalesDots"></g>
 
-                            {{-- Order line (green) --}}
-                            <path d="M0,200 L100,185 L200,145 L300,160 L400,130 L500,165 L600,110 L700,90"
-                                  fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            @foreach ([0,100,200,300,400,500,600,700] as $i => $x)
-                                @php $y = [200,185,145,160,130,165,110,90][$i]; @endphp
-                                <circle cx="{{ $x }}" cy="{{ $y }}" r="4" fill="#34d399" stroke="#0a0a0a" stroke-width="2"/>
-                            @endforeach
+                            {{-- Order path (green) --}}
+                            <path id="chartOrderPath" d=""
+                                fill="none" stroke="#34d399" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round"/>
+                            <g id="chartOrderDots"></g>
                         </svg>
 
-                        {{-- X-axis labels --}}
-                        <div class="absolute -bottom-5 left-0 right-0 flex justify-between text-[9px]"
-                             style="color: var(--text-5);">
-                            <span>21 Mei</span>
-                            <span>22 Mei</span>
-                            <span>23 Mei</span>
-                            <span>24 Mei</span>
-                            <span>25 Mei</span>
-                            <span>26 Mei</span>
-                            <span>27 Mei</span>
+                        {{-- X-axis Labels --}}
+                        <div id="chartXAxis"
+                            class="absolute -bottom-5 left-0 right-0 flex justify-between text-[9px]"
+                            style="color: var(--text-5);">
+                            {{-- diisi JS --}}
                         </div>
+                    </div>
+                </div>
+
+                {{-- Summary Stats --}}
+                <div class="grid grid-cols-2 gap-3 mt-6 pt-4 border-t"
+                    style="border-color: var(--border-1);">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider mb-0.5"
+                        style="color: var(--text-5);">
+                            Total Penjualan
+                        </p>
+                        <p id="chartTotalSales" class="text-sm font-bold font-mono"
+                        style="color: #ecbc42;">
+                            Rp 0
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider mb-0.5"
+                        style="color: var(--text-5);">
+                            Total Order
+                        </p>
+                        <p id="chartTotalOrders" class="text-sm font-bold font-mono"
+                        style="color: #34d399;">
+                            0
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
 
 
         {{-- Produk Terlaris --}}
@@ -444,17 +515,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @php
-                            $topProducts = $topProducts ?? [
-                                ['rank' => 1, 'name' => 'Jaket Training Premium', 'variant' => 'Hitam, M-XL',   'sold' => 256, 'revenue' => 76_800_000],
-                                ['rank' => 2, 'name' => 'Celana Training Sport',  'variant' => 'Hitam, M-XXL',  'sold' => 198, 'revenue' => 49_500_000],
-                                ['rank' => 3, 'name' => 'Setelan Olahraga Unisex', 'variant' => 'Navy, M-XL',   'sold' => 162, 'revenue' => 48_600_000],
-                                ['rank' => 4, 'name' => 'Jaket Windbreaker',      'variant' => 'Grey, M-XXL',   'sold' => 134, 'revenue' => 33_500_000],
-                                ['rank' => 5, 'name' => 'Kaos Olahraga Dry Fit',  'variant' => 'Hitam, M-XL',   'sold' => 98,  'revenue' => 19_600_000],
-                            ];
-                        @endphp
-
-                        @foreach ($topProducts as $product)
+                        @forelse ($topProducts ?? [] as $product)
                             <tr class="border-b last:border-0 transition-colors"
                                 style="border-color: var(--border-1);"
                                 onmouseover="this.style.background='var(--bg-hover)'"
@@ -464,20 +525,17 @@
                                 <td class="px-3 py-3">
                                     <div class="flex items-center gap-2.5">
                                         <span class="text-xs font-bold w-4 flex-shrink-0" style="color: var(--text-4);">
-                                            {{ $product['rank'] }}
+                                            {{ $loop->iteration }}
                                         </span>
-                                        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                                                    bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
-                                                    shadow-sm shadow-amber-500/20">
-                                            <iconify-icon icon="mdi:tshirt-crew-outline" class="text-slate-900"></iconify-icon>
-                                        </div>
                                         <div class="min-w-0">
-                                            <p class="text-[11px] font-semibold truncate" style="color: var(--text-1);">
-                                                {{ $product['name'] }}
+                                            <p class="text-[11px] font-semibold truncate max-w-[200px]" style="color: var(--text-1);">
+                                                {{ $product->product_name ?? 'Produk' }}
                                             </p>
-                                            <p class="text-[9px] truncate" style="color: var(--text-5);">
-                                                {{ $product['variant'] }}
-                                            </p>
+                                            @if($product->variant ?? '')
+                                                <p class="text-[9px] truncate" style="color: var(--text-5);">
+                                                    {{ $product->variant }}
+                                                </p>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
@@ -485,18 +543,24 @@
                                 {{-- Sold --}}
                                 <td class="px-3 py-3 text-center">
                                     <span class="text-xs font-bold" style="color: var(--text-2);">
-                                        {{ $product['sold'] }}
+                                        {{ $product->sold ?? 0 }}
                                     </span>
                                 </td>
 
                                 {{-- Revenue --}}
                                 <td class="px-3 py-3 text-right">
                                     <span class="text-xs font-bold" style="color: #ecbc42;">
-                                        Rp {{ number_format($product['revenue'], 0, ',', '.') }}
+                                        Rp {{ number_format($product->revenue ?? 0, 0, ',', '.') }}
                                     </span>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="3" class="px-3 py-8 text-center text-[11px]" style="color: var(--text-5);">
+                                    Belum ada data penjualan.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -504,205 +568,11 @@
     </div>
 
 
+
     {{-- ============================================ --}}
     {{-- ROW 4: 3 Kartu Donut Charts --}}
     {{-- ============================================ --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {{-- Metode Pembayaran --}}
-        <div class="rounded-2xl border overflow-hidden"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-
-            <div class="px-5 py-4 border-b" style="background: var(--bg-input); border-color: var(--border-2);">
-                <h3 class="font-bold text-sm" style="color: var(--text-1);">Metode Pembayaran</h3>
-            </div>
-
-            <div class="p-5">
-                <div class="flex flex-col sm:flex-row items-center gap-4">
-                    {{-- Donut Chart --}}
-                    <div class="relative flex-shrink-0">
-                        <svg viewBox="0 0 100 100" class="w-28 h-28 -rotate-90">
-                            @php
-                                $paymentData = $paymentMethods ?? [
-                                    ['label' => 'COD (Bayar di Tempat)', 'percent' => 48, 'amount' => 164_630_000, 'color' => '#60a5fa'],
-                                    ['label' => 'Transfer Bank',         'percent' => 32, 'amount' => 109_760_000, 'color' => '#fb923c'],
-                                    ['label' => 'E-Wallet',              'percent' => 15, 'amount' => 51_480_000,  'color' => '#a78bfa'],
-                                    ['label' => 'Kartu Kredit',          'percent' => 5,  'amount' => 17_110_000,  'color' => '#ecbc42'],
-                                ];
-                                $offset = 0;
-                                $circumference = 2 * 3.14159 * 40;
-                            @endphp
-
-                            @foreach ($paymentData as $item)
-                                @php
-                                    $dash = ($item['percent'] / 100) * $circumference;
-                                    $gap = $circumference - $dash;
-                                @endphp
-                                <circle cx="50" cy="50" r="40"
-                                        fill="none"
-                                        stroke="{{ $item['color'] }}"
-                                        stroke-width="12"
-                                        stroke-dasharray="{{ $dash }} {{ $gap }}"
-                                        stroke-dashoffset="{{ -$offset }}"/>
-                                @php $offset += $dash; @endphp
-                            @endforeach
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-center">
-                                <p class="text-[9px] font-bold uppercase" style="color: var(--text-5);">Total</p>
-                                <p class="text-xs font-bold" style="color: var(--text-1);">100%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Legend --}}
-                    <div class="flex-1 min-w-0 space-y-2">
-                        @foreach ($paymentData as $item)
-                            <div class="flex items-center gap-2 text-[10px]">
-                                <span class="w-2 h-2 rounded-full flex-shrink-0"
-                                      style="background: {{ $item['color'] }};"></span>
-                                <span class="flex-1 truncate" style="color: var(--text-4);">{{ $item['label'] }}</span>
-                                <span class="font-bold" style="color: var(--text-2);">{{ $item['percent'] }}%</span>
-                                <span class="font-bold w-20 text-right" style="color: #ecbc42;">
-                                    Rp {{ number_format($item['amount'], 0, ',', '.') }}
-                                </span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        {{-- Status Pesanan --}}
-        <div class="rounded-2xl border overflow-hidden"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-
-            <div class="px-5 py-4 border-b" style="background: var(--bg-input); border-color: var(--border-2);">
-                <h3 class="font-bold text-sm" style="color: var(--text-1);">Status Pesanan</h3>
-            </div>
-
-            <div class="p-5">
-                <div class="flex flex-col sm:flex-row items-center gap-4">
-                    {{-- Donut Chart --}}
-                    <div class="relative flex-shrink-0">
-                        <svg viewBox="0 0 100 100" class="w-28 h-28 -rotate-90">
-                            @php
-                                $statusData = $orderStatuses ?? [
-                                    ['label' => 'Selesai',    'percent' => 82, 'count' => 1023, 'color' => '#34d399'],
-                                    ['label' => 'Proses',     'percent' => 12, 'count' => 150,  'color' => '#60a5fa'],
-                                    ['label' => 'Dikirim',    'percent' => 4,  'count' => 50,   'color' => '#fb923c'],
-                                    ['label' => 'Dibatalkan', 'percent' => 2,  'count' => 25,   'color' => '#f87171'],
-                                ];
-                                $offset = 0;
-                                $circumference = 2 * 3.14159 * 40;
-                            @endphp
-
-                            @foreach ($statusData as $item)
-                                @php
-                                    $dash = ($item['percent'] / 100) * $circumference;
-                                    $gap = $circumference - $dash;
-                                @endphp
-                                <circle cx="50" cy="50" r="40"
-                                        fill="none"
-                                        stroke="{{ $item['color'] }}"
-                                        stroke-width="12"
-                                        stroke-dasharray="{{ $dash }} {{ $gap }}"
-                                        stroke-dashoffset="{{ -$offset }}"/>
-                                @php $offset += $dash; @endphp
-                            @endforeach
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-center">
-                                <p class="text-[9px] font-bold uppercase" style="color: var(--text-5);">Total</p>
-                                <p class="text-xs font-bold" style="color: var(--text-1);">100%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Legend --}}
-                    <div class="flex-1 min-w-0 space-y-2">
-                        @foreach ($statusData as $item)
-                            <div class="flex items-center gap-2 text-[10px]">
-                                <span class="w-2 h-2 rounded-full flex-shrink-0"
-                                      style="background: {{ $item['color'] }};"></span>
-                                <span class="flex-1 truncate" style="color: var(--text-4);">{{ $item['label'] }}</span>
-                                <span class="font-bold" style="color: var(--text-2);">{{ $item['percent'] }}%</span>
-                                <span class="font-bold w-16 text-right" style="color: #ecbc42;">
-                                    {{ number_format($item['count'], 0, ',', '.') }}
-                                </span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        {{-- Sumber Trafik --}}
-        <div class="rounded-2xl border overflow-hidden"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-
-            <div class="px-5 py-4 border-b" style="background: var(--bg-input); border-color: var(--border-2);">
-                <h3 class="font-bold text-sm" style="color: var(--text-1);">Sumber Trafik</h3>
-            </div>
-
-            <div class="p-5">
-                <div class="flex flex-col sm:flex-row items-center gap-4">
-                    {{-- Donut Chart --}}
-                    <div class="relative flex-shrink-0">
-                        <svg viewBox="0 0 100 100" class="w-28 h-28 -rotate-90">
-                            @php
-                                $trafficData = $trafficSources ?? [
-                                    ['label' => 'Shopee',     'percent' => 45, 'amount' => 154_340_000, 'color' => '#fb923c'],
-                                    ['label' => 'TikTok Shop','percent' => 30, 'amount' => 102_890_000, 'color' => '#a78bfa'],
-                                    ['label' => 'Tokopedia',  'percent' => 15, 'amount' => 51_460_000,  'color' => '#34d399'],
-                                    ['label' => 'Lainnya',    'percent' => 10, 'amount' => 34_290_000,  'color' => '#60a5fa'],
-                                ];
-                                $offset = 0;
-                                $circumference = 2 * 3.14159 * 40;
-                            @endphp
-
-                            @foreach ($trafficData as $item)
-                                @php
-                                    $dash = ($item['percent'] / 100) * $circumference;
-                                    $gap = $circumference - $dash;
-                                @endphp
-                                <circle cx="50" cy="50" r="40"
-                                        fill="none"
-                                        stroke="{{ $item['color'] }}"
-                                        stroke-width="12"
-                                        stroke-dasharray="{{ $dash }} {{ $gap }}"
-                                        stroke-dashoffset="{{ -$offset }}"/>
-                                @php $offset += $dash; @endphp
-                            @endforeach
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-center">
-                                <p class="text-[9px] font-bold uppercase" style="color: var(--text-5);">Total</p>
-                                <p class="text-xs font-bold" style="color: var(--text-1);">100%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Legend --}}
-                    <div class="flex-1 min-w-0 space-y-2">
-                        @foreach ($trafficData as $item)
-                            <div class="flex items-center gap-2 text-[10px]">
-                                <span class="w-2 h-2 rounded-full flex-shrink-0"
-                                      style="background: {{ $item['color'] }};"></span>
-                                <span class="flex-1 truncate" style="color: var(--text-4);">{{ $item['label'] }}</span>
-                                <span class="font-bold" style="color: var(--text-2);">{{ $item['percent'] }}%</span>
-                                <span class="font-bold w-20 text-right" style="color: #ecbc42;">
-                                    Rp {{ number_format($item['amount'], 0, ',', '.') }}
-                                </span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
 
     {{-- ============================================ --}}
@@ -718,5 +588,213 @@
     </div>
 
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ============================================
+    // STATE & ELEMENTS
+    // ============================================
+    const chartPeriodFilter = document.getElementById('chartPeriodFilter');
+    const chartLoading = document.getElementById('chartLoading');
+    const salesPath = document.getElementById('chartSalesPath');
+    const orderPath = document.getElementById('chartOrderPath');
+    const salesDots = document.getElementById('chartSalesDots');
+    const orderDots = document.getElementById('chartOrderDots');
+    const xAxis = document.getElementById('chartXAxis');
+    const yAxisLeft = document.getElementById('chartYAxisLeft');
+    const yAxisRight = document.getElementById('chartYAxisRight');
+    const totalSalesEl = document.getElementById('chartTotalSales');
+    const totalOrdersEl = document.getElementById('chartTotalOrders');
+
+    const CHART_WIDTH = 700;
+    const CHART_HEIGHT = 214;
+    const CHART_TOP = 6;
+
+    // ============================================
+    // FORMAT HELPERS
+    // ============================================
+    function formatRupiah(num) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(num || 0));
+    }
+
+    function formatShort(num) {
+        if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(1) + ' M';
+        if (num >= 1_000_000)     return (num / 1_000_000).toFixed(1) + ' Jt';
+        if (num >= 1_000)         return (num / 1_000).toFixed(0) + ' Rb';
+        return Math.round(num);
+    }
+
+    // ============================================
+    // RENDER CHART
+    // ============================================
+    function renderChart(labels, salesData, ordersData) {
+        const pointCount = salesData.length;
+        if (pointCount === 0) return;
+
+        // ============================================
+        // 🔥 FIX: Bulatkan max agar Y-axis cantik
+        // ============================================
+        const niceMax = (val) => {
+            if (val <= 0) return 1;
+            
+            // Cari magnitude (10, 100, 1000, 10000, ...)
+            const magnitude = Math.pow(10, Math.floor(Math.log(val) / Math.LN10));
+            const normalized = val / magnitude;
+            
+            // Pilih "nice" multiplier
+            let niceMultiplier;
+            if (normalized <= 1)        niceMultiplier = 1;
+            else if (normalized <= 1.5) niceMultiplier = 1.5;
+            else if (normalized <= 2)   niceMultiplier = 2;
+            else if (normalized <= 2.5) niceMultiplier = 2.5;
+            else if (normalized <= 3)   niceMultiplier = 3;
+            else if (normalized <= 4)   niceMultiplier = 4;
+            else if (normalized <= 5)   niceMultiplier = 5;
+            else if (normalized <= 6)   niceMultiplier = 6;
+            else if (normalized <= 8)   niceMultiplier = 8;
+            else                        niceMultiplier = 10;
+            
+            return niceMultiplier * magnitude;
+        };
+
+        // Kalkulasi max data
+        const maxSales = Math.max(...salesData, 1);
+        const maxOrders = Math.max(...ordersData, 1);
+
+        // 🔥 Y-axis max dengan padding 10%
+        const niceMaxSales = niceMax(maxSales * 1.1);
+        const niceMaxOrders = niceMax(maxOrders * 1.1);
+        
+        // 🔥 Debug log (hapus setelah fix)
+        console.log('📊 Chart Scale:', {
+            maxSales: maxSales,
+            niceMaxSales: niceMaxSales,
+            maxOrders: maxOrders,
+            niceMaxOrders: niceMaxOrders,
+        });
+
+        // X positions
+        const xStep = pointCount > 1 ? CHART_WIDTH / (pointCount - 1) : 0;
+
+        // Build paths
+        let sPath = '';
+        let oPath = '';
+        let sDots = '';
+        let oDots = '';
+
+        for (let i = 0; i < pointCount; i++) {
+            const x = xStep * i;
+            const yS = CHART_TOP + CHART_HEIGHT - (salesData[i] / niceMaxSales) * CHART_HEIGHT;
+            const yO = CHART_TOP + CHART_HEIGHT - (ordersData[i] / niceMaxOrders) * CHART_HEIGHT;
+
+            // Sales path
+            sPath += (i === 0 ? 'M' : ' L') + x.toFixed(1) + ',' + yS.toFixed(1);
+            sDots += `<circle cx="${x.toFixed(1)}" cy="${yS.toFixed(1)}" r="4" fill="#60a5fa" stroke="var(--bg-card)" stroke-width="2"/>`;
+
+            // Order path
+            oPath += (i === 0 ? 'M' : ' L') + x.toFixed(1) + ',' + yO.toFixed(1);
+            oDots += `<circle cx="${x.toFixed(1)}" cy="${yO.toFixed(1)}" r="4" fill="#34d399" stroke="var(--bg-card)" stroke-width="2"/>`;
+        }
+
+        salesPath.setAttribute('d', sPath);
+        orderPath.setAttribute('d', oPath);
+        salesDots.innerHTML = sDots;
+        orderDots.innerHTML = oDots;
+
+        // 🔥 Y-axis LEFT (Sales)
+        let yLeftHtml = '';
+        for (let i = 5; i >= 0; i--) {
+            const val = (niceMaxSales / 5) * i;
+            yLeftHtml += `<span>${formatShort(val)}</span>`;
+        }
+        yAxisLeft.innerHTML = yLeftHtml;
+
+        // 🔥 Y-axis RIGHT (Orders)
+        let yRightHtml = '';
+        for (let i = 5; i >= 0; i--) {
+            const val = Math.round((niceMaxOrders / 5) * i);
+            yRightHtml += `<span>${val}</span>`;
+        }
+        yAxisRight.innerHTML = yRightHtml;
+
+        // 🔥 X-axis Labels
+        let xHtml = '';
+        const maxLabels = 10;
+        const step = pointCount > maxLabels ? Math.ceil(pointCount / maxLabels) : 1;
+
+        for (let i = 0; i < pointCount; i++) {
+            if (i % step === 0 || i === pointCount - 1) {
+                xHtml += `<span>${labels[i]}</span>`;
+            } else {
+                xHtml += `<span class="invisible">${labels[i]}</span>`;
+            }
+        }
+        xAxis.innerHTML = xHtml;
+
+        // 🔥 Update Totals
+        const totalSales = salesData.reduce((a, b) => a + b, 0);
+        const totalOrders = ordersData.reduce((a, b) => a + b, 0);
+
+        totalSalesEl.textContent = formatRupiah(totalSales);
+        totalOrdersEl.textContent = new Intl.NumberFormat('id-ID').format(totalOrders);
+    }
+
+
+    // ============================================
+    // FETCH DATA VIA AJAX
+    // ============================================
+    function fetchChartData(period) {
+        chartLoading.classList.remove('hidden');
+
+        fetch('{{ route("admin.dashboard.chart-data") }}?period=' + period, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                renderChart(data.labels, data.sales, data.orders);
+            } else {
+                console.error('Failed to load chart data');
+            }
+        })
+        .catch(err => {
+            console.error('Chart fetch error:', err);
+        })
+        .finally(() => {
+            chartLoading.classList.add('hidden');
+        });
+    }
+
+    // ============================================
+    // INIT — Render default 7 hari dari server
+    // ============================================
+    @php
+        $initialLabels = $stats['chart_labels'] ?? [];
+        $initialSales = $stats['chart_sales'] ?? [];
+        $initialOrders = $stats['chart_orders'] ?? [];
+    @endphp
+
+    const initialLabels = @json($initialLabels);
+    const initialSales = @json($initialSales);
+    const initialOrders = @json($initialOrders);
+
+    renderChart(initialLabels, initialSales, initialOrders);
+
+    // ============================================
+    // EVENT: Filter change
+    // ============================================
+    if (chartPeriodFilter) {
+        chartPeriodFilter.addEventListener('change', function() {
+            fetchChartData(this.value);
+        });
+    }
+});
+</script>
+@endpush
 
 @endsection

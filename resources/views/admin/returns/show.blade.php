@@ -108,13 +108,13 @@
                     </p>
                 </div>
 
-                {{-- Email --}}
+                {{-- Nomor HP --}}
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style="color: var(--text-5);">
-                        Email
+                        Nomor HP
                     </p>
                     <p class="font-semibold break-all" style="color: var(--text-1);">
-                        {{ $order->user->email ?? '-' }}
+                        {{ $order->user->phone ?? '-' }}
                     </p>
                 </div>
 

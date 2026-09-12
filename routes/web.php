@@ -13,6 +13,7 @@ use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Customer\CustomerCategoryController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OfflineOrderController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
@@ -41,7 +42,11 @@ use App\Http\Controllers\Admin\FaqCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\TestimonialController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Customer\CustomerTestimonialController;
+use App\Http\Controllers\Admin\AccountAdminController;
+use App\Http\Controllers\Admin\DashboardExportController;
+use App\Http\Controllers\Admin\ReportController;
 
 // ============================================
 // CUSTOMER FRONTEND
@@ -438,9 +443,11 @@ Route::post('/admin/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+    Route::get('/dashboard', [ProductController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/dashboard/chart-data', [ProductController::class, 'getChartData'])
+        ->name('admin.dashboard.chart-data');
+    
+    Route::get('/dashboard/export', [DashboardExportController::class, 'export'])->name('admin.dashboard.export');
 
     // CATEGORY
     Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
@@ -514,6 +521,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::post('/orders/bulk-ship', [OrderController::class, 'bulkShip'])->name('admin.orders.bulk-ship');
     Route::post('/orders/bulk-print-label', [OrderController::class, 'bulkPrintLabel'])->name('admin.orders.bulk-print-label');
 
+    // 🔥 OFFLINE ORDERS
+    Route::get('/offline', [OfflineOrderController::class, 'index'])->name('admin.orders.offline');
+    Route::post('/offline/create', [OfflineOrderController::class, 'createOrder'])->name('admin.orders.offline.create');
+    Route::get('/offline/receipt/{order}', [OfflineOrderController::class, 'printReceipt'])->name('admin.orders.offline.receipt');
+
     // 🔥 RETURNS MANAGEMENT
     Route::get('/returns', [ReturnController::class, 'index'])->name('admin.returns.index');
     Route::get('/returns/{order}', [ReturnController::class, 'show'])->name('admin.returns.show');
@@ -521,6 +533,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->name('admin.returns.restore');
 
     Route::post('/features', [FeatureController::class, 'store'])->name('admin.features.store');
+
+    // 🔥 LAPORAN (REPORTS)
+    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/orders', [ReportController::class, 'orders'])->name('admin.reports.orders');
+    Route::get('/reports/products', [ReportController::class, 'products'])->name('admin.reports.products');
+    Route::get('/reports/customers', [ReportController::class, 'customers'])->name('admin.reports.customers');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
 
     Route::get('/articles', [ArticleController::class, 'index'])->name('admin.articles.index');
     Route::get('/articles/create', [ArticleController::class, 'create'])->name('admin.articles.create');
@@ -577,4 +596,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/about', [AboutUsController::class, 'index'])->name('admin.about.index');
     Route::put('/about', [AboutUsController::class, 'update'])->name('admin.about.update');
     Route::patch('/about/toggle', [AboutUsController::class, 'toggle'])->name('admin.about.toggle');
+
+    // USERS / CUSTOMERS
+    Route::get('/customers', [UserController::class, 'index'])->name('admin.customers.index');
+    Route::get('/customers/{user}', [UserController::class, 'show'])->name('admin.customers.show');
+    Route::patch('/customers/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.customers.toggle-status');
+    Route::delete('/customers/{user}', [UserController::class, 'destroy'])->name('admin.customers.destroy');
+
+    Route::get('/account', [AccountAdminController::class, 'edit'])->name('admin.account.edit');
+    Route::put('/account', [AccountAdminController::class, 'update'])->name('admin.account.update');
+    Route::put('/account/password', [AccountAdminController::class, 'updatePassword'])->name('admin.account.password');
 });

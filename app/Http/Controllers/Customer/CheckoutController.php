@@ -13,6 +13,7 @@ use App\Models\Voucher;
 use App\Models\Setting;
 use App\Services\BiteshipService;
 use App\Models\VoucherUsage;
+use App\Models\BiteshipApiUsage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -638,6 +639,26 @@ private function resetCheckoutData(): void
                 $items,
                 $couriers
             );
+
+            // 🔥 Log API usage ke database (Rp 5 per hit)
+            try {
+                BiteshipApiUsage::create([
+                    'user_id'              => auth()->id(),
+                    'endpoint'             => '/rates/couriers',
+                    'action'               => 'cek_ongkir',
+                    'origin_postal_code'   => $originPostalCode,
+                    'destination_postal_code' => $destinationPostalCode,
+                    'api_cost'             => BiteshipApiUsage::COST_PER_HIT,
+                    'ip_address'           => request()->ip(),
+                    'request_data'         => json_encode($request->all()),
+                    'response_summary'     => [
+                        'couriers_found' => count($data['pricing'] ?? []),
+                        'has_error'      => isset($data['error']),
+                    ],
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to log Biteship API usage: ' . $e->getMessage());
+            }
 
             $grouped = [];
 

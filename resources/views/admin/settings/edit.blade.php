@@ -407,14 +407,15 @@
                         Instagram
                     </label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <iconify-icon icon="mdi:link-variant" class="text-base" style="color: var(--text-5);"></iconify-icon>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <iconify-icon icon="mdi:link-variant" class="text-lg" style="color: var(--text-5);"></iconify-icon>
                         </span>
                         <input type="text"
-                               name="instagram"
-                               value="{{ old('instagram', $setting?->instagram) }}"
-                               class="form-input pl-9"
-                               placeholder="https://instagram.com/toko">
+                            name="instagram"
+                            value="{{ old('instagram', $setting?->instagram) }}"
+                            class="form-input"
+                            style="padding-left: 3rem !important;"
+                            placeholder="https://instagram.com/toko">
                     </div>
                 </div>
 
@@ -425,13 +426,14 @@
                         Facebook
                     </label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <iconify-icon icon="mdi:link-variant" class="text-base" style="color: var(--text-5);"></iconify-icon>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <iconify-icon icon="mdi:link-variant" class="text-lg" style="color: var(--text-5);"></iconify-icon>
                         </span>
                         <input type="text"
                                name="facebook"
                                value="{{ old('facebook', $setting?->facebook) }}"
-                               class="form-input pl-9"
+                               class="form-input"
+                               style="padding-left: 3rem !important;"
                                placeholder="https://facebook.com/toko">
                     </div>
                 </div>
@@ -443,13 +445,14 @@
                         TikTok
                     </label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <iconify-icon icon="mdi:link-variant" class="text-base" style="color: var(--text-5);"></iconify-icon>
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <iconify-icon icon="mdi:link-variant" class="text-lg" style="color: var(--text-5);"></iconify-icon>
                         </span>
                         <input type="text"
                                name="tiktok"
                                value="{{ old('tiktok', $setting?->tiktok) }}"
-                               class="form-input pl-9"
+                               class="form-input"
+                               style="padding-left: 3rem !important;"
                                placeholder="https://tiktok.com/@toko">
                     </div>
                 </div>

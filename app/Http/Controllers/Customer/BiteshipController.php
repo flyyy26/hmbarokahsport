@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\BiteshipApiUsage;
 use App\Services\BiteshipService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -78,6 +79,25 @@ class BiteshipController extends Controller
             Log::info('Biteship Rates Request:', $request->all());
 
             $rates = $this->biteship->getRatesByPostalCode($request->all());
+
+            // 🔥 Log API usage ke database (Rp 5 per hit)
+            try {
+                BiteshipApiUsage::create([
+                    'user_id'                 => auth()->id(),
+                    'endpoint'                => '/rates/couriers',
+                    'action'                  => 'cek_ongkir',
+                    'origin_postal_code'      => $request->input('origin_postal_code'),
+                    'destination_postal_code' => $request->input('destination_postal_code'),
+                    'api_cost'                => BiteshipApiUsage::COST_PER_HIT,
+                    'ip_address'              => request()->ip(),
+                    'request_data'            => json_encode($request->all()),
+                    'response_summary'        => [
+                        'error' => isset($rates['error']),
+                    ],
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to log Biteship API usage: ' . $e->getMessage());
+            }
 
             // Jika ada error dengan detail
             if (isset($rates['error'])) {

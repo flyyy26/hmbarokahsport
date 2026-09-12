@@ -30,6 +30,11 @@ class AccountController extends Controller
             $q->where('shipping_status', 'delivered')
               ->orWhereNotNull('delivered_at');
         })->count();
+        $pendingRequestCount = (clone $baseQuery)->where(function ($q) {
+            $q->where('cancellation_status', 'pending')
+              ->orWhere('return_status', 'pending');
+        })->count();
+        $cancelledCount = (clone $baseQuery)->where('shipping_status', 'cancelled')->count();
         
         $wishlistCount = Wishlist::where('user_id', $customer->id)->count();
         
@@ -54,6 +59,8 @@ class AccountController extends Controller
             'processingCount' => $processingCount,
             'shippedCount' => $shippedCount,
             'completedCount' => $completedCount,
+            'pendingRequestCount' => $pendingRequestCount,
+            'cancelledCount' => $cancelledCount,
             'wishlistCount' => $wishlistCount,
             'availableVouchers' => $availableVouchers,
         ];
@@ -264,6 +271,15 @@ class AccountController extends Controller
                     $q->where('shipping_status', 'delivered')
                       ->orWhereNotNull('delivered_at');
                 });
+                break;
+            case 'pending':
+                $query->where(function ($q) {
+                    $q->where('cancellation_status', 'pending')
+                      ->orWhere('return_status', 'pending');
+                });
+                break;
+            case 'cancelled':
+                $query->where('shipping_status', 'cancelled');
                 break;
             default:
                 break;
@@ -505,26 +521,25 @@ class AccountController extends Controller
 
             DB::beginTransaction();
 
-            // 🔥 Jika belum bayar (pending), batalkan langsung tanpa perlu persetujuan admin
+            // Pesanan belum bayar dapat dibatalkan langsung.
             if ($order->shipping_status === 'pending' && $order->payment_status === 'unpaid') {
                 $order->cancelByCustomer($request->reason);
 
                 DB::commit();
 
                 return redirect()
-                    ->route('customer.orders', ['tab' => 'unpaid'])
+                    ->route('customer.orders.show', $order)
                     ->with('success', 'Pesanan #'.$order->order_number.' berhasil dibatalkan.');
             }
 
-            // 🔥 Jika sedang dikemas (processing), minta persetujuan admin
-            $previousStatus = $order->shipping_status;
+            // Simpan permintaan agar muncul di notifikasi dan daftar admin.
+            if (!$order->requestCancellation($request->reason)) {
+                DB::rollBack();
 
-            $order->update([
-                'cancellation_status' => 'pending',
-                'cancellation_reason' => $request->reason,
-                'cancellation_requested_at' => now(),
-                'previous_shipping_status' => $previousStatus,
-            ]);
+                return redirect()
+                    ->route('customer.orders.show', $order)
+                    ->with('error', 'Pesanan tidak dapat dibatalkan karena sudah dalam proses pengiriman atau selesai.');
+            }
 
             Log::info('Customer requested cancellation', [
                 'order_id' => $order->id,
@@ -532,6 +547,7 @@ class AccountController extends Controller
                 'user_id' => Auth::guard('customer')->id(),
                 'reason' => $request->reason,
                 'cancellation_status' => $order->cancellation_status,
+                'shipping_status' => $order->shipping_status,
             ]);
 
             DB::commit();
@@ -572,17 +588,14 @@ class AccountController extends Controller
         try {
             DB::beginTransaction();
 
-            // Restore stok + tandai cancelled
+            // Restore stok + tandai cancelled; pesanan tetap tersedia di riwayat admin/customer.
             $order->cancelByCustomer('Dibatalkan oleh customer (langsung)');
-
-            // Hapus order dari data
-            $order->delete();
 
             DB::commit();
 
             return redirect()
-                ->route('customer.orders', ['tab' => 'unpaid'])
-                ->with('success', 'Pesanan #'.$order->order_number.' berhasil dibatalkan dan dihapus.');
+                ->route('customer.orders.show', $order)
+                ->with('success', 'Pesanan #'.$order->order_number.' berhasil dibatalkan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -615,16 +628,28 @@ class AccountController extends Controller
                     ->with('error', 'Permintaan retur hanya tersedia untuk pesanan yang sudah selesai (dikirim/terkirim).');
             }
 
+            DB::beginTransaction();
             $order->requestReturn($request->reason);
+            DB::commit();
+
+            Log::info('Customer requested return', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => Auth::guard('customer')->id(),
+                'reason' => $request->reason,
+                'return_status' => $order->return_status,
+            ]);
 
             return redirect()
                 ->route('customer.orders.show', $order)
-                ->with('success', 'Permintaan retur berhasil dikirim. Silakan kirim barang ke gudang kami. Menunggu persetujuan admin.');
+                ->with('success', 'Permintaan retur berhasil dikirim. Menunggu persetujuan admin.');
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error requesting return:', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()
@@ -652,7 +677,7 @@ class AccountController extends Controller
             ]);
 
             return redirect()
-                ->route('customer.orders', ['tab' => 'completed'])
+                ->route('customer.orders.show', $order)
                 ->with('success', 'Pesanan telah diterima. Terima kasih!');
         } catch (\Exception $e) {
             Log::error('Error confirming order receipt:', [

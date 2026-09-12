@@ -146,7 +146,7 @@
                                 transition-colors"
                          style="background: var(--bg-input)">
                         <iconify-icon icon="mdi:label-outline" class="text-[#ecbc42] text-sm"></iconify-icon>
-                        <span class="text-sm font-semibold text-[#FDDD57]">{{ $label }}</span>
+                        <span class="text-sm font-semibold text-[#c0911b]">{{ $label }}</span>
                         <input type="hidden" name="dimension_labels[]" value="{{ $label }}">
                         <button type="button"
                                 class="remove-dimension text-lg leading-none transition-colors"
@@ -170,130 +170,124 @@
                 </span>
             </div>
 
-            {{-- Table Wrapper --}}
-            <div class="rounded-xl overflow-hidden border"
-                 style="border-color: var(--border-2); background: var(--bg-input)">
+            {{-- Container Grid 2 Kolom --}}
+            <div id="size-guides-container"
+                class="grid grid-cols-1 lg:grid-cols-2 gap-3">
 
-                {{-- Scrollable Area --}}
-                <div class="overflow-x-auto">
-                    <div id="size-guides-container" class="min-w-max">
+                {{-- Baris akan di-generate oleh JS --}}
+                @php
+                    $sizeGuides = isset($category) ? $category->sizeGuides : collect();
+                    $defaultSizes = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
+                    $currentLabels = $labels;
+                @endphp
 
-                        {{-- Table Header --}}
-                        <div class="size-guide-header flex items-center gap-2 px-4 py-3 border-b sticky top-0 z-10"
-                             style="background: var(--bg-card); border-color: var(--border-2)">
-                            <div class="w-24 flex-shrink-0">
-                                <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">Ukuran</span>
+                @if($sizeGuides->isNotEmpty())
+                    @foreach($sizeGuides as $index => $guide)
+                        <div class="size-guide-card rounded-xl border overflow-hidden transition-colors"
+                            style="background: var(--bg-input); border-color: var(--border-2);">
+                            <div class="flex items-center gap-2 px-3 py-2.5 border-b"
+                                style="background: var(--bg-card); border-color: var(--border-2);">
+                                <iconify-icon icon="mdi:ruler" class="text-[#ecbc42]"></iconify-icon>
+                                <input type="text"
+                                    name="size_guides[{{ $index }}][size]"
+                                    value="{{ $guide->size }}"
+                                    placeholder="S"
+                                    required
+                                    class="flex-1 px-3 py-1.5 rounded-lg text-sm font-bold text-center
+                                            focus:outline-none transition-all"
+                                    style="background: var(--bg-input); border: 1px solid var(--border-2); color: var(--text-1)">
+                                <input type="hidden" name="size_guides[{{ $index }}][id]" value="{{ $guide->id }}">
+                                <button type="button"
+                                        class="remove-size-guide inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all"
+                                        style="color: var(--text-5)"
+                                        onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'"
+                                        onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'"
+                                        title="Hapus ukuran">
+                                    <iconify-icon icon="mdi:trash-can-outline" class="text-sm"></iconify-icon>
+                                </button>
                             </div>
-                            <div id="header-dimensions" class="flex items-center gap-2">
-                                {{-- Header dimensions akan di-inject oleh JS --}}
-                            </div>
-                            <div class="w-10 flex-shrink-0"></div>
-                        </div>
 
-                        {{-- Table Body --}}
-                        <div id="size-guides-body">
-                            @php
-                                $sizeGuides = isset($category) ? $category->sizeGuides : collect();
-                                $defaultSizes = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
-                                $currentLabels = $labels;
-                            @endphp
-
-                            @if($sizeGuides->isNotEmpty())
-                                @foreach($sizeGuides as $index => $guide)
-                                    <div class="size-guide-row flex items-center gap-2 px-4 py-2.5 transition-colors group border-b last:border-0"
-                                         style="border-color: var(--border-1)"
-                                         onmouseover="this.style.background='var(--bg-hover)'"
-                                         onmouseout="this.style.background='transparent'">
-                                        <input type="hidden" name="size_guides[{{ $index }}][id]" value="{{ $guide->id }}">
-
-                                        <div class="w-24 flex-shrink-0">
-                                            <input type="text" name="size_guides[{{ $index }}][size]" value="{{ $guide->size }}"
-                                                class="w-full px-3 py-2 rounded-lg text-sm font-semibold text-center
-                                                       focus:outline-none transition-all"
-                                                style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)"
-                                                placeholder="S" required>
-                                        </div>
-
-                                        @foreach($currentLabels as $labelIndex => $label)
-                                            @php
-                                                $dimensionValue = $guide->dimensions[$label] ?? '';
-                                            @endphp
-                                            <div class="w-28 flex-shrink-0">
-                                                <input type="number" name="size_guides[{{ $index }}][dimensions][{{ $labelIndex }}]"
-                                                    value="{{ $dimensionValue }}"
-                                                    class="w-full px-3 py-2 rounded-lg text-sm text-center
-                                                           focus:outline-none transition-all"
-                                                    style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)"
-                                                    placeholder="0">
-                                            </div>
-                                        @endforeach
-
-                                        <div class="w-10 flex-shrink-0 flex justify-center">
-                                            <button type="button"
-                                                    class="remove-size-guide flex items-center justify-center w-8 h-8 rounded-lg transition-all opacity-60 group-hover:opacity-100"
-                                                    style="color: var(--text-5)"
-                                                    onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'"
-                                                    onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'"
-                                                    title="Hapus ukuran">
-                                                <iconify-icon icon="mdi:trash-can-outline" class="text-base"></iconify-icon>
-                                            </button>
-                                        </div>
+                            <div class="p-3 grid grid-cols-2 gap-2">
+                                @foreach($currentLabels as $labelIndex => $label)
+                                    @php
+                                        $dimensionValue = $guide->dimensions[$label] ?? '';
+                                    @endphp
+                                    <div>
+                                        <label class="block text-[9px] font-bold uppercase tracking-wider mb-1 truncate"
+                                            style="color: var(--text-5)"
+                                            title="{{ $label }} (cm)">
+                                            {{ $label }}
+                                        </label>
+                                        <input type="number"
+                                            name="size_guides[{{ $index }}][dimensions][{{ $labelIndex }}]"
+                                            value="{{ $dimensionValue }}"
+                                            placeholder="0"
+                                            class="w-full px-2.5 py-1.5 rounded-lg text-sm text-center
+                                                    focus:outline-none transition-all"
+                                            style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)">
                                     </div>
                                 @endforeach
-                            @else
-                                @foreach($defaultSizes as $index => $size)
-                                    <div class="size-guide-row flex items-center gap-2 px-4 py-2.5 transition-colors group border-b last:border-0"
-                                         style="border-color: var(--border-1)"
-                                         onmouseover="this.style.background='var(--bg-hover)'"
-                                         onmouseout="this.style.background='transparent'">
-                                        <div class="w-24 flex-shrink-0">
-                                            <input type="text" name="size_guides[{{ $index }}][size]" value="{{ $size }}"
-                                                class="w-full px-3 py-2 rounded-lg text-sm font-semibold text-center
-                                                       focus:outline-none transition-all"
-                                                style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)"
-                                                placeholder="S" required>
-                                        </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    @foreach($defaultSizes as $index => $size)
+                        <div class="size-guide-card rounded-xl border overflow-hidden transition-colors"
+                            style="background: var(--bg-input); border-color: var(--border-2);">
+                            <div class="flex items-center gap-2 px-3 py-2.5 border-b"
+                                style="background: var(--bg-card); border-color: var(--border-2);">
+                                <iconify-icon icon="mdi:ruler" class="text-[#ecbc42]"></iconify-icon>
+                                <input type="text"
+                                    name="size_guides[{{ $index }}][size]"
+                                    value="{{ $size }}"
+                                    placeholder="S"
+                                    required
+                                    class="flex-1 px-3 py-1.5 rounded-lg text-sm font-bold text-center
+                                            focus:outline-none transition-all"
+                                    style="background: var(--bg-input); border: 1px solid var(--border-2); color: var(--text-1)">
+                                <button type="button"
+                                        class="remove-size-guide inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all"
+                                        style="color: var(--text-5)"
+                                        onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'"
+                                        onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'"
+                                        title="Hapus ukuran">
+                                    <iconify-icon icon="mdi:trash-can-outline" class="text-sm"></iconify-icon>
+                                </button>
+                            </div>
 
-                                        @foreach($currentLabels as $labelIndex => $label)
-                                            <div class="w-28 flex-shrink-0">
-                                                <input type="number" name="size_guides[{{ $index }}][dimensions][{{ $labelIndex }}]"
-                                                    value=""
-                                                    class="w-full px-3 py-2 rounded-lg text-sm text-center
-                                                           focus:outline-none transition-all"
-                                                    style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)"
-                                                    placeholder="0">
-                                            </div>
-                                        @endforeach
-
-                                        <div class="w-10 flex-shrink-0 flex justify-center">
-                                            <button type="button"
-                                                    class="remove-size-guide flex items-center justify-center w-8 h-8 rounded-lg transition-all opacity-60 group-hover:opacity-100"
-                                                    style="color: var(--text-5)"
-                                                    onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'"
-                                                    onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'"
-                                                    title="Hapus ukuran">
-                                                <iconify-icon icon="mdi:trash-can-outline" class="text-base"></iconify-icon>
-                                            </button>
-                                        </div>
+                            <div class="p-3 grid grid-cols-2 gap-2">
+                                @foreach($currentLabels as $labelIndex => $label)
+                                    <div>
+                                        <label class="block text-[9px] font-bold uppercase tracking-wider mb-1 truncate"
+                                            style="color: var(--text-5)"
+                                            title="{{ $label }} (cm)">
+                                            {{ $label }}
+                                        </label>
+                                        <input type="number"
+                                            name="size_guides[{{ $index }}][dimensions][{{ $labelIndex }}]"
+                                            value=""
+                                            placeholder="0"
+                                            class="w-full px-2.5 py-1.5 rounded-lg text-sm text-center
+                                                    focus:outline-none transition-all"
+                                            style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)">
                                     </div>
                                 @endforeach
-                            @endif
+                            </div>
                         </div>
+                    @endforeach
+                @endif
+            </div>
 
-                    </div>
-                </div>
-
-                {{-- Empty State --}}
-                <div id="size-guides-empty" class="hidden px-4 py-8 text-center">
-                    <iconify-icon icon="mdi:table-off" class="text-3xl" style="color: var(--text-6)"></iconify-icon>
-                    <p class="text-sm mt-2" style="color: var(--text-5)">Belum ada ukuran. Klik "Tambah Ukuran" untuk memulai.</p>
-                </div>
-
+            {{-- Empty State --}}
+            <div id="size-guides-empty" class="hidden px-4 py-12 text-center rounded-xl border border-dashed"
+                style="border-color: var(--border-2); background: var(--bg-input);">
+                <iconify-icon icon="mdi:table-off" class="text-3xl" style="color: var(--text-6)"></iconify-icon>
+                <p class="text-sm mt-2" style="color: var(--text-5)">Belum ada ukuran. Klik "Tambah Ukuran" untuk memulai.</p>
             </div>
 
             <p class="flex items-center gap-1 text-xs mt-3" style="color: var(--text-5)">
                 <iconify-icon icon="mdi:information-outline"></iconify-icon>
-                Kosongkan nilai jika tidak ingin menampilkan. Scroll horizontal jika kolom terlalu banyak.
+                Kosongkan nilai jika tidak ingin menampilkan.
             </p>
         </div>
     </div>
@@ -325,125 +319,118 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('size-guides-body');
+    const container = document.getElementById('size-guides-container');
     const labelsContainer = document.getElementById('dimension-labels-container');
-    const headerDimensions = document.getElementById('header-dimensions');
     const addSizeBtn = document.getElementById('add-size-guide');
     const addDimensionBtn = document.getElementById('add-dimension');
     const rowCountEl = document.getElementById('row-count');
     const emptyState = document.getElementById('size-guides-empty');
 
     // ============================================
-    // 🔥 CLASS HELPERS (pakai CSS variables)
+    // HELPER: Get dimension labels
     // ============================================
-    const sizeInputClass = 'w-full px-3 py-2 rounded-lg text-sm font-semibold text-center focus:outline-none transition-all';
-    const dimInputClass = 'w-full px-3 py-2 rounded-lg text-sm text-center focus:outline-none transition-all';
-    const inputStyle = 'background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)';
-    const rowClass = 'size-guide-row flex items-center gap-2 px-4 py-2.5 transition-colors group border-b last:border-0';
-    const rowStyle = 'border-color: var(--border-1)';
-    const removeBtn = `<button type="button" class="remove-size-guide flex items-center justify-center w-8 h-8 rounded-lg transition-all opacity-60 group-hover:opacity-100" style="color: var(--text-5)" onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'" title="Hapus ukuran"><iconify-icon icon="mdi:trash-can-outline" class="text-base"></iconify-icon></button>`;
-
-    // ============================================
-    // 🔥 RENDER HEADER DIMENSIONS
-    // ============================================
-    function renderHeaderDimensions() {
-        const labels = getDimensionLabels();
-        let html = '';
-        labels.forEach(function(label) {
-            html += `
-                <div class="w-28 flex-shrink-0">
-                    <span class="text-[10px] font-bold uppercase tracking-wider truncate block text-center" style="color: var(--text-5)" title="${label}">
-                        ${label} (cm)
-                    </span>
-                </div>
-            `;
-        });
-        headerDimensions.innerHTML = html;
+    function getDimensionLabels() {
+        const inputs = labelsContainer.querySelectorAll('input[name="dimension_labels[]"]');
+        return Array.from(inputs).map(el => el.value);
     }
 
     // ============================================
-    // 🔥 BUILD ROW HTML
+    // HELPER: Build card HTML
     // ============================================
-    function buildRowHtml(index, size, dimensions, id) {
+    function buildCardHtml(index, size, dimensions, id) {
         const labels = getDimensionLabels();
 
-        let idHtml = '';
-        if (id) {
-            idHtml = `<input type="hidden" name="size_guides[${index}][id]" value="${id}">`;
-        }
+        const idHtml = id
+            ? `<input type="hidden" name="size_guides[${index}][id]" value="${id}">`
+            : '';
 
         let dimensionsHtml = '';
         labels.forEach(function(label, labelIndex) {
             const value = dimensions[label] || '';
             dimensionsHtml += `
-                <div class="w-28 flex-shrink-0">
-                    <input type="number" name="size_guides[${index}][dimensions][${labelIndex}]"
+                <div>
+                    <label class="block text-[9px] font-bold uppercase tracking-wider mb-1 truncate" style="color: var(--text-5)" title="${label} (cm)">
+                        ${label}
+                    </label>
+                    <input type="number"
+                           name="size_guides[${index}][dimensions][${labelIndex}]"
                            value="${value}"
-                           class="${dimInputClass}"
-                           style="${inputStyle}"
-                           placeholder="0">
+                           placeholder="0"
+                           class="w-full px-2.5 py-1.5 rounded-lg text-sm text-center focus:outline-none transition-all"
+                           style="background: var(--bg-card); border: 1px solid var(--border-2); color: var(--text-1)">
                 </div>
             `;
         });
 
         return `
-            ${idHtml}
-            <div class="w-24 flex-shrink-0">
-                <input type="text" name="size_guides[${index}][size]" value="${size}"
-                       class="${sizeInputClass}"
-                       style="${inputStyle}"
-                       placeholder="S" required>
+            <div class="flex items-center gap-2 px-3 py-2.5 border-b"
+                 style="background: var(--bg-card); border-color: var(--border-2);">
+                <iconify-icon icon="mdi:ruler" class="text-[#ecbc42]"></iconify-icon>
+                <input type="text"
+                       name="size_guides[${index}][size]"
+                       value="${size}"
+                       placeholder="S"
+                       required
+                       class="flex-1 px-3 py-1.5 rounded-lg text-sm font-bold text-center focus:outline-none transition-all"
+                       style="background: var(--bg-input); border: 1px solid var(--border-2); color: var(--text-1)">
+                ${idHtml}
+                <button type="button"
+                        class="remove-size-guide inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all"
+                        style="color: var(--text-5)"
+                        onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#f87171'"
+                        onmouseout="this.style.background='transparent'; this.style.color='var(--text-5)'"
+                        title="Hapus ukuran">
+                    <iconify-icon icon="mdi:trash-can-outline" class="text-sm"></iconify-icon>
+                </button>
             </div>
-            ${dimensionsHtml}
-            <div class="w-10 flex-shrink-0 flex justify-center">
-                ${removeBtn}
+
+            <div class="p-3 grid grid-cols-2 gap-2">
+                ${dimensionsHtml}
             </div>
         `;
     }
 
     // ============================================
-    // 🔥 UPDATE ROW COUNTER & EMPTY STATE
+    // UPDATE ROW COUNTER & EMPTY STATE
     // ============================================
     function updateRowState() {
-        const rows = container.querySelectorAll('.size-guide-row');
-        if (rowCountEl) rowCountEl.textContent = rows.length;
+        const cards = container.querySelectorAll('.size-guide-card');
+        if (rowCountEl) rowCountEl.textContent = cards.length;
 
         if (emptyState) {
-            if (rows.length === 0) {
+            if (cards.length === 0) {
                 emptyState.classList.remove('hidden');
+                container.classList.add('hidden');
             } else {
                 emptyState.classList.add('hidden');
+                container.classList.remove('hidden');
             }
         }
     }
 
     // ============================================
-    // 🔥 TAMBAH UKURAN
+    // TAMBAH UKURAN
     // ============================================
     if (addSizeBtn) {
         addSizeBtn.addEventListener('click', function() {
-            const rows = container.querySelectorAll('.size-guide-row');
-            const index = rows.length;
+            const cards = container.querySelectorAll('.size-guide-card');
+            const index = cards.length;
 
-            const row = document.createElement('div');
-            row.className = rowClass;
-            row.style.cssText = rowStyle;
-            row.onmouseover = function() { this.style.background = 'var(--bg-hover)'; };
-            row.onmouseout = function() { this.style.background = 'transparent'; };
-            row.innerHTML = buildRowHtml(index, '', {}, null);
-            container.appendChild(row);
+            const card = document.createElement('div');
+            card.className = 'size-guide-card rounded-xl border overflow-hidden transition-colors';
+            card.style.cssText = 'background: var(--bg-input); border-color: var(--border-2);';
+            card.innerHTML = buildCardHtml(index, '', {}, null);
+            container.appendChild(card);
 
-            reindexSizeGuides();
             updateRowState();
 
-            const newRow = container.lastElementChild;
-            const sizeInput = newRow.querySelector('input[name*="[size]"]');
+            const sizeInput = card.querySelector('input[name*="[size]"]');
             if (sizeInput) sizeInput.focus();
         });
     }
 
     // ============================================
-    // 🔥 TAMBAH DIMENSI
+    // TAMBAH DIMENSI
     // ============================================
     if (addDimensionBtn) {
         addDimensionBtn.addEventListener('click', function() {
@@ -468,14 +455,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 labelsContainer.appendChild(item);
 
-                renderHeaderDimensions();
-                updateAllRows();
+                // Update semua card dengan label baru
+                updateAllCards();
             }
         });
     }
 
     // ============================================
-    // 🔥 HAPUS DIMENSI
+    // HAPUS DIMENSI
     // ============================================
     if (labelsContainer) {
         labelsContainer.addEventListener('click', function(e) {
@@ -485,28 +472,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (confirm(`Hapus dimensi "${label}"? Semua nilai "${label}" di tabel akan hilang.`)) {
                     item.remove();
-                    renderHeaderDimensions();
-                    updateAllRows();
+                    updateAllCards();
                 }
             }
         });
     }
 
     // ============================================
-    // 🔥 HAPUS UKURAN
+    // HAPUS UKURAN
     // ============================================
     if (container) {
         container.addEventListener('click', function(e) {
             if (e.target.closest('.remove-size-guide')) {
-                const row = e.target.closest('.size-guide-row');
-                const rows = container.querySelectorAll('.size-guide-row');
+                const card = e.target.closest('.size-guide-card');
+                const cards = container.querySelectorAll('.size-guide-card');
 
-                if (rows.length > 1) {
-                    row.remove();
-                    reindexSizeGuides();
+                if (cards.length > 1) {
+                    card.remove();
+                    reindexCards();
                     updateRowState();
                 } else {
-                    row.querySelectorAll('input[type="text"], input[type="number"]').forEach(function(input) {
+                    // Jika tinggal 1, kosongkan saja isinya
+                    card.querySelectorAll('input[type="text"], input[type="number"]').forEach(function(input) {
                         input.value = '';
                     });
                 }
@@ -515,31 +502,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================
-    // 🔥 GET DIMENSION LABELS
+    // UPDATE ALL CARDS (setelah tambah/hapus dimensi)
     // ============================================
-    function getDimensionLabels() {
-        const inputs = labelsContainer.querySelectorAll('input[name="dimension_labels[]"]');
-        return Array.from(inputs).map(el => el.value);
-    }
-
-    // ============================================
-    // 🔥 UPDATE ALL ROWS
-    // ============================================
-    function updateAllRows() {
-        const rows = container.querySelectorAll('.size-guide-row');
+    function updateAllCards() {
+        const cards = container.querySelectorAll('.size-guide-card');
         const labels = getDimensionLabels();
 
-        rows.forEach(function(row, index) {
-            const sizeInput = row.querySelector('input[name*="[size]"]');
+        cards.forEach(function(card, index) {
+            // Ambil nilai size
+            const sizeInput = card.querySelector('input[name*="[size]"]');
             const size = sizeInput ? sizeInput.value : '';
 
-            const idInput = row.querySelector('input[name*="[id]"]');
+            // Ambil ID
+            const idInput = card.querySelector('input[name*="[id]"]');
             const id = idInput ? idInput.value : null;
 
+            // Ambil nilai dimensions existing
             const existingDimensions = {};
-            const oldLabels = getDimensionLabelsBeforeUpdate(row);
-
-            row.querySelectorAll('input[name*="[dimensions]"]').forEach(function(input) {
+            const oldLabels = getDimensionLabels(); // pakai labels baru
+            card.querySelectorAll('input[name*="[dimensions]"]').forEach(function(input) {
                 const match = input.name.match(/dimensions\[(\d+)\]/);
                 if (match) {
                     const labelIndex = parseInt(match[1]);
@@ -549,35 +530,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            row.innerHTML = buildRowHtml(index, size, existingDimensions, id);
+            // Rebuild card content
+            card.innerHTML = buildCardHtml(index, size, existingDimensions, id);
         });
     }
 
-    function getDimensionLabelsBeforeUpdate(row) {
-        const inputs = labelsContainer.querySelectorAll('input[name="dimension_labels[]"]');
-        return Array.from(inputs).map(el => el.value);
-    }
-
     // ============================================
-    // 🔥 REINDEX SIZE GUIDES
+    // REINDEX CARDS (setelah hapus baris)
     // ============================================
-    function reindexSizeGuides() {
-        const rows = container.querySelectorAll('.size-guide-row');
-        rows.forEach(function(row, index) {
-            row.querySelectorAll('input').forEach(function(input) {
-                const name = input.name;
-                const newName = name.replace(/size_guides\[\d+\]/, `size_guides[${index}]`);
+    function reindexCards() {
+        const cards = container.querySelectorAll('.size-guide-card');
+        cards.forEach(function(card, index) {
+            card.querySelectorAll('input').forEach(function(input) {
+                const newName = input.name.replace(/size_guides\[\d+\]/, `size_guides[${index}]`);
                 input.name = newName;
             });
         });
     }
 
     // ============================================
-    // 🔥 INIT
+    // INIT
     // ============================================
-    renderHeaderDimensions();
     updateRowState();
 
-    console.log('✅ Size guide table initialized');
+    console.log('✅ Size guide grid initialized');
 });
 </script>

@@ -964,6 +964,16 @@
             @endif
             @endif
 
+            @if($order->shipping_status == 'shipped')
+                <form action="{{ route('customer.orders.confirm-received', $order) }}" method="POST" style="display: contents;">
+                    @csrf
+                    <button type="submit" class="od-btn od-btn-success">
+                        <iconify-icon icon="mdi:hand-heart-outline"></iconify-icon>
+                        Pesanan Diterima
+                    </button>
+                </form>
+            @endif
+
             @if($order->can_request_return)
                 <button onclick="showReturnModal()" class="od-btn od-btn-outline">
                     <iconify-icon icon="mdi:package-variant-closed-remove"></iconify-icon>
@@ -1145,20 +1155,53 @@
             Anda yakin ingin membatalkan pesanan #{{ $order->order_number }}?
         </p>
 
-        <form action="{{ route('customer.orders.request-cancel', $order) }}" method="POST">
+        <form action="{{ route('customer.orders.request-cancel', $order) }}"
+              method="POST"
+              id="cancelForm"
+              onsubmit="return validateCancelForm(event)">
             @csrf
-            <textarea name="reason" rows="4" required
-                      placeholder="Tuliskan alasan pembatalan..."></textarea>
-            <p class="od-modal-hint">
-                <iconify-icon icon="mdi:information-outline"></iconify-icon>
-                Minimal 10 karakter
-            </p>
+            <div style="position: relative;">
+                <textarea name="reason"
+                          id="cancelReason"
+                          rows="4"
+                          required
+                          minlength="10"
+                          maxlength="500"
+                          placeholder="Tuliskan alasan pembatalan..."
+                          oninput="updateCancelCounter()"></textarea>
+
+                {{-- Counter Karakter --}}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4vw;">
+                    <p class="od-modal-hint" style="margin: 0;">
+                        <iconify-icon icon="mdi:information-outline"></iconify-icon>
+                        Minimal <strong>10</strong> karakter
+                    </p>
+                    <span id="cancelCounter"
+                          style="font-size: 0.72vw; font-weight: 600; color: #94a3b8;">
+                        0 / 500
+                    </span>
+                </div>
+
+                {{-- Error Message --}}
+                <p id="cancelError"
+                   style="display: none; font-size: 0.75vw; color: #dc2626; margin-top: 0.5vw;
+                          padding: 0.5vw 0.7vw; background: #fef2f2;
+                          border: 0.1vw solid #fecaca; border-radius: 0.4vw;
+                          display: none; align-items: center; gap: 0.4vw;">
+                    <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
+                    <span id="cancelErrorText">Alasan minimal 10 karakter.</span>
+                </p>
+            </div>
 
             <div class="od-modal-actions">
                 <button type="button" onclick="closeCancelModal()" class="od-btn od-btn-outline">
                     Batal
                 </button>
-                <button type="submit" class="od-btn od-btn-danger">
+                <button type="submit"
+                        class="od-btn od-btn-danger"
+                        id="cancelSubmitBtn"
+                        disabled
+                        style="opacity: 0.5; cursor: not-allowed;">
                     <span id="cancelModalSubmitText">Ya, Batalkan</span>
                 </button>
             </div>
@@ -1182,20 +1225,53 @@
             Barang akan dicek oleh admin dan stok dikembalikan setelah retur disetujui.
         </p>
 
-        <form action="{{ route('customer.orders.request-return', $order) }}" method="POST">
+        <form action="{{ route('customer.orders.request-return', $order) }}"
+              method="POST"
+              id="returnForm"
+              onsubmit="return validateReturnForm(event)">
             @csrf
-            <textarea name="reason" rows="4" required
-                      placeholder="Tuliskan alasan retur..."></textarea>
-            <p class="od-modal-hint">
-                <iconify-icon icon="mdi:information-outline"></iconify-icon>
-                Minimal 10 karakter
-            </p>
+            <div style="position: relative;">
+                <textarea name="reason"
+                          id="returnReason"
+                          rows="4"
+                          required
+                          minlength="10"
+                          maxlength="500"
+                          placeholder="Tuliskan alasan retur..."
+                          oninput="updateReturnCounter()"></textarea>
+
+                {{-- Counter Karakter --}}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4vw;">
+                    <p class="od-modal-hint" style="margin: 0;">
+                        <iconify-icon icon="mdi:information-outline"></iconify-icon>
+                        Minimal <strong>10</strong> karakter
+                    </p>
+                    <span id="returnCounter"
+                          style="font-size: 0.72vw; font-weight: 600; color: #94a3b8;">
+                        0 / 500
+                    </span>
+                </div>
+
+                {{-- Error Message --}}
+                <p id="returnError"
+                   style="display: none; font-size: 0.75vw; color: #dc2626; margin-top: 0.5vw;
+                          padding: 0.5vw 0.7vw; background: #fef2f2;
+                          border: 0.1vw solid #fecaca; border-radius: 0.4vw;
+                          display: none; align-items: center; gap: 0.4vw;">
+                    <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
+                    <span id="returnErrorText">Alasan minimal 10 karakter.</span>
+                </p>
+            </div>
 
             <div class="od-modal-actions">
                 <button type="button" onclick="closeReturnModal()" class="od-btn od-btn-outline">
                     Batal
                 </button>
-                <button type="submit" class="od-btn od-btn-primary">
+                <button type="submit"
+                        class="od-btn od-btn-primary"
+                        id="returnSubmitBtn"
+                        disabled
+                        style="opacity: 0.5; cursor: not-allowed;">
                     <iconify-icon icon="mdi:send-outline"></iconify-icon>
                     Kirim Retur
                 </button>
@@ -1206,28 +1282,106 @@
 
 @push('scripts')
 <script>
+    const MIN_CHARS = 10;
+    const MAX_CHARS = 500;
     function showCancelModal(type) {
         var title = document.getElementById('cancelModalTitle');
         var message = document.getElementById('cancelModalMessage');
         var submitText = document.getElementById('cancelModalSubmitText');
+        var form = document.getElementById('cancelForm');
+        var textarea = document.getElementById('cancelReason');
 
+        // 🔥 Set action & text sesuai tipe
         if (type === 'direct') {
             title.textContent = 'Batalkan Pesanan';
             message.textContent = 'Anda yakin ingin membatalkan pesanan #{{ $order->order_number }}? Pesanan akan dibatalkan langsung.';
             submitText.textContent = 'Ya, Batalkan Sekarang';
+            form.action = '{{ route("customer.orders.cancel-direct", $order) }}';
         } else {
             title.textContent = 'Minta Pembatalan Pesanan';
             message.textContent = 'Anda yakin ingin meminta pembatalan pesanan #{{ $order->order_number }}? Permintaan ini perlu persetujuan admin.';
             submitText.textContent = 'Kirim Permintaan';
+            form.action = '{{ route("customer.orders.request-cancel", $order) }}';
         }
+
+        // 🔥 Reset form
+        textarea.value = '';
+        hideError('cancelError');
+        updateCancelCounter();
 
         document.getElementById('cancelModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // 🔥 Auto focus textarea
+        setTimeout(function() { textarea.focus(); }, 300);
     }
 
     function closeCancelModal() {
         document.getElementById('cancelModal').classList.remove('active');
         document.body.style.overflow = '';
+
+        // 🔥 Reset textarea + state
+        document.getElementById('cancelReason').value = '';
+        hideError('cancelError');
+        updateCancelCounter();
+    }
+
+    function updateCancelCounter() {
+        var textarea = document.getElementById('cancelReason');
+        var counter = document.getElementById('cancelCounter');
+        var submitBtn = document.getElementById('cancelSubmitBtn');
+        var errorEl = document.getElementById('cancelError');
+        var errorText = document.getElementById('cancelErrorText');
+
+        var length = textarea.value.trim().length;
+
+        // 🔥 Update counter
+        counter.textContent = length + ' / ' + MAX_CHARS;
+
+        // 🔥 Update counter color
+        if (length === 0) {
+            counter.style.color = '#94a3b8';
+        } else if (length < MIN_CHARS) {
+            counter.style.color = '#dc2626';
+        } else if (length >= MIN_CHARS && length < MAX_CHARS * 0.9) {
+            counter.style.color = '#059669';
+        } else {
+            counter.style.color = '#f59e0b';
+        }
+
+        // 🔥 Update button state
+        if (length >= MIN_CHARS) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            hideError('cancelError');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+
+            if (length > 0) {
+                errorText.textContent = 'Alasan minimal ' + MIN_CHARS + ' karakter. Sisa ' + (MIN_CHARS - length) + ' karakter lagi.';
+                showError('cancelError');
+            } else {
+                hideError('cancelError');
+            }
+        }
+    }
+
+    function validateCancelForm(event) {
+        var textarea = document.getElementById('cancelReason');
+        var length = textarea.value.trim().length;
+
+        if (length < MIN_CHARS) {
+            event.preventDefault();
+            var errorText = document.getElementById('cancelErrorText');
+            errorText.textContent = 'Alasan minimal ' + MIN_CHARS + ' karakter.';
+            showError('cancelError');
+            textarea.focus();
+            return false;
+        }
+        return true;
     }
 
     document.getElementById('cancelModal').addEventListener('click', function(e) {
@@ -1235,14 +1389,98 @@
     });
 
     function showReturnModal() {
+        var textarea = document.getElementById('returnReason');
+
+        // 🔥 Reset form
+        textarea.value = '';
+        hideError('returnError');
+        updateReturnCounter();
+
         document.getElementById('returnModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // 🔥 Auto focus textarea
+        setTimeout(function() { textarea.focus(); }, 300);
     }
 
     function closeReturnModal() {
         document.getElementById('returnModal').classList.remove('active');
         document.body.style.overflow = '';
+
+        // 🔥 Reset textarea + state
+        document.getElementById('returnReason').value = '';
+        hideError('returnError');
+        updateReturnCounter();
     }
+
+    function updateReturnCounter() {
+        var textarea = document.getElementById('returnReason');
+        var counter = document.getElementById('returnCounter');
+        var submitBtn = document.getElementById('returnSubmitBtn');
+        var errorEl = document.getElementById('returnError');
+        var errorText = document.getElementById('returnErrorText');
+
+        var length = textarea.value.trim().length;
+
+        // 🔥 Update counter
+        counter.textContent = length + ' / ' + MAX_CHARS;
+
+        // 🔥 Update counter color
+        if (length === 0) {
+            counter.style.color = '#94a3b8';
+        } else if (length < MIN_CHARS) {
+            counter.style.color = '#dc2626';
+        } else if (length >= MIN_CHARS && length < MAX_CHARS * 0.9) {
+            counter.style.color = '#059669';
+        } else {
+            counter.style.color = '#f59e0b';
+        }
+
+        // 🔥 Update button state
+        if (length >= MIN_CHARS) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            hideError('returnError');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+
+            if (length > 0) {
+                errorText.textContent = 'Alasan minimal ' + MIN_CHARS + ' karakter. Sisa ' + (MIN_CHARS - length) + ' karakter lagi.';
+                showError('returnError');
+            } else {
+                hideError('returnError');
+            }
+        }
+    }
+
+    function validateReturnForm(event) {
+        var textarea = document.getElementById('returnReason');
+        var length = textarea.value.trim().length;
+
+        if (length < MIN_CHARS) {
+            event.preventDefault();
+            var errorText = document.getElementById('returnErrorText');
+            errorText.textContent = 'Alasan minimal ' + MIN_CHARS + ' karakter.';
+            showError('returnError');
+            textarea.focus();
+            return false;
+        }
+        return true;
+    }
+
+    function showError(elementId) {
+        var el = document.getElementById(elementId);
+        if (el) el.style.display = 'flex';
+    }
+
+    function hideError(elementId) {
+        var el = document.getElementById(elementId);
+        if (el) el.style.display = 'none';
+    }
+
 
     document.getElementById('returnModal').addEventListener('click', function(e) {
         if (e.target === this) closeReturnModal();

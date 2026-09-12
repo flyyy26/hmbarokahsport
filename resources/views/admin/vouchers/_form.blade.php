@@ -125,10 +125,10 @@
                     </label>
                     <select name="discount_target" id="discount_target" class="form-input">
                         <option value="product" {{ old('discount_target', $voucher->discount_target ?? 'product') === 'product' ? 'selected' : '' }}>
-                            🛒 Diskon Produk
+                            Diskon Produk
                         </option>
                         <option value="shipping" {{ old('discount_target', $voucher->discount_target ?? '') === 'shipping' ? 'selected' : '' }}>
-                            🚚 Diskon Ongkir
+                            Diskon Ongkir
                         </option>
                     </select>
                     <p class="text-[10px] mt-1" style="color: var(--text-5)">Pilih jenis potongan yang diberikan.</p>
@@ -167,14 +167,14 @@
             </div>
 
             {{-- Gratis Ongkir --}}
-            <div class="flex items-center gap-3 pt-4 border-t" style="border-color: var(--border-1)">
+            <div id="free_shipping_wrapper" class="hidden flex items-center gap-3 pt-4 border-t" style="border-color: var(--border-1)">
                 <input type="checkbox"
-                       id="is_free_shipping"
-                       name="is_free_shipping"
-                       value="1"
-                       {{ old('is_free_shipping', $voucher->is_free_shipping ?? false) ? 'checked' : '' }}
-                       class="h-4 w-4 rounded cursor-pointer"
-                       style="accent-color: #ecbc42;">
+                    id="is_free_shipping"
+                    name="is_free_shipping"
+                    value="1"
+                    {{ old('is_free_shipping', $voucher->is_free_shipping ?? false) ? 'checked' : '' }}
+                    class="h-4 w-4 rounded cursor-pointer"
+                    style="accent-color: #ecbc42;">
                 <label for="is_free_shipping" class="cursor-pointer">
                     <span class="text-sm font-semibold flex items-center gap-1.5" style="color: var(--text-1)">
                         <iconify-icon icon="mdi:truck-fast-outline" class="text-[#ecbc42]"></iconify-icon>
@@ -191,11 +191,11 @@
                     Maksimal Potongan Ongkir (Rp)
                 </label>
                 <input type="number"
-                       name="max_shipping_discount"
-                       value="{{ old('max_shipping_discount', $voucher->max_shipping_discount ?? '') }}"
-                       min="0"
-                       class="form-input"
-                       placeholder="Contoh: 50000">
+                    name="max_shipping_discount"
+                    value="{{ old('max_shipping_discount', $voucher->max_shipping_discount ?? '') }}"
+                    min="0"
+                    class="form-input"
+                    placeholder="Contoh: 50000">
                 <p class="text-[10px] mt-1" style="color: var(--text-5)">Kosongkan jika tanpa batas maks potongan ongkir.</p>
             </div>
 
@@ -206,11 +206,11 @@
                     Maksimal Potongan (Rp)
                 </label>
                 <input type="number"
-                       name="max_discount_amount"
-                       value="{{ old('max_discount_amount', $voucher->max_discount_amount ?? '') }}"
-                       min="0"
-                       class="form-input"
-                       placeholder="Contoh: 150000">
+                    name="max_discount_amount"
+                    value="{{ old('max_discount_amount', $voucher->max_discount_amount ?? '') }}"
+                    min="0"
+                    class="form-input"
+                    placeholder="Contoh: 150000">
                 <p class="text-[10px] mt-1" style="color: var(--text-5)">
                     Kosongkan jika tidak ada batas maksimum potongan.
                 </p>
@@ -238,19 +238,43 @@
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         @php
-                            $couriers = ['JNE', 'JNT', 'SICEPAT', 'POS', 'ANTERAJA', 'LION', 'NINJA', 'RPX'];
+                            $couriers = [
+                                'jne'       => 'JNE',
+                                'jnt'       => 'J&T Express',
+                                'sicepat'   => 'SiCepat',
+                                'pos'       => 'POS Indonesia',
+                                'anteraja'  => 'AnterAja',
+                                'lion'      => 'Lion Parcel',
+                                'ninja'     => 'Ninja Xpress',
+                                'rpx'       => 'RPX',
+                                'pahala'    => 'Pahala Express',
+                                'wahana'    => 'Wahana',
+                                'tiki'      => 'TIKI',
+                                'ncs'       => 'NCS',
+                                'first'     => 'First Logistics',
+                                'idexpress' => 'ID Express',
+                                'star'      => 'Star Cargo',
+                            ];
+
+                            // Ambil kurir yang sudah dipilih (dari old atau database)
                             $selectedCouriers = old('applicable_couriers', $voucher->applicable_couriers ?? []);
+
+                            // 🔥 Normalisasi: pastikan semua lowercase untuk perbandingan
+                            $selectedCouriers = array_map('strtolower', (array) $selectedCouriers);
                         @endphp
-                        @foreach ($couriers as $courier)
-                            <label class="flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border transition-all"
-                                   style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3);">
+                        @foreach ($couriers as $value => $label)
+                            <label class="flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border transition-all
+                                        hover:border-[#ecbc42]/50"
+                                style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3);">
+
                                 <input type="checkbox"
-                                       name="applicable_couriers[]"
-                                       value="{{ $courier }}"
-                                       {{ in_array($courier, $selectedCouriers) ? 'checked' : '' }}
-                                       class="h-3.5 w-3.5 rounded cursor-pointer"
-                                       style="accent-color: #ecbc42;">
-                                {{ $courier }}
+                                    name="applicable_couriers[]"
+                                    value="{{ $value }}"
+                                    {{ in_array($value, $selectedCouriers) ? 'checked' : '' }}
+                                    class="h-3.5 w-3.5 rounded cursor-pointer"
+                                    style="accent-color: #ecbc42;">
+
+                                <span class="text-xs font-semibold">{{ $label }}</span>
                             </label>
                         @endforeach
                     </div>
@@ -510,46 +534,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-    // ============================================
-    // QUILL EDITOR - Terms & Conditions
-    // ============================================
-    var termsHiddenInput = document.getElementById('terms_and_conditions');
-    var termsEditorContainer = document.getElementById('quill-editor-terms');
-
-    if (typeof Quill !== 'undefined' && termsEditorContainer && termsHiddenInput) {
-        var quillTerms = new Quill(termsEditorContainer, {
-            theme: 'snow',
-            placeholder: termsEditorContainer.dataset.placeholder || 'Tulis S&K di sini...',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                    [{ 'indent': '-1' }, { 'indent': '+1' }],
-                    ['link', 'clean']
-                ]
-            }
-        });
-
-        // Set initial content
-        var initialContent = termsHiddenInput.value;
-        if (initialContent) {
-            quillTerms.root.innerHTML = initialContent;
-        }
-
-        // Sync ke hidden input saat ada perubahan
-        quillTerms.on('text-change', function() {
-            termsHiddenInput.value = quillTerms.root.innerHTML;
-        });
-
-        // Sync saat form submit
-        var form = termsHiddenInput.closest('form');
-        if (form) {
-            form.addEventListener('submit', function() {
-                termsHiddenInput.value = quillTerms.root.innerHTML;
-            });
-        }
-    }
+    
 
 
     // ============================================
@@ -598,10 +583,18 @@ document.addEventListener('DOMContentLoaded', function() {
         var maxShippingWrapper = document.getElementById('max_shipping_discount_wrapper');
 
         if (freeShipping.checked) {
+            // Sembunyikan semua
             if (typeWrapper) typeWrapper.classList.add('hidden');
             if (valueWrapper) valueWrapper.classList.add('hidden');
-            if (maxDiscountWrapper) maxDiscountWrapper.classList.add('hidden');
-            if (maxShippingWrapper) maxShippingWrapper.classList.add('hidden');
+            if (maxDiscountWrapper) {
+                maxDiscountWrapper.classList.add('hidden');
+                maxDiscountWrapper.style.display = 'none';
+            }
+            if (maxShippingWrapper) {
+                maxShippingWrapper.classList.add('hidden');
+                maxShippingWrapper.style.display = 'none';
+            }
+            
             if (discountType) discountType.value = 'fixed';
             var discountValue = document.getElementById('discount_value');
             if (discountValue) discountValue.value = '';
@@ -612,6 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+
     function updateMaxDiscountWrapper() {
         if (!discountTarget || !discountType) return;
 
@@ -621,17 +615,43 @@ document.addEventListener('DOMContentLoaded', function() {
         var maxShippingWrapper = document.getElementById('max_shipping_discount_wrapper');
         var freeShippingChecked = freeShipping && freeShipping.checked;
 
-        if (target === 'product' && !freeShippingChecked && type === 'percentage') {
-            if (maxDiscountWrapper) maxDiscountWrapper.classList.remove('hidden');
-            if (maxShippingWrapper) maxShippingWrapper.classList.add('hidden');
-        } else if (target === 'shipping' && !freeShippingChecked && type === 'percentage') {
-            if (maxShippingWrapper) maxShippingWrapper.classList.remove('hidden');
-            if (maxDiscountWrapper) maxDiscountWrapper.classList.add('hidden');
-        } else {
-            if (maxDiscountWrapper) maxDiscountWrapper.classList.add('hidden');
-            if (maxShippingWrapper) maxShippingWrapper.classList.add('hidden');
+        // 🔥 RESET: Sembunyikan KEDUANYA dulu
+        if (maxDiscountWrapper) {
+            maxDiscountWrapper.classList.add('hidden');
+            maxDiscountWrapper.style.display = 'none';
         }
+        if (maxShippingWrapper) {
+            maxShippingWrapper.classList.add('hidden');
+            maxShippingWrapper.style.display = 'none';
+        }
+
+        // Jika gratis ongkir, jangan tampilkan apapun
+        if (freeShippingChecked) return;
+
+        // 🔥 Tampilkan HANYA yang sesuai
+        if (target === 'product' && type === 'percentage') {
+            if (maxDiscountWrapper) {
+                maxDiscountWrapper.classList.remove('hidden');
+                maxDiscountWrapper.style.display = 'block';
+            }
+        } else if (target === 'shipping' && type === 'percentage') {
+            if (maxShippingWrapper) {
+                maxShippingWrapper.classList.remove('hidden');
+                maxShippingWrapper.style.display = 'block';
+            }
+        }
+        // Untuk tipe 'fixed': keduanya tetap hidden
+
+        // 🔥 Debug log (hapus setelah fix terbukti bekerja)
+        console.log('🔍 updateMaxDiscountWrapper:', {
+            target: target,
+            type: type,
+            freeShipping: freeShippingChecked,
+            showMaxProduct: target === 'product' && type === 'percentage',
+            showMaxShipping: target === 'shipping' && type === 'percentage',
+        });
     }
+
 
     function toggleDiscountTarget() {
         if (!discountTarget) return;
@@ -640,27 +660,33 @@ document.addEventListener('DOMContentLoaded', function() {
         var courierWrapper = document.getElementById('courier_selection_wrapper');
         var typeWrapper = document.getElementById('discount_type_wrapper');
         var valueWrapper = document.getElementById('discount_value_wrapper');
+        var freeShippingWrapper = document.getElementById('free_shipping_wrapper');
         var freeShippingChecked = freeShipping && freeShipping.checked;
 
+        // Toggle kurir
         if (target === 'shipping') {
             if (courierWrapper) courierWrapper.classList.remove('hidden');
-            if (!freeShippingChecked) {
-                if (typeWrapper) typeWrapper.classList.remove('hidden');
-                if (valueWrapper) valueWrapper.classList.remove('hidden');
-            }
+            // 🔥 Tampilkan checkbox Gratis Ongkir
+            if (freeShippingWrapper) freeShippingWrapper.classList.remove('hidden');
         } else {
             if (courierWrapper) courierWrapper.classList.add('hidden');
-            if (!freeShippingChecked) {
-                if (typeWrapper) typeWrapper.classList.remove('hidden');
-                if (valueWrapper) valueWrapper.classList.remove('hidden');
+            // 🔥 Sembunyikan checkbox Gratis Ongkir
+            if (freeShippingWrapper) freeShippingWrapper.classList.add('hidden');
+            
+            // 🔥 Reset checkbox gratis ongkir ke unchecked
+            if (freeShipping) {
+                freeShipping.checked = false;
             }
         }
 
-        if (freeShippingChecked) {
-            toggleFreeShipping();
-        } else {
-            updateMaxDiscountWrapper();
+        // Tampilkan type & value (jika bukan gratis ongkir)
+        if (!freeShippingChecked) {
+            if (typeWrapper) typeWrapper.classList.remove('hidden');
+            if (valueWrapper) valueWrapper.classList.remove('hidden');
         }
+
+        // 🔥 SELALU update max wrapper di akhir
+        updateMaxDiscountWrapper();
     }
 
     // ============================================
@@ -678,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (discountValue) {
                 discountValue.placeholder = this.value === 'percentage' ? 'Contoh: 20' : 'Contoh: 100000';
             }
+            // 🔥 WAJIB panggil updateMaxDiscountWrapper
             updateMaxDiscountWrapper();
         });
     }

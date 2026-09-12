@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Feature;
+use App\Models\Order;
+use App\Models\OfflineOrder;
+use App\Models\OfflineOrderItem; 
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\StockHistory;
 use App\Models\ProductOption;
@@ -474,57 +478,416 @@ class ProductController extends Controller
         }
     }
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        // Produk dengan stok kritis
+        $now = now();
+        
+        // ============================================
+        // 🔥 FILTER BULAN (HANYA UNTUK 4 CARD STATS)
+        // ============================================
+        $monthParam = $request->input('month');
+        
+        if ($monthParam) {
+            try {
+                $selectedMonth = \Carbon\Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+            } catch (\Exception $e) {
+                $selectedMonth = $now->copy()->startOfMonth();
+            }
+        } else {
+            $selectedMonth = $now->copy()->startOfMonth();
+        }
+        
+        $monthStart = $selectedMonth->copy()->startOfMonth();
+        $monthEnd = $selectedMonth->copy()->endOfMonth();
+        $prevMonthStart = $monthStart->copy()->subMonth()->startOfMonth();
+        $prevMonthEnd = $monthStart->copy()->subMonth()->endOfMonth();
+        
+        // Generate list bulan (12 bulan terakhir)
+        $monthOptions = [];
+        for ($i = 0; $i < 12; $i++) {
+            $m = $now->copy()->subMonths($i)->startOfMonth();
+            $monthOptions[] = [
+                'value' => $m->format('Y-m'),
+                'label' => $m->translatedFormat('F Y'),
+            ];
+        }
+        
+        // ============================================
+        // 🔥 HELPER: Combined Sales Range
+        // ============================================
+        $getCombinedSales = function ($start, $end = null) {
+            $query = function ($model) use ($start, $end) {
+                return $model::where('payment_status', 'paid')
+                    ->when($end, fn($q) => $q->whereBetween('created_at', [$start, $end]))
+                    ->when(!$end, fn($q) => $q->where('created_at', '>=', $start))
+                    ->sum('total');
+            };
+            return (float) $query(Order::class) + (float) $query(OfflineOrder::class);
+        };
+        
+        // ============================================
+        // 🔥 3 CARD ATAS (7/30/90 hari) — TIDAK FILTER BULAN
+        // ============================================
+        $sales_7d  = $getCombinedSales($now->copy()->subDays(7));
+        $sales_30d = $getCombinedSales($now->copy()->subDays(30));
+        $sales_90d = $getCombinedSales($now->copy()->subDays(90));
+        
+        $prev_7d  = $getCombinedSales($now->copy()->subDays(14), $now->copy()->subDays(7));
+        $prev_30d = $getCombinedSales($now->copy()->subDays(60), $now->copy()->subDays(30));
+        $prev_90d = $getCombinedSales($now->copy()->subDays(180), $now->copy()->subDays(90));
+        
+        $change_7d  = $prev_7d  > 0 ? round((($sales_7d  - $prev_7d)  / $prev_7d)  * 100, 1) : 0;
+        $change_30d = $prev_30d > 0 ? round((($sales_30d - $prev_30d) / $prev_30d) * 100, 1) : 0;
+        $change_90d = $prev_90d > 0 ? round((($sales_90d - $prev_90d) / $prev_90d) * 100, 1) : 0;
+        
+        // ============================================
+        // 🔥 CHART (7 HARI) — TIDAK FILTER BULAN
+        // ============================================
+        $chartDefaultStart = $now->copy()->subDays(6)->startOfDay();
+        
+        $dailyOnline = Order::where('payment_status', 'paid')
+            ->where('created_at', '>=', $chartDefaultStart)
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $dailyOffline = OfflineOrder::where('payment_status', 'paid')
+            ->where('created_at', '>=', $chartDefaultStart)
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $chartLabels = [];
+        $chartSales  = [];
+        $chartOrders = [];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $day = $now->copy()->subDays($i)->format('Y-m-d');
+            $online  = $dailyOnline[$day] ?? null;
+            $offline = $dailyOffline[$day] ?? null;
+            
+            $chartLabels[] = $now->copy()->subDays($i)->format('d M');
+            $chartSales[]  = (float) (($online->sales ?? 0) + ($offline->sales ?? 0));
+            $chartOrders[] = (int)   (($online->orders ?? 0) + ($offline->orders ?? 0));
+        }
+        
+        // Sparkline 7/30/90 hari
+        $sparkline_7d = $this->generateSparklinePath($chartSales, 300, 60);
+        
+        $daily30Online = Order::where('payment_status', 'paid')
+            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $daily30Offline = OfflineOrder::where('payment_status', 'paid')
+            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $sales30 = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $day = $now->copy()->subDays($i)->format('Y-m-d');
+            $sales30[] = (float) (($daily30Online[$day]->sales ?? 0) + ($daily30Offline[$day]->sales ?? 0));
+        }
+        $sparkline_30d = $this->generateSparklinePath($sales30, 300, 60);
+        
+        $daily90Online = Order::where('payment_status', 'paid')
+            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay())
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $daily90Offline = OfflineOrder::where('payment_status', 'paid')
+            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay())
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
+            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+        
+        $sales90 = [];
+        for ($i = 89; $i >= 0; $i--) {
+            $day = $now->copy()->subDays($i)->format('Y-m-d');
+            $sales90[] = (float) (($daily90Online[$day]->sales ?? 0) + ($daily90Offline[$day]->sales ?? 0));
+        }
+        $sparkline_90d = $this->generateSparklinePath($sales90, 300, 60);
+        
+        // ============================================
+        // 🔥 4 CARD STATS (TENGAH) — FILTER BULAN ✅
+        // ============================================
+        
+        // Total Penjualan Online (bulan)
+        $cashIn = (float) Order::where('payment_status', 'paid')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->sum('total');
+        
+        $prevCashIn = (float) Order::where('payment_status', 'paid')
+            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])
+            ->sum('total');
+        
+        $changeCashIn = $prevCashIn > 0
+            ? round((($cashIn - $prevCashIn) / $prevCashIn) * 100, 1)
+            : 0;
+        
+        // Total Penjualan Offline (bulan)
+        $offlineSales = (float) OfflineOrder::where('payment_status', 'paid')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->sum('total');
+        
+        $prevOfflineSales = (float) OfflineOrder::where('payment_status', 'paid')
+            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])
+            ->sum('total');
+        
+        $changeOffline = $prevOfflineSales > 0
+            ? round((($offlineSales - $prevOfflineSales) / $prevOfflineSales) * 100, 1)
+            : 0;
+        
+        // Total Order (bulan) — gabungan online + offline
+        $totalOrders = Order::whereBetween('created_at', [$monthStart, $monthEnd])->count()
+            + OfflineOrder::whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        
+        $prevTotalOrders = Order::whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])->count()
+            + OfflineOrder::whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])->count();
+        
+        $changeOrders = $prevTotalOrders > 0
+            ? round((($totalOrders - $prevTotalOrders) / $prevTotalOrders) * 100, 1)
+            : 0;
+        
+        // AOV (bulan)
+        $totalRevenue = $cashIn + $offlineSales;
+        $aov = $totalOrders > 0 ? round($totalRevenue / $totalOrders) : 0;
+        
+        $prevTotalRevenue = $prevCashIn + $prevOfflineSales;
+        $prevTotalOrdersForAOV = $prevTotalOrders > 0 ? $prevTotalOrders : 1;
+        $prevAOV = $prevTotalRevenue > 0 ? round($prevTotalRevenue / $prevTotalOrdersForAOV) : 0;
+        $changeAOV = $prevAOV > 0 ? round((($aov - $prevAOV) / $prevAOV) * 100, 1) : 0;
+        
+        // ============================================
+        // 🔥 TOP 5 PRODUK TERLARIS — 90 HARI (TIDAK FILTER BULAN)
+        // ============================================
+        $topProductsOnline = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.payment_status', 'paid')
+            ->where('orders.created_at', '>=', $now->copy()->subDays(90))
+            ->selectRaw('order_items.product_name, order_items.variant_name as variant, SUM(order_items.quantity) as sold, SUM(order_items.subtotal) as revenue')
+            ->groupBy('order_items.product_name', 'order_items.variant_name')
+            ->get();
+        
+        $topProductsOffline = \App\Models\OfflineOrderItem::query()
+            ->join('offline_orders', 'offline_orders.id', '=', 'offline_order_items.offline_order_id')
+            ->where('offline_orders.payment_status', 'paid')
+            ->where('offline_orders.created_at', '>=', $now->copy()->subDays(90))
+            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal) as revenue')
+            ->groupBy('offline_order_items.product_name', 'offline_order_items.variant_name')
+            ->get();
+        
+        $topProducts = $topProductsOnline
+            ->concat($topProductsOffline)
+            ->groupBy(fn($item) => $item->product_name . '|' . ($item->variant ?? ''))
+            ->map(function ($group) {
+                return (object) [
+                    'product_name' => $group->first()->product_name,
+                    'variant' => $group->first()->variant,
+                    'sold' => $group->sum('sold'),
+                    'revenue' => $group->sum('revenue'),
+                ];
+            })
+            ->sortByDesc('revenue')
+            ->take(5)
+            ->values();
+        
+        // ============================================
+        // STATS ARRAY
+        // ============================================
+        $stats = [
+            // Card atas (7/30/90 hari) — tidak filter bulan
+            'sales_7d'       => $sales_7d,
+            'sales_30d'      => $sales_30d,
+            'sales_90d'      => $sales_90d,
+            'change_7d'      => $change_7d,
+            'change_30d'     => $change_30d,
+            'change_90d'     => $change_90d,
+            'sparkline_7d'   => $sparkline_7d,
+            'sparkline_30d'  => $sparkline_30d,
+            'sparkline_90d'  => $sparkline_90d,
+            
+            // Chart (7 hari) — tidak filter bulan
+            'chart_labels'   => $chartLabels,
+            'chart_sales'    => $chartSales,
+            'chart_orders'   => $chartOrders,
+            
+            // 4 Card tengah — FILTER BULAN ✅
+            'cash_in'        => $cashIn,
+            'change_cash_in' => $changeCashIn,
+            'sales_offline'  => $offlineSales,
+            'change_offline' => $changeOffline,
+            'total_orders'   => $totalOrders,
+            'change_orders'  => $changeOrders,
+            'aov'            => $aov,
+            'change_aov'     => $changeAOV,
+            
+            // Info bulan
+            'month_label'    => $selectedMonth->translatedFormat('F Y'),
+            'month_param'    => $selectedMonth->format('Y-m'),
+        ];
+        
+        // Stock data
         $criticalProducts = Product::with(['variants', 'category'])
-            ->where('is_active', true)
-            ->criticalStock()
-            ->get()
-            ->map(function($product) {
-                $product->total_stock = $product->variants->sum('stock');
-                return $product;
-            });
-
-        // Produk dengan stok menipis
+            ->where('is_active', true)->criticalStock()->get()
+            ->map(fn($p) => tap($p, fn($x) => $x->total_stock = $x->variants->sum('stock')));
+        
         $lowProducts = Product::with(['variants', 'category'])
-            ->where('is_active', true)
-            ->lowStock()
-            ->get()
-            ->map(function($product) {
-                $product->total_stock = $product->variants->sum('stock');
-                return $product;
-            });
-
-        // Produk habis
+            ->where('is_active', true)->lowStock()->get()
+            ->map(fn($p) => tap($p, fn($x) => $x->total_stock = $x->variants->sum('stock')));
+        
         $outOfStockProducts = Product::with(['variants', 'category'])
             ->where('is_active', true)
-            ->whereHas('variants', function($q) {
-                $q->selectRaw('SUM(stock) as total_stock')
-                  ->havingRaw('SUM(stock) = 0');
-            })
+            ->whereHas('variants', fn($q) => $q->selectRaw('SUM(stock) as total_stock')->havingRaw('SUM(stock) = 0'))
             ->get()
-            ->map(function($product) {
-                $product->total_stock = $product->variants->sum('stock');
-                return $product;
-            });
-
-        // Produk aman
+            ->map(fn($p) => tap($p, fn($x) => $x->total_stock = $x->variants->sum('stock')));
+        
         $inStockProducts = Product::with(['variants', 'category'])
-            ->where('is_active', true)
-            ->inStock()
-            ->get()
-            ->map(function($product) {
-                $product->total_stock = $product->variants->sum('stock');
-                return $product;
-            });
-
+            ->where('is_active', true)->inStock()->get()
+            ->map(fn($p) => tap($p, fn($x) => $x->total_stock = $x->variants->sum('stock')));
+        
         return view('admin.dashboard', compact(
+            'stats',
+            'topProducts',
             'criticalProducts',
             'lowProducts',
             'outOfStockProducts',
-            'inStockProducts'
+            'inStockProducts',
+            'monthOptions'
         ));
+    }
+
+    /**
+     * 🔥 AJAX: Get chart data berdasarkan filter periode
+     */
+    public function getChartData(Request $request)
+    {
+        $period = (int) $request->input('period', 7);
+        if (!in_array($period, [7, 30, 90])) {
+            $period = 7;
+        }
+
+        $now = now();
+        $startDate = $now->copy()->subDays($period - 1)->startOfDay();
+
+        // 🔥 Ambil data online
+        $dailyOnline = Order::where('payment_status', 'paid')
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        // 🔥 Ambil data offline
+        $dailyOffline = OfflineOrder::where('payment_status', 'paid')
+            ->where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        // 🔥 Merge per hari
+        $labels = [];
+        $sales = [];
+        $orders = [];
+
+        for ($i = $period - 1; $i >= 0; $i--) {
+            $day = $now->copy()->subDays($i)->format('Y-m-d');
+            $label = $now->copy()->subDays($i)->format('d M');
+
+            $online  = $dailyOnline[$day] ?? null;
+            $offline = $dailyOffline[$day] ?? null;
+
+            $labels[] = $label;
+            $sales[]  = (float) (($online->sales ?? 0) + ($offline->sales ?? 0));
+            $orders[] = (int)   (($online->orders ?? 0) + ($offline->orders ?? 0));
+        }
+
+        return response()->json([
+            'success' => true,
+            'period'  => $period,
+            'labels'  => $labels,
+            'sales'   => $sales,
+            'orders'  => $orders,
+            'total_sales'  => array_sum($sales),
+            'total_orders' => array_sum($orders),
+        ]);
+    }
+
+    /**
+     * Generate an SVG path string for a sparkline from an array of values.
+     */
+    private function generateSparklinePath(array $values, int $width, int $height): string
+    {
+        if (empty($values)) {
+            return '';
+        }
+
+        $max = max($values);
+        $min = min($values);
+        $range = $max - $min;
+        if ($range == 0) {
+            $range = 1;
+        }
+
+        $padding = 10;
+        $chartHeight = $height - $padding * 2;
+        $chartWidth = $width - 20;
+        $step = $chartWidth / (count($values) - 1);
+
+        $points = [];
+        foreach ($values as $i => $val) {
+            $x = 10 + $i * $step;
+            $y = $height - $padding - (($val - $min) / $range) * $chartHeight;
+            $points[] = $x . ',' . round($y, 1);
+        }
+
+        $d = 'M' . $points[0];
+        for ($i = 1; $i < count($points); $i++) {
+            $midX = (floatval(explode(',', $points[$i - 1])[0]) + floatval(explode(',', $points[$i])[0])) / 2;
+            $d .= ' Q' . $midX . ',' . $height - $padding . ' ' . $points[$i];
+        }
+
+        return $d;
+    }
+
+    /**
+     * Generate an SVG path fill string for a sparkline.
+     */
+    private function generateSparklineFill(array $values, int $width, int $height): string
+    {
+        if (empty($values)) {
+            return '';
+        }
+
+        $max = max($values);
+        $min = min($values);
+        $range = $max - $min;
+        if ($range == 0) {
+            $range = 1;
+        }
+
+        $padding = 10;
+        $chartHeight = $height - $padding * 2;
+        $chartWidth = $width - 20;
+        $step = $chartWidth / (count($values) - 1);
+
+        $points = [];
+        foreach ($values as $i => $val) {
+            $x = 10 + $i * $step;
+            $y = $height - $padding - (($val - $min) / $range) * $chartHeight;
+            $points[] = $x . ',' . round($y, 1);
+        }
+
+        $d = 'M' . $points[0];
+        for ($i = 1; $i < count($points); $i++) {
+            $midX = (floatval(explode(',', $points[$i - 1])[0]) + floatval(explode(',', $points[$i])[0])) / 2;
+            $d .= ' Q' . $midX . ',' . $height - $padding . ' ' . $points[$i];
+        }
+        $d .= ' L' . $width . ',' . $height;
+        $d .= ' L0,' . $height . ' Z';
+
+        return $d;
     }
 
 

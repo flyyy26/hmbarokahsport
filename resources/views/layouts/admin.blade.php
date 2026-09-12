@@ -9,6 +9,18 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <script>
+        (function() {
+            var theme = localStorage.getItem('admin-theme');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-mode');
+                // Tambahkan juga saat body tersedia (tanpa tunggu DOMContentLoaded)
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.classList.add('light-mode');
+                });
+            }
+        })();
+    </script>
     <title>
         @yield('title', 'Admin E-Commerce')
     </title>
@@ -72,7 +84,7 @@
             --gold-text: #422006;
         }
 
-        body.light-mode {
+        html.light-mode {
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
             --bg-hover: #f1f5f9;
@@ -146,7 +158,7 @@
             color: var(--gold-bright);
         }
         .sidebar-link:hover .sidebar-icon {
-            color: var(--gold-bright);
+            color: #ecbc42;
             transform: scale(1.1);
         }
         .sidebar-link.active {
@@ -166,7 +178,7 @@
             box-shadow: 0 0 10px rgba(236, 188, 66, 0.6);
         }
         .sidebar-link.active .sidebar-icon {
-            color: var(--gold-bright);
+            color: #ecbc42;
         }
 
         .sidebar-icon {
@@ -174,21 +186,21 @@
             color: var(--text-5);
         }
 
-        body.light-mode .sidebar-link {
+        html.light-mode .sidebar-link {
             color: var(--text-4);
         }
-        body.light-mode .sidebar-link:hover {
+        html.light-mode .sidebar-link:hover {
             background: rgba(236, 188, 66, 0.1);
             color: var(--gold-dark);
         }
-        body.light-mode .sidebar-link.active {
+        html.light-mode .sidebar-link.active {
             background: linear-gradient(90deg, rgba(236, 188, 66, 0.15) 0%, rgba(236, 188, 66, 0.02) 100%);
             color: var(--gold-dark);
         }
-        body.light-mode .sidebar-link.active::before {
+        html.light-mode .sidebar-link.active::before {
             background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
         }
-        body.light-mode .sidebar-link.active .sidebar-icon {
+        html.light-mode .sidebar-link.active .sidebar-icon {
             color: var(--gold-dark);
         }
 
@@ -396,16 +408,16 @@
             color: #93c5fd !important;
         }
 
-        body.light-mode .alert-success {
+        html.light-mode .alert-success {
             color: #15803d !important;
         }
-        body.light-mode .alert-error {
+        html.light-mode .alert-error {
             color: #b91c1c !important;
         }
-        body.light-mode .alert-warning {
+        html.light-mode .alert-warning {
             color: #a16207 !important;
         }
-        body.light-mode .alert-info {
+        html.light-mode .alert-info {
             color: #1d4ed8 !important;
         }
 
@@ -417,7 +429,7 @@
             backdrop-filter: blur(4px);
         }
 
-        body.light-mode .modal-overlay {
+        html.light-mode .modal-overlay {
             background: rgba(15, 23, 42, 0.5) !important;
         }
 
@@ -471,7 +483,7 @@
             transition: background 0.3s ease, border-color 0.3s ease;
         }
 
-        body.light-mode .admin-header {
+        html.light-mode .admin-header {
             background: rgba(255, 255, 255, 0.9) !important;
         }
 
@@ -484,7 +496,7 @@
             transition: background 0.3s ease, border-color 0.3s ease;
         }
 
-        body.light-mode .admin-sidebar {
+        html.light-mode .admin-sidebar {
             background: #ffffff;
             border-right: 1px solid #e2e8f0;
         }
@@ -520,9 +532,11 @@
         /* Icon themes */
         #themeIcon-sun  { display: block; }
         #themeIcon-moon { display: none; }
-        body.light-mode #themeIcon-sun  { display: none; }
-        body.light-mode #themeIcon-moon { display: block; }
+        html.light-mode #themeIcon-sun  { display: none; }
+        html.light-mode #themeIcon-moon { display: block; }
     </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 
@@ -607,15 +621,49 @@
                 </div>
 
                 <a href="{{ route('admin.orders.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                class="sidebar-link {{ request()->routeIs('admin.orders.index') ? 'active' : '' }}
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
                     <iconify-icon icon="mdi:cart-outline" class="sidebar-icon text-lg"></iconify-icon>
-                    <span>Pesanan</span>
+                    <span class="flex-1">Pesanan</span>
+
+                    {{-- 🔥 Badge Permintaan Pembatalan --}}
+                    @if(($pendingCancellationCount ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-red-500 text-white
+                                    shadow-md shadow-red-500/50
+                                    animate-pulse">
+                            {{ $pendingCancellationCount > 99 ? '99+' : $pendingCancellationCount }}
+                        </span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.orders.offline') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.orders.offline') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                    <iconify-icon icon="mdi:cart-plus" class="sidebar-icon text-lg"></iconify-icon>
+                    <span>Pesanan Offline</span>
                 </a>
 
                 <a href="{{ route('admin.returns.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.returns.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                class="sidebar-link {{ request()->routeIs('admin.returns.*') ? 'active' : '' }}
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
                     <iconify-icon icon="mdi:backup-restore" class="sidebar-icon text-lg"></iconify-icon>
-                    <span>Retur</span>
+                    <span class="flex-1">Retur</span>
+
+                    {{-- 🔥 Badge Permintaan Retur --}}
+                    @if(($pendingReturnCount ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-red-500 text-white
+                                    shadow-md shadow-red-500/50
+                                    animate-pulse">
+                            {{ $pendingReturnCount > 99 ? '99+' : $pendingReturnCount }}
+                        </span>
+                    @endif
                 </a>
 
                 <a href="{{ route('admin.vouchers.index') }}"
@@ -624,8 +672,8 @@
                     <span>Voucher Promo</span>
                 </a>
 
-                <a href="#"
-                   class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                <a href="{{ route('admin.customers.index') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
                     <iconify-icon icon="mdi:account-multiple-outline" class="sidebar-icon text-lg"></iconify-icon>
                     <span>Pelanggan</span>
                 </a>
@@ -634,6 +682,27 @@
                    class="sidebar-link {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
                     <iconify-icon icon="mdi:star-outline" class="sidebar-icon text-lg"></iconify-icon>
                     <span>Testimonial</span>
+                </a>
+
+
+                {{-- SECTION: LAPORAN --}}
+                <div class="pt-4 pb-1 px-3">
+                    <span class="admin-sidebar-section text-[10px] font-bold uppercase tracking-widest">Laporan</span>
+                </div>
+                <a href="{{ route('admin.reports.index') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.reports.index') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                    <iconify-icon icon="ic:baseline-point-of-sale" class="sidebar-icon text-lg"></iconify-icon>
+                    <span>Laporan Penjualan</span>
+                </a>
+                <a href="{{ route('admin.reports.orders') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.reports.orders') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                    <iconify-icon icon="material-symbols-light:orders" class="sidebar-icon text-lg"></iconify-icon>
+                    <span>Laporan Pesanan</span>
+                </a>
+                <a href="{{ route('admin.reports.products') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.reports.products') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                    <iconify-icon icon="ant-design:product-filled" class="sidebar-icon text-lg"></iconify-icon>
+                    <span>Laporan Produk</span>
                 </a>
 
 
@@ -852,39 +921,166 @@
                     </div>
 
                     {{-- User Profile --}}
-                    <div class="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3">
+                    <div class="relative" id="userDropdownWrapper">
 
-                        <div class="hidden sm:block text-right">
-                            <p class="text-sm font-semibold leading-tight truncate max-w-[140px]" style="color: var(--text-1)">
-                                {{ auth()->user()->name }}
-                            </p>
-                            <div class="flex items-center justify-end gap-1 text-xs text-[#ecbc42] font-medium">
-                                <iconify-icon icon="mdi:shield-check" class="text-xs"></iconify-icon>
-                                <span>Administrator</span>
+                        {{-- Trigger Button --}}
+                        <button type="button"
+                                id="userDropdownTrigger"
+                                class="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 cursor-pointer
+                                    rounded-lg transition-all duration-200
+                                    hover:bg-[rgba(236,188,66,0.05)]
+                                    active:scale-[0.98]
+                                    focus:outline-none">
+
+                            <div class="hidden sm:block text-right">
+                                <p class="text-sm font-semibold leading-tight truncate max-w-[140px]" style="color: var(--text-1)">
+                                    {{ auth()->user()->name }}
+                                </p>
+                                <div class="flex items-center justify-end gap-1 text-xs text-[#ecbc42] font-medium">
+                                    <iconify-icon icon="mdi:shield-check" class="text-xs"></iconify-icon>
+                                    <span>Administrator</span>
+                                </div>
+                            </div>
+
+                            {{-- Avatar --}}
+                            <div class="relative">
+                                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full
+                                            bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                            flex items-center justify-center
+                                            font-bold text-slate-900
+                                            text-sm sm:text-base
+                                            shadow-md shadow-amber-500/30
+                                            transition-all duration-200">
+                                    @if(auth()->user()->avatar)
+                                        <img src="{{ asset('storage/' . auth()->user()->avatar) }}"
+                                            alt="{{ auth()->user()->name }}"
+                                            class="w-full h-full object-cover rounded-full">
+                                    @else
+                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                    @endif
+                                </div>
+                                <span class="absolute bottom-0 right-0
+                                            w-3 h-3 rounded-full
+                                            bg-emerald-500
+                                            shadow-md shadow-emerald-500/50"
+                                    style="box-shadow: 0 0 0 2px var(--bg-body)"></span>
+                            </div>
+
+                            {{-- Chevron --}}
+                            <iconify-icon icon="mdi:chevron-down"
+                                        id="userDropdownChevron"
+                                        class="hidden sm:block text-lg transition-transform duration-200"
+                                        style="color: var(--text-5);"></iconify-icon>
+                        </button>
+
+
+                        {{-- Dropdown Menu --}}
+                        <div id="userDropdownMenu"
+                            class="absolute right-0 top-full mt-2 w-64 rounded-xl border overflow-hidden
+                                    opacity-0 invisible scale-95 origin-top-right
+                                    transition-all duration-200 ease-out z-50"
+                            style="background: var(--bg-card); border-color: var(--border-2);
+                                    box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+
+                            {{-- User Info Header --}}
+                            <div class="px-4 py-3 border-b flex items-center gap-3"
+                                style="background: var(--bg-input); border-color: var(--border-2);">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                                            bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                            shadow-md shadow-amber-500/20">
+                                    @if(auth()->user()->avatar)
+                                        <img src="{{ asset('storage/' . auth()->user()->avatar) }}"
+                                            alt="{{ auth()->user()->name }}"
+                                            class="w-full h-full object-cover rounded-full">
+                                    @else
+                                        <span class="font-bold text-slate-900">
+                                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-bold truncate" style="color: var(--text-1);">
+                                        {{ auth()->user()->name }}
+                                    </p>
+                                    <p class="text-[10px] truncate" style="color: var(--text-5);">
+                                        {{ auth()->user()->email }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {{-- Menu Items --}}
+                            <div class="p-2">
+                                {{-- Pengaturan Akun --}}
+                                <a href="{{ route('admin.account.edit') }}"
+                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                        text-sm font-medium transition-all
+                                        hover:bg-[rgba(236,188,66,0.08)] group"
+                                style="color: var(--text-3);">
+                                    <iconify-icon icon="mdi:account-cog-outline"
+                                                class="text-lg transition-colors group-hover:text-[#FDDD57]"
+                                                style="color: var(--text-5);"></iconify-icon>
+                                    <span class="transition-colors group-hover:text-[#FDDD57]">Pengaturan Akun</span>
+                                </a>
+
+                                {{-- Dashboard --}}
+                                <a href="{{ route('admin.dashboard') }}"
+                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                        text-sm font-medium transition-all
+                                        hover:bg-[rgba(236,188,66,0.08)] group"
+                                style="color: var(--text-3);">
+                                    <iconify-icon icon="mdi:view-dashboard-outline"
+                                                class="text-lg transition-colors group-hover:text-[#FDDD57]"
+                                                style="color: var(--text-5);"></iconify-icon>
+                                    <span class="transition-colors group-hover:text-[#FDDD57]">Dashboard</span>
+                                </a>
+
+                                {{-- Lihat Toko --}}
+                                <a href="{{ route('customer.home') }}"
+                                target="_blank"
+                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                        text-sm font-medium transition-all
+                                        hover:bg-[rgba(236,188,66,0.08)] group"
+                                style="color: var(--text-3);">
+                                    <iconify-icon icon="mdi:storefront-outline"
+                                                class="text-lg transition-colors group-hover:text-[#FDDD57]"
+                                                style="color: var(--text-5);"></iconify-icon>
+                                    <span class="transition-colors group-hover:text-[#FDDD57]">Lihat Toko</span>
+                                    <iconify-icon icon="mdi:open-in-new"
+                                                class="text-xs ml-auto"
+                                                style="color: var(--text-6);"></iconify-icon>
+                                </a>
+
+                                {{-- Pengaturan Toko --}}
+                                <a href="{{ route('admin.settings.edit') }}"
+                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                        text-sm font-medium transition-all
+                                        hover:bg-[rgba(236,188,66,0.08)] group"
+                                style="color: var(--text-3);">
+                                    <iconify-icon icon="mdi:cog-outline"
+                                                class="text-lg transition-colors group-hover:text-[#FDDD57]"
+                                                style="color: var(--text-5);"></iconify-icon>
+                                    <span class="transition-colors group-hover:text-[#FDDD57]">Pengaturan Toko</span>
+                                </a>
+
+                                {{-- Divider --}}
+                                <div class="my-2 border-t" style="border-color: var(--border-1);"></div>
+
+                                {{-- Logout --}}
+                                <form action="{{ route('logout') }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                                text-sm font-medium transition-all
+                                                hover:bg-red-500/10 group text-left"
+                                            style="color: #f87171;">
+                                        <iconify-icon icon="mdi:logout"
+                                                    class="text-lg transition-colors group-hover:text-red-300"
+                                                    style="color: #f87171;"></iconify-icon>
+                                        <span class="transition-colors group-hover:text-red-300">Logout</span>
+                                    </button>
+                                </form>
                             </div>
                         </div>
-
-                        {{-- Avatar --}}
-                        <div class="relative group cursor-pointer">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full
-                                        bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
-                                        flex items-center justify-center
-                                        font-bold text-slate-900
-                                        text-sm sm:text-base
-                                        shadow-md shadow-amber-500/30
-                                        transition-all duration-200
-                                        group-hover:scale-105
-                                        group-hover:shadow-lg
-                                        group-hover:shadow-amber-500/50">
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                            </div>
-                            <span class="absolute bottom-0 right-0
-                                         w-3 h-3 rounded-full
-                                         bg-emerald-500
-                                         shadow-md shadow-emerald-500/50"
-                                  style="box-shadow: 0 0 0 2px var(--bg-body)"></span>
-                        </div>
-
                     </div>
 
                 </div>
@@ -910,34 +1106,21 @@
     {{-- ============================================ --}}
     <script>
         (function() {
-            // Load theme lebih awal (sebelum DOM ready) — mencegah flash
-            var currentTheme = localStorage.getItem('admin-theme');
-            if (currentTheme === 'light') {
-                document.documentElement.classList.add('light-mode');
-                document.addEventListener('DOMContentLoaded', function() {
-                    document.body.classList.add('light-mode');
-                });
-            } else {
-                document.addEventListener('DOMContentLoaded', function() {
-                    document.body.classList.remove('light-mode');
-                });
-            }
-
             document.addEventListener('DOMContentLoaded', function() {
                 var themeToggle = document.getElementById('themeToggle');
                 if (!themeToggle) return;
 
-                themeToggle.addEventListener('click', function() {
-                    document.body.classList.toggle('light-mode');
-                    var isLight = document.body.classList.contains('light-mode');
-                    localStorage.setItem('admin-theme', isLight ? 'light' : 'dark');
+                // Sync body class dengan html class (untuk konsistensi)
+                if (document.documentElement.classList.contains('light-mode')) {
+                    document.body.classList.add('light-mode');
+                }
 
-                    // Sync html class juga
-                    if (isLight) {
-                        document.documentElement.classList.add('light-mode');
-                    } else {
-                        document.documentElement.classList.remove('light-mode');
-                    }
+                themeToggle.addEventListener('click', function() {
+                    document.documentElement.classList.toggle('light-mode');
+                    document.body.classList.toggle('light-mode');
+
+                    var isLight = document.documentElement.classList.contains('light-mode');
+                    localStorage.setItem('admin-theme', isLight ? 'light' : 'dark');
                 });
             });
         })();
@@ -1052,6 +1235,10 @@
 
             if (discountType) {
                 function updateFields() {
+                    if (typeof updateMaxDiscountWrapper === 'function') {
+                        updateMaxDiscountWrapper();
+                        return;
+                    }
                     if (discountType.value === 'percentage') {
                         if (maxWrapper) maxWrapper.classList.remove('hidden');
                         if (unitLabel) unitLabel.textContent = '(%)';
@@ -1112,6 +1299,63 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownWrapper = document.getElementById('userDropdownWrapper');
+            const dropdownTrigger = document.getElementById('userDropdownTrigger');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            const dropdownChevron = document.getElementById('userDropdownChevron');
+
+            if (!dropdownTrigger || !dropdownMenu) return;
+
+            let isOpen = false;
+
+            function openDropdown() {
+                isOpen = true;
+                dropdownMenu.classList.remove('opacity-0', 'invisible', 'scale-95');
+                dropdownMenu.classList.add('opacity-100', 'visible', 'scale-100');
+                if (dropdownChevron) dropdownChevron.style.transform = 'rotate(180deg)';
+            }
+
+            function closeDropdown() {
+                isOpen = false;
+                dropdownMenu.classList.add('opacity-0', 'invisible', 'scale-95');
+                dropdownMenu.classList.remove('opacity-100', 'visible', 'scale-100');
+                if (dropdownChevron) dropdownChevron.style.transform = 'rotate(0deg)';
+            }
+
+            // Toggle on click
+            dropdownTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (isOpen) {
+                    closeDropdown();
+                } else {
+                    openDropdown();
+                }
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', function(e) {
+                if (isOpen && dropdownWrapper && !dropdownWrapper.contains(e.target)) {
+                    closeDropdown();
+                }
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isOpen) {
+                    closeDropdown();
+                }
+            });
+
+            // Close when clicking a menu item (except logout form button which needs to submit)
+            dropdownMenu.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    closeDropdown();
+                });
+            });
+        });
+        </script>
 
 </body>
 

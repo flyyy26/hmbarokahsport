@@ -36,6 +36,21 @@ class AuthController extends Controller
         $user = User::where('phone', $request->phone)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
+
+            // 🔥 CEK APAKAH AKUN AKTIF
+            if (!$user->is_active) {
+                if ($isAjax) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'
+                    ], 403);
+                }
+
+                return back()
+                    ->withInput($request->only('phone', 'remember'))
+                    ->with('error', 'Akun Anda telah dinonaktifkan. Silakan hubungi admin untuk informasi lebih lanjut.');
+            }
+
             Auth::guard('customer')->login($user, $request->boolean('remember'));
             $request->session()->regenerate();
 
@@ -48,9 +63,8 @@ class AuthController extends Controller
             session()->forget('old_cart_backup');
 
             if ($isAjax) {
-                // 🔥 GENERATE CSRF TOKEN BARU
                 $csrfToken = csrf_token();
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Login berhasil',
@@ -98,6 +112,21 @@ class AuthController extends Controller
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'terms' => ['required', 'accepted'],
+        ], [
+            // 🔥 Custom messages dalam Bahasa Indonesia
+            'name.required'     => 'Nama wajib diisi.',
+            'name.max'          => 'Nama maksimal 255 karakter.',
+
+            'phone.required'    => 'Nomor HP wajib diisi.',
+            'phone.max'         => 'Nomor HP maksimal 30 karakter.',
+            'phone.unique'      => 'Nomor HP sudah terdaftar. Silakan gunakan nomor lain atau login.',
+
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min'      => 'Kata sandi minimal 8 karakter.',
+            'password.confirmed'=> 'Konfirmasi kata sandi tidak cocok.',
+
+            'terms.required'    => 'Anda harus menyetujui syarat & ketentuan.',
+            'terms.accepted'    => 'Anda harus menyetujui syarat & ketentuan.',
         ]);
 
         if ($validator->fails()) {

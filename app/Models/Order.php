@@ -169,7 +169,7 @@ class Order extends Model
             'delivered' => 'Selesai',
             'cancelled' => 'Dibatalkan',
             'refunded' => 'Dikembalikan',
-            'cancellation_requested' => 'Menunggu Pembatalan',
+            'cancellation_requested' => 'Menunggu Persetujuan Admin',
         ][$this->shipping_status] ?? $this->shipping_status;
     }
 
@@ -191,7 +191,7 @@ class Order extends Model
             'shipped' => 'Dikirim',
             'delivered' => 'Terkirim',
             'cancelled' => 'Dibatalkan',
-            'cancellation_requested' => 'Menunggu Pembatalan',
+            'cancellation_requested' => 'Menunggu Persetujuan Admin',
         ][$this->shipping_status] ?? $this->shipping_status;
     }
 
@@ -215,6 +215,7 @@ class Order extends Model
             'delivered' => 'green',
             'cancelled' => 'red',
             'refunded' => 'gray',
+            'cancellation_requested' => 'yellow',
         ];
 
         $color = $colors[$this->shipping_status] ?? 'gray';
@@ -269,6 +270,16 @@ class Order extends Model
         return 'Batalkan Pesanan';
     }
 
+    public function getReturnButtonTextAttribute(): string
+    {
+        return [
+            'pending' => 'Menunggu Persetujuan Admin',
+            'approved' => 'Retur Disetujui',
+            'rejected' => 'Retur Ditolak',
+            'completed' => 'Retur Selesai',
+        ][$this->return_status] ?? 'Ajukan Retur';
+    }
+
     // ============================================
     // RETURN ACCESSORS
     // ============================================
@@ -295,15 +306,24 @@ class Order extends Model
 
     public function getCanRequestReturnAttribute(): bool
     {
-        if ($this->shipping_status !== 'delivered') {
+        // Harus berstatus 'delivered' atau sudah ada delivered_at
+        $isDelivered = $this->shipping_status === 'delivered' 
+                    || $this->delivered_at !== null;
+
+        if (!$isDelivered) {
             return false;
         }
+
+        // Jika retur sedang/sudah diproses → tidak bisa request lagi
         if (in_array($this->return_status, ['pending', 'approved', 'completed'])) {
             return false;
         }
-        if ($this->delivered_at && $this->delivered_at->addDays(7)->isPast()) {
+
+        // Jika lebih dari 7 hari setelah diterima → tidak bisa request
+        if ($this->delivered_at && $this->delivered_at->copy()->addDays(7)->isPast()) {
             return false;
         }
+
         return true;
     }
 
@@ -478,13 +498,21 @@ class Order extends Model
 
     public function canBeCancelled(): bool
     {
+        // Status yang bisa dibatalkan
         $cancellable = ['pending', 'processing'];
         
+        // Jika shipping_status tidak termasuk cancellable → tidak bisa
         if (!in_array($this->shipping_status, $cancellable)) {
             return false;
         }
 
+        // Jika sudah ada request pembatalan yang pending → tidak bisa
         if ($this->cancellation_status === 'pending') {
+            return false;
+        }
+
+        // Jika sudah dibatalkan → tidak bisa
+        if ($this->shipping_status === 'cancelled') {
             return false;
         }
 
@@ -513,6 +541,16 @@ class Order extends Model
     public function scopePending($query)
     {
         return $query->where('shipping_status', 'pending');
+    }
+
+    public function scopePendingCancellation($query)
+    {
+        return $query->where('cancellation_status', 'pending');
+    }
+
+    public function scopePendingReturn($query)
+    {
+        return $query->where('return_status', 'pending');
     }
 
     public function scopeProcessing($query)

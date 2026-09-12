@@ -298,7 +298,7 @@
                                         <p style="color: #94a3b8;">Belum ada ulasan untuk produk ini.</p>
                                     @endif
                                 </div>
-                            </div>
+                            </div> 
                         </div>
 
             </div>
@@ -333,6 +333,15 @@
                 </div>
                 {{-- Nama Produk --}}
                 <h1 class="product_name">{{ $product->name }}</h1>
+                <div class="share-section-box-mobile">
+                    @foreach($marketplaces as $marketplace)
+                        <a href="{{ $marketplace->url }}" target="_blank">
+                            <button class="share-btn">
+                                <iconify-icon icon="{{ $marketplace->icon }}"></iconify-icon>
+                            </button>
+                        </a>
+                    @endforeach
+                </div>
 
                 {{-- Harga --}}
                 @php
@@ -712,9 +721,25 @@
                 </div>
 
                 {{-- SHARE --}}
-                <div class="share-section">
-                    <span>Bagikan:</span>
-                    <button onclick="shareProduct()" class="share-btn">🔗</button>
+                <div class="share-section-layout">
+                    <div class="share-section">
+                        <span>Bagikan:</span>
+                        <button onclick="shareProduct()" class="share-btn">
+                            <iconify-icon icon="codicon:live-share"></iconify-icon>
+                        </button>
+                    </div>
+                    <div class="share-section">
+                        <span>Toko Online:</span>
+                        <div class="share-section-box">
+                            @foreach($marketplaces as $marketplace)
+                                <a href="{{ $marketplace->url }}" target="_blank">
+                                    <button class="share-btn">
+                                        <iconify-icon icon="{{ $marketplace->icon }}"></iconify-icon>
+                                    </button>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
 
             </div>

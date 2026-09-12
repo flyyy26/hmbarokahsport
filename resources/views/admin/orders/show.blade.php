@@ -2,6 +2,69 @@
 
 @section('content')
 
+@php
+    $isCancelled = $order->shipping_status === 'cancelled';
+@endphp
+
+<style>
+    .shipping-status-tab {
+    background-color: transparent !important;
+    color: var(--text-4) !important;
+    border: 1px solid transparent !important;
+    cursor: pointer;
+}
+
+.shipping-status-tab:hover:not(:disabled):not(.is-active) {
+    background-color: var(--bg-hover) !important;
+    color: var(--text-3) !important;
+}
+
+/* Active state — warna default */
+.shipping-status-tab.is-active {
+    font-weight: 700;
+}
+
+/* Warna per status — pakai data-status selector */
+.shipping-status-tab.is-active[data-status="pending"] {
+    background-color: rgba(251, 191, 36, 0.15) !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
+    color: #fbbf24 !important;
+}
+
+.shipping-status-tab.is-active[data-status="processing"] {
+    background-color: rgba(96, 165, 250, 0.15) !important;
+    border-color: rgba(96, 165, 250, 0.5) !important;
+    color: #60a5fa !important;
+}
+
+.shipping-status-tab.is-active[data-status="shipped"] {
+    background-color: rgba(167, 139, 250, 0.15) !important;
+    border-color: rgba(167, 139, 250, 0.5) !important;
+    color: #a78bfa !important;
+}
+
+.shipping-status-tab.is-active[data-status="delivered"] {
+    background-color: rgba(52, 211, 153, 0.15) !important;
+    border-color: rgba(52, 211, 153, 0.5) !important;
+    color: #34d399 !important;
+}
+
+/* Dot indicator — default hidden */
+.shipping-status-dot {
+    opacity: 0;
+    background: transparent;
+}
+
+.shipping-status-tab.is-active .shipping-status-dot {
+    opacity: 1;
+}
+
+.shipping-status-tab[data-status="pending"].is-active .shipping-status-dot { background: #fbbf24; }
+.shipping-status-tab[data-status="processing"].is-active .shipping-status-dot { background: #60a5fa; }
+.shipping-status-tab[data-status="shipped"].is-active .shipping-status-dot { background: #a78bfa; }
+.shipping-status-tab[data-status="delivered"].is-active .shipping-status-dot { background: #34d399; }
+</style>
+
 <div class="w-full max-w-5xl mx-auto space-y-6">
 
     {{-- ============================================ --}}
@@ -121,15 +184,15 @@
 
     {{-- Cancellation Pending --}}
     @if($order->cancellation_status === 'pending')
-        <div class="rounded-xl border p-4 bg-amber-500/10 border-amber-500/30">
+        <div class="rounded-xl border p-4 border-amber-500/30" style="background: var(--bg-card);">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="text-sm font-bold flex items-center gap-1.5 text-amber-400">
+                    <p class="text-sm font-bold flex items-center gap-1.5" style="color: var(--text-1)">
                         <iconify-icon icon="mdi:clock-outline"></iconify-icon>
                         Permintaan Pembatalan
                     </p>
-                    <p class="text-sm text-amber-300 mt-1">{{ $order->cancellation_reason }}</p>
-                    <p class="text-xs text-amber-400/70 mt-1">
+                    <p class="text-sm mt-1" style="color:var(--text-3);">{{ $order->cancellation_reason }}</p>
+                    <p class="text-xs mt-1" style="color:var(--text-3);">
                         Diminta: {{ $order->cancellation_requested_at->format('d M Y, H:i') }}
                     </p>
                 </div>
@@ -139,9 +202,7 @@
                         <button type="submit"
                                 onclick="return confirm('Setujui pembatalan pesanan #{{ $order->order_number }}?')"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg
-                                       text-xs font-bold transition-all active:scale-95
-                                       bg-emerald-500/20 border border-emerald-500/40 text-emerald-300
-                                       hover:bg-emerald-500/30">
+                                       text-xs font-bold transition-all active:scale-95 border-2 border-emerald-500/40 text-emerald-300 text-regular">
                             <iconify-icon icon="mdi:check"></iconify-icon>
                             Setujui
                         </button>
@@ -151,9 +212,7 @@
                         <button type="submit"
                                 onclick="return confirm('Tolak permintaan pembatalan?')"
                                 class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg
-                                       text-xs font-bold transition-all active:scale-95
-                                       bg-red-500/20 border border-red-500/40 text-red-300
-                                       hover:bg-red-500/30">
+                                       text-xs font-bold transition-all active:scale-95 border-2 border-red-500/40 text-red-300">
                             <iconify-icon icon="mdi:close"></iconify-icon>
                             Tolak
                         </button>
@@ -180,7 +239,7 @@
 
     {{-- Return Pending --}}
     @if($order->return_status === 'pending')
-        <div class="rounded-xl border p-4 bg-amber-500/10 border-amber-500/30">
+        <div class="rounded-xl border p-4 bg-white border-amber-500/30">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="min-w-0">
                     <p class="text-sm font-bold flex items-center gap-1.5 text-amber-400">
@@ -245,32 +304,51 @@
     {{-- ⭐ PRIORITAS UTAMA: ATUR PENGIRIMAN --}}
     {{-- ============================================ --}}
     <div class="rounded-2xl border-2 overflow-hidden"
-         style="background: var(--bg-card); border-color: #ecbc42;">
+        style="background: var(--bg-card); border-color: {{ $isCancelled ? '#f87171' : '#ecbc42' }};">
 
         {{-- Header dengan Highlight --}}
         <div class="px-5 py-4 border-b flex items-center gap-3"
-             style="background: linear-gradient(90deg, rgba(236, 188, 66, 0.15) 0%, transparent 100%); border-color: var(--border-2);">
+            style="background: linear-gradient(90deg,
+                    {{ $isCancelled ? 'rgba(248, 113, 113, 0.15)' : 'rgba(236, 188, 66, 0.15)' }} 0%,
+                    transparent 100%);
+                    border-color: var(--border-2);">
 
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl
-                         bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
-                         shadow-lg shadow-amber-500/30 flex-shrink-0">
-                <iconify-icon icon="mdi:truck-delivery-outline" class="text-slate-900 text-xl"></iconify-icon>
+                        {{ $isCancelled
+                            ? 'bg-red-500/20 border border-red-500/40'
+                            : 'bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]' }}
+                        shadow-lg flex-shrink-0">
+                <iconify-icon icon="{{ $isCancelled ? 'mdi:close-circle-outline' : 'mdi:truck-delivery-outline' }}"
+                            class="{{ $isCancelled ? 'text-red-400' : 'text-slate-900' }} text-xl"></iconify-icon>
             </span>
 
             <div class="flex-1 min-w-0">
                 <h2 class="text-base font-bold flex items-center gap-2" style="color: var(--text-1)">
                     Atur Pengiriman
+
+                    @if($isCancelled)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+                                    text-[10px] font-bold
+                                    bg-red-500/20 text-red-400 border border-red-500/30">
+                            <iconify-icon icon="mdi:lock-outline"></iconify-icon>
+                            Dibekukan
+                        </span>
+                    @endif
                 </h2>
                 <p class="text-[11px]" style="color: var(--text-5)">
-                    Update nomor resi dan status pengiriman pesanan ini.
+                    @if($isCancelled)
+                        Pesanan ini telah dibatalkan. Form pengiriman tidak dapat diubah.
+                    @else
+                        Update nomor resi dan status pengiriman pesanan ini.
+                    @endif
                 </p>
             </div>
         </div>
 
         {{-- Form Body --}}
         <form action="{{ route('admin.orders.shipping', $order) }}"
-              method="POST"
-              class="p-5">
+            method="POST"
+            class="p-5">
 
             @csrf
             @method('PUT')
@@ -287,11 +365,11 @@
                         </span>
                     </label>
                     <input type="text"
-                           name="courier"
-                           value="{{ $order->courier }}"
-                           disabled
-                           readonly
-                           class="form-input form-input-disabled">
+                        name="courier"
+                        value="{{ $order->courier }}"
+                        disabled
+                        readonly
+                        class="form-input form-input-disabled">
                     <input type="hidden" name="courier" value="{{ $order->courier }}">
                 </div>
 
@@ -305,15 +383,15 @@
                         </span>
                     </label>
                     <input type="text"
-                           name="service"
-                           value="{{ $order->service }}"
-                           disabled
-                           readonly
-                           class="form-input form-input-disabled">
+                        name="service"
+                        value="{{ $order->service }}"
+                        disabled
+                        readonly
+                        class="form-input form-input-disabled">
                     <input type="hidden" name="service" value="{{ $order->service }}">
                 </div>
 
-                {{-- Nomor Resi (Editable) --}}
+                {{-- Nomor Resi (Editable / Disabled) --}}
                 <div class="sm:col-span-2">
                     <label class="form-label">
                         <iconify-icon icon="mdi:barcode-scan" class="text-[#ecbc42]"></iconify-icon>
@@ -323,47 +401,83 @@
                         </span>
                     </label>
                     <input type="text"
-                           name="tracking_number"
-                           value="{{ $order->tracking_number }}"
-                           placeholder="Contoh: JNE1234567890"
-                           class="form-input">
-                    <p class="text-[10px] mt-1" style="color: var(--text-5)">
-                        Kosongkan jika ingin menggunakan resi otomatis dari Biteship.
-                    </p>
+                        name="tracking_number"
+                        value="{{ $order->tracking_number }}"
+                        placeholder="Contoh: JNE1234567890"
+                        class="form-input {{ $isCancelled ? 'form-input-disabled' : '' }}"
+                        {{ $isCancelled ? 'disabled' : '' }}>
+                    @if(!$isCancelled)
+                        <p class="text-[10px] mt-1" style="color: var(--text-5)">
+                            Kosongkan jika ingin menggunakan resi otomatis dari Biteship.
+                        </p>
+                    @endif
                 </div>
 
-                {{-- Status Pengiriman (Editable) --}}
+                {{-- Status Pengiriman (Editable / Disabled) --}}
                 <div class="sm:col-span-2">
                     <label class="form-label">
                         <iconify-icon icon="mdi:state-machine" class="text-[#ecbc42]"></iconify-icon>
                         Status Pengiriman
                     </label>
-                    <select name="shipping_status" class="form-input">
-                        @php
-                            $defaultShippingStatus = $order->shipping_status;
-                            if ($order->payment_status === 'paid' && $order->shipping_status === 'pending') {
-                                $defaultShippingStatus = 'processing';
-                            }
-                        @endphp
-                        <option value="pending" {{ $defaultShippingStatus == 'pending' ? 'selected' : '' }}>
-                            Belum Bayar
-                        </option>
-                        <option value="processing" {{ $defaultShippingStatus == 'processing' ? 'selected' : '' }}>
-                            Sedang Dikemas
-                        </option>
-                        <option value="shipped" {{ $defaultShippingStatus == 'shipped' ? 'selected' : '' }}>
-                            Dikirim
-                        </option>
-                        <option value="delivered" {{ $defaultShippingStatus == 'delivered' ? 'selected' : '' }}>
-                            Terkirim
-                        </option>
-                    </select>
-                    <p class="text-[10px] mt-1" style="color: var(--text-5)">
-                        @if($order->shipping_status == 'pending') Menunggu pembayaran.
-                        @elseif($order->shipping_status == 'processing') Sedang disiapkan untuk dikirim.
-                        @elseif($order->shipping_status == 'shipped') Paket dalam perjalanan.
-                        @elseif($order->shipping_status == 'delivered') Paket telah diterima.
-                        @endif
+
+                    @php
+                        $defaultShippingStatus = $order->shipping_status;
+                        if ($order->payment_status === 'paid' && $order->shipping_status === 'pending') {
+                            $defaultShippingStatus = 'processing';
+                        }
+
+                        $statusOptions = [
+                            'pending'    => ['label' => 'Belum Bayar', 'icon' => 'mdi:clock-outline',        'color' => '#fbbf24'],
+                            'processing' => ['label' => 'Dikemas',     'icon' => 'mdi:package-variant',     'color' => '#60a5fa'],
+                            'shipped'    => ['label' => 'Dikirim',     'icon' => 'mdi:truck-fast-outline',  'color' => '#a78bfa'],
+                            'delivered'  => ['label' => 'Terkirim',    'icon' => 'mdi:check-circle-outline','color' => '#34d399'],
+                        ];
+                    @endphp
+
+                    {{-- Hidden input --}}
+                    <input type="hidden" name="shipping_status" id="shipping_status_input" value="{{ $defaultShippingStatus }}">
+
+                    {{-- Tab Buttons --}}
+                    <div id="shipping-status-tabs"
+                        class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-xl
+                                {{ $isCancelled ? 'opacity-50 pointer-events-none' : '' }}"
+                        style="background: var(--bg-input); border: 1px solid var(--border-2);">
+
+                        @foreach ($statusOptions as $value => $opt)
+                            @php $isActive = $defaultShippingStatus == $value; @endphp
+
+                            <button type="button"
+                                    data-status="{{ $value }}"
+                                    data-color="{{ $opt['color'] }}"
+                                    class="shipping-status-tab
+                                        {{ $isActive ? 'is-active' : '' }}
+                                        relative flex flex-col sm:flex-row items-center justify-center gap-1.5
+                                        px-3 py-2.5 rounded-lg text-xs font-bold
+                                        transition-all duration-200 active:scale-95"
+                                    {{ $isCancelled ? 'disabled' : '' }}>
+
+                                <iconify-icon icon="{{ $opt['icon'] }}" class="text-lg"></iconify-icon>
+                                <span>{{ $opt['label'] }}</span>
+
+                                {{-- Active indicator dot --}}
+                                <span class="shipping-status-dot absolute top-1 right-1 w-1.5 h-1.5 rounded-full
+                                            transition-opacity duration-200"></span>
+                            </button>
+                        @endforeach
+                    </div>
+
+                    {{-- Hint Text --}}
+                    <p class="text-[10px] mt-2 flex items-center gap-1.5" style="color: var(--text-5)">
+                        <iconify-icon icon="mdi:information-outline"></iconify-icon>
+                        <span id="shipping-status-hint">
+                            @if($isCancelled)
+                                <span class="text-red-400">🔒 Pesanan dibatalkan — status tidak dapat diubah.</span>
+                            @elseif($defaultShippingStatus == 'pending') Menunggu pembayaran dari customer.
+                            @elseif($defaultShippingStatus == 'processing') Sedang disiapkan untuk dikirim.
+                            @elseif($defaultShippingStatus == 'shipped') Paket dalam perjalanan ke customer.
+                            @elseif($defaultShippingStatus == 'delivered') Paket telah diterima customer.
+                            @endif
+                        </span>
                     </p>
                 </div>
             </div>
@@ -371,10 +485,9 @@
             {{-- Timestamps --}}
             @if ($order->shipped_at || $order->delivered_at)
                 <div class="mt-4 pt-4 border-t flex flex-wrap gap-4 text-xs"
-                     style="border-color: var(--border-1); color: var(--text-5)">
+                    style="border-color: var(--border-1); color: var(--text-5)">
                     @if ($order->shipped_at)
                         <span>
-                            <iconify-icon icon="mdi:truck-fast-outline" class="inline"></iconify-icon>
                             Dikirim: <strong style="color: var(--text-3)">{{ $order->shipped_at->format('d M Y, H:i') }}</strong>
                         </span>
                     @endif
@@ -389,17 +502,35 @@
 
             {{-- Submit Button --}}
             <div class="mt-5 pt-4 border-t" style="border-color: var(--border-2)">
-                <button type="submit"
-                        class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-                               text-sm font-bold transition-all active:scale-95
-                               bg-gradient-to-r from-[#FDDD57] to-[#ecbc42]
-                               text-slate-900
-                               shadow-lg shadow-amber-500/30
-                               hover:shadow-xl hover:shadow-amber-500/50
-                               hover:-translate-y-0.5">
-                    <iconify-icon icon="mdi:content-save-outline" class="text-lg"></iconify-icon>
-                    Simpan Pengiriman
-                </button>
+
+                @if($isCancelled)
+                    {{-- 🔥 DISABLED BUTTON --}}
+                    <button type="button"
+                            disabled
+                            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+                                text-sm font-bold
+                                bg-red-500/10
+                                border-2 border-red-500/30
+                                text-red-400
+                                cursor-not-allowed
+                                opacity-70">
+                        <iconify-icon icon="mdi:lock-outline" class="text-lg"></iconify-icon>
+                        Pesanan Dibatalkan — Tidak Dapat Diubah
+                    </button>
+                @else
+                    {{-- 🔥 NORMAL SUBMIT BUTTON --}}
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+                                text-sm font-bold transition-all active:scale-95
+                                bg-gradient-to-r from-[#FDDD57] to-[#ecbc42]
+                                text-slate-900
+                                shadow-lg shadow-amber-500/30
+                                hover:shadow-xl hover:shadow-amber-500/50
+                                hover:-translate-y-0.5">
+                        <iconify-icon icon="mdi:content-save-outline" class="text-lg"></iconify-icon>
+                        Simpan Pengiriman
+                    </button>
+                @endif
             </div>
         </form>
     </div>
@@ -640,5 +771,61 @@
         margin-bottom: 0.4rem;
     }
 </style>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabsContainer = document.getElementById('shipping-status-tabs');
+    const hiddenInput = document.getElementById('shipping_status_input');
+    const hintText = document.getElementById('shipping-status-hint');
+
+    if (!tabsContainer || !hiddenInput) return;
+
+    // 🔥 SKIP kalau order cancelled (tab sudah disabled via pointer-events-none + disabled attr)
+    const isCancelled = {{ $isCancelled ? 'true' : 'false' }};
+        if (isCancelled) return;
+
+        const hintMessages = {
+            'pending':    'Menunggu pembayaran dari customer.',
+            'processing': 'Sedang disiapkan untuk dikirim.',
+            'shipped':    'Paket dalam perjalanan ke customer.',
+            'delivered':  'Paket telah diterima customer.',
+        };
+
+        const tabs = tabsContainer.querySelectorAll('.shipping-status-tab');
+
+        const DEFAULT_COLOR = getComputedStyle(document.documentElement)
+            .getPropertyValue('--text-4')
+            .trim() || '#94a3b8';
+
+        function activateTab(activeTab) {
+            const status = activeTab.dataset.status;
+
+            // Update hidden input
+            hiddenInput.value = status;
+
+            // Toggle class pada setiap tab
+            tabs.forEach(function(tab) {
+                if (tab === activeTab) {
+                    tab.classList.add('is-active');
+                } else {
+                    tab.classList.remove('is-active');
+                }
+            });
+
+            // Update hint
+            if (hintText && hintMessages[status]) {
+                hintText.textContent = hintMessages[status];
+            }
+        }
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            activateTab(this);
+        });
+    });
+});
+</script>
+@endpush
 
 @endsection

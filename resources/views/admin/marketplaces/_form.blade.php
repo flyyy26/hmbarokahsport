@@ -118,13 +118,13 @@
 
             @php
                 $marketplaceIcons = [
-                    ['name' => 'Shopee',     'icon' => 'arcticons:shopee'],
+                    ['name' => 'Shopee',     'icon' => 'simple-icons:shopee'],
                     ['name' => 'Tokopedia',  'icon' => 'arcticons:tokopedia'],
-                    ['name' => 'TikTok Shop','icon' => 'ic:sharp-tiktok'],
+                    ['name' => 'TikTok Shop','icon' => 'akar-icons:tiktok-fill'],
                     ['name' => 'Lazada',     'icon' => 'arcticons:lazada'],
                     ['name' => 'Blibli',     'icon' => 'simple-icons:blibli'],
                     ['name' => 'Bukalapak',  'icon' => 'arcticons:bukalapak'],
-                    ['name' => 'Facebook',   'icon' => 'uit:facebook-f'],
+                    ['name' => 'Facebook',   'icon' => 'akar-icons:facebook-fill'],
                     ['name' => 'Instagram',  'icon' => 'griddy-icons:instagram'],
                     ['name' => 'WhatsApp',   'icon' => 'uil:whatsapp'],
                 ];

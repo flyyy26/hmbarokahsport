@@ -27,7 +27,7 @@
     {{-- ============================================ --}}
     {{-- STATUS SUMMARY CARDS --}}
     {{-- ============================================ --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-8">
 
         @php
             $statusCards = [
@@ -37,6 +37,7 @@
                 ['key' => 'shipped',    'label' => 'Dikirim',     'color' => '#a78bfa'],
                 ['key' => 'delivered',  'label' => 'Selesai',     'color' => '#34d399'],
                 ['key' => 'cancelled',  'label' => 'Dibatalkan',  'color' => '#f87171'],
+                ['key' => 'cancellation_requested', 'label' => 'Minta Batal', 'color' => '#f97316'],
                 ['key' => 'unpaid',     'label' => 'Belum Bayar', 'color' => '#fb923c'],
             ];
         @endphp
@@ -80,25 +81,52 @@
                     ['value' => 'shipped',       'label' => 'Dikirim'],
                     ['value' => 'delivered',     'label' => 'Selesai'],
                     ['value' => 'cancelled',     'label' => 'Dibatalkan'],
+                    ['value' => 'cancellation_requested', 'label' => 'Permintaan Pembatalan', 'highlight' => true],
                 ];
             @endphp
 
             @foreach($filters as $filter)
                 @php
-                    $isActive = request('shipping_status') == $filter['value'] || ($filter['value'] === null && !request('shipping_status'));
-                    $url = $filter['value'] ? route('admin.orders.index', ['shipping_status' => $filter['value']]) : route('admin.orders.index');
+                    $isActive = request('shipping_status') == $filter['value']
+                            || ($filter['value'] === null && !request('shipping_status'));
+                    $url = $filter['value']
+                        ? route('admin.orders.index', ['shipping_status' => $filter['value']])
+                        : route('admin.orders.index');
+                    $isHighlight = $filter['highlight'] ?? false;
+                    $hasPending = $isHighlight && ($statusCounts['cancellation_requested'] ?? 0) > 0;
                 @endphp
 
                 <a href="{{ $url }}"
-                   class="px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all"
-                   @if($isActive)
-                        style="background: #ecbc42; color: #422006; border-color: #ecbc42;"
-                   @else
+                class="relative px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all"
+                @if($isActive)
+                        style="background: {{ $isHighlight ? '#f97316' : '#ecbc42' }};
+                            color: {{ $isHighlight ? '#ffffff' : '#422006' }};
+                            border-color: {{ $isHighlight ? '#f97316' : '#ecbc42' }};"
+                @elseif($isHighlight)
+                        style="background: rgba(249,115,22,0.1);
+                            color: #f97316;
+                            border-color: rgba(249,115,22,0.3);"
+                        onmouseover="this.style.background='rgba(249,115,22,0.2)'; this.style.borderColor='#f97316'"
+                        onmouseout="this.style.background='rgba(249,115,22,0.1)'; this.style.borderColor='rgba(249,115,22,0.3)'"
+                @else
                         style="background: var(--bg-input); color: var(--text-4); border-color: var(--border-2);"
                         onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
                         onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-4)'"
-                   @endif>
+                @endif>
+
                     {{ $filter['label'] }}
+
+                    {{-- 🔥 Counter bubble untuk permintaan pembatalan --}}
+                    @if($hasPending)
+                        <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1
+                                    inline-flex items-center justify-center
+                                    text-[9px] font-bold rounded-full
+                                    bg-red-500 text-white
+                                    shadow-md shadow-red-500/50
+                                    animate-pulse">
+                            {{ $statusCounts['cancellation_requested'] }}
+                        </span>
+                    @endif
                 </a>
             @endforeach
         </div>
@@ -272,22 +300,36 @@
 
                             {{-- Status --}}
                             <td class="px-4 py-3.5">
-                                @php
-                                    $shippingMap = [
-                                        'pending'    => ['text' => '#fbbf24', 'dot' => '#f59e0b'],
-                                        'processing' => ['text' => '#60a5fa', 'dot' => '#3b82f6'],
-                                        'shipped'    => ['text' => '#a78bfa', 'dot' => '#8b5cf6'],
-                                        'delivered'  => ['text' => '#34d399', 'dot' => '#10b981'],
-                                        'cancelled'  => ['text' => '#f87171', 'dot' => '#ef4444'],
-                                    ];
-                                    $sc = $shippingMap[$order->shipping_status] ?? ['text' => 'var(--text-4)', 'dot' => 'var(--text-5)'];
-                                @endphp
+                                <div class="flex flex-col gap-1.5">
 
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                      style="background: {{ $sc['text'] }}15; border-color: {{ $sc['text'] }}40; color: {{ $sc['text'] }};">
-                                    <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sc['dot'] }};"></span>
-                                    {{ $order->shipping_status_label }}
-                                </span>
+                                    {{-- 🔥 Badge Permintaan Pembatalan (PRIORITAS) --}}
+                                    @if($order->cancellation_status === 'pending')
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border
+                                                    w-fit animate-pulse"
+                                            style="background: rgba(249,115,22,0.15); border-color: rgba(249,115,22,0.4); color: #f97316;">
+                                            <iconify-icon icon="mdi:clock-alert-outline" class="text-sm"></iconify-icon>
+                                            Minta Pembatalan
+                                        </span>
+                                    @endif
+
+                                    {{-- Shipping Status Badge --}}
+                                    @php
+                                        $shippingMap = [
+                                            'pending'    => ['text' => '#fbbf24', 'dot' => '#f59e0b'],
+                                            'processing' => ['text' => '#60a5fa', 'dot' => '#3b82f6'],
+                                            'shipped'    => ['text' => '#a78bfa', 'dot' => '#8b5cf6'],
+                                            'delivered'  => ['text' => '#34d399', 'dot' => '#10b981'],
+                                            'cancelled'  => ['text' => '#f87171', 'dot' => '#ef4444'],
+                                        ];
+                                        $sc = $shippingMap[$order->shipping_status] ?? ['text' => 'var(--text-4)', 'dot' => 'var(--text-5)'];
+                                    @endphp
+
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border w-fit"
+                                        style="background: {{ $sc['text'] }}15; border-color: {{ $sc['text'] }}40; color: {{ $sc['text'] }};">
+                                        <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sc['dot'] }};"></span>
+                                        {{ $order->shipping_status_label }}
+                                    </span>
+                                </div>
                             </td>
 
                             {{-- Payment --}}
@@ -320,14 +362,51 @@
 
                             {{-- Aksi --}}
                             <td class="px-4 py-3.5 text-right">
-                                <a href="{{ route('admin.orders.show', $order) }}"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                          text-xs font-semibold border transition-all active:scale-95"
-                                   style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
-                                   onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
-                                   onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'">
-                                    Detail
-                                </a>
+                                <div class="flex items-center justify-end gap-1.5">
+
+                                    {{-- 🔥 Tombol Cepat Approve/Reject Pembatalan --}}
+                                    @if($order->cancellation_status === 'pending')
+                                        <form action="{{ route('admin.orders.approve-cancellation', $order) }}"
+                                            method="POST"
+                                            class="inline"
+                                            onsubmit="return confirm('Setujui pembatalan pesanan #{{ $order->order_number }}?')">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                                        text-xs font-semibold border transition-all active:scale-95
+                                                        bg-emerald-500/5 border-emerald-500/20 text-emerald-400
+                                                        hover:bg-emerald-500/15 hover:border-emerald-500/40"
+                                                    title="Setujui Pembatalan">
+                                                <iconify-icon icon="mdi:check"></iconify-icon>
+                                            </button>
+                                        </form>
+
+                                        <form action="{{ route('admin.orders.reject-cancellation', $order) }}"
+                                            method="POST"
+                                            class="inline"
+                                            onsubmit="return confirm('Tolak permintaan pembatalan?')">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                                        text-xs font-semibold border transition-all active:scale-95
+                                                        bg-red-500/5 border-red-500/20 text-red-400
+                                                        hover:bg-red-500/15 hover:border-red-500/40"
+                                                    title="Tolak Pembatalan">
+                                                <iconify-icon icon="mdi:close"></iconify-icon>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    {{-- Tombol Detail --}}
+                                    <a href="{{ route('admin.orders.show', $order) }}"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                            text-xs font-semibold border transition-all active:scale-95"
+                                    style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
+                                    onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
+                                    onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'">
+                                        Detail
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty
