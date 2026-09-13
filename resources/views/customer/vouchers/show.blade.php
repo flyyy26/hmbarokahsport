@@ -1073,10 +1073,23 @@
                         Maks. Potongan
                     </div>
                     <div class="vd-info-value">
-                        @if($voucher->max_discount_amount)
-                            Rp {{ number_format($voucher->max_discount_amount, 0, ',', '.') }}
+                        @if($voucher->is_free_shipping)
+                            {{-- Gratis ongkir = potong semua ongkir --}}
+                            <span class="muted">Sesuai ongkir</span>
+                        @elseif($voucher->discount_target === 'shipping')
+                            {{-- Voucher ongkir → pakai max_shipping_discount --}}
+                            @if($voucher->max_shipping_discount)
+                                Rp {{ number_format($voucher->max_shipping_discount, 0, ',', '.') }}
+                            @else
+                                <span class="muted">Tanpa batas</span>
+                            @endif
                         @else
-                            <span class="muted">Tanpa batas</span>
+                            {{-- Voucher produk → pakai max_discount_amount --}}
+                            @if($voucher->max_discount_amount)
+                                Rp {{ number_format($voucher->max_discount_amount, 0, ',', '.') }}
+                            @else
+                                <span class="muted">Tanpa batas</span>
+                            @endif
                         @endif
                     </div>
                 </div>

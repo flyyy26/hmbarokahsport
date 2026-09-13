@@ -167,7 +167,7 @@
                                     <span class="text-xs font-bold" style="color: var(--text-1)">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                                 </td>
                                 <td class="px-4 py-2 text-right">
-                                    <span class="text-xs" style="color: var(--text-4)">Rp {{ number_format($order->shipping_cost ?? 0, 0, ',', '.') }}</span>
+                                    <span class="text-xs" style="color: var(--text-4)">Rp {{ number_format($order->original_shipping_cost ?? 0, 0, ',', '.') }}</span>
                                 </td>
                                 <td class="px-4 py-2 text-center">
                                     <a href="{{ route('admin.orders.show', $order) }}"
@@ -234,13 +234,20 @@
                                 <td class="px-4 py-2 text-right">
                                     <span class="text-xs font-bold" style="color: var(--text-1)">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                                 </td>
-                                <td class="px-4 py-2 text-center">
-                                    <a href="{{ route('admin.orders.offline.receipt', $order) }}" target="_blank"
-                                       class="text-[10px] px-2 py-1 rounded"
-                                       style="background: var(--bg-elevated); color: var(--text-3)">
-                                        Nota
-                                    </a>
-                                </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <div class="flex gap-1">
+                                            <a href="{{ route('admin.orders.offline.receipt', $order) }}" target="_blank"
+                                               class="text-[10px] px-2 py-1 rounded"
+                                               style="background: var(--bg-elevated); color: var(--text-3)">
+                                                Nota
+                                            </a>
+                                            <a href="{{ route('admin.orders.offline.faktur', $order) }}" target="_blank"
+                                               class="text-[10px] px-2 py-1 rounded"
+                                               style="background: var(--bg-elevated); color: var(--text-3)">
+                                                Faktur
+                                            </a>
+                                        </div>
+                                    </td>
                             </tr>
                         @empty
                             <tr>

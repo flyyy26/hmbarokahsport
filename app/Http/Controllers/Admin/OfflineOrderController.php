@@ -71,7 +71,9 @@ class OfflineOrderController extends Controller
             'transaction_discount_type' => 'nullable|in:nominal,percentage',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        $printType = $request->input('print_type', 'nota');
+
+        return DB::transaction(function () use ($validated, $printType) {
             $now = now();
             $orderNumber = 'OFF-' . strtoupper(Str::random(6)) . '-' . $now->format('YmdHis');
 
@@ -119,6 +121,7 @@ class OfflineOrderController extends Controller
                 'shipping_postal_code' => '0',
                 'subtotal' => $subtotal,
                 'shipping_cost' => 0,
+                'original_shipping_cost' => 0,
                 'transaction_discount' => $transactionDiscount,
                 'transaction_discount_type' => $transactionDiscountType,
                 'discount' => $totalDiscount,
@@ -170,6 +173,10 @@ class OfflineOrderController extends Controller
                 ]);
             }
 
+            if ($printType === 'faktur') {
+                return redirect()->route('admin.orders.offline.faktur', $order);
+            }
+
             return redirect()->route('admin.orders.offline.receipt', $order);
         });
     }
@@ -180,8 +187,19 @@ class OfflineOrderController extends Controller
         $setting = Setting::first();
 
         $pdf = Pdf::loadView('admin.orders.receipt', compact('order', 'setting'));
-        $pdf->setPaper('a4', 'portrait');
+        $pdf->setPaper('a6', 'portrait');
 
         return $pdf->stream('nota-' . $order->order_number . '.pdf');
+    }
+
+    public function printFaktur(OfflineOrder $order)
+    {
+        $order->load(['items', 'items.variant']);
+        $setting = Setting::first();
+
+        $pdf = Pdf::loadView('admin.orders.faktur', compact('order', 'setting'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream('faktur-' . $order->order_number . '.pdf');
     }
 }

@@ -28,6 +28,7 @@ class OfflineOrder extends Model
         'shipping_postal_code',
         'subtotal',
         'shipping_cost',
+        'original_shipping_cost',
         'transaction_discount',
         'transaction_discount_type',
         'discount',
@@ -59,6 +60,7 @@ class OfflineOrder extends Model
     protected $casts = [
         'subtotal' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
+        'original_shipping_cost' => 'decimal:2',
         'transaction_discount' => 'decimal:2',
         'discount' => 'decimal:2',
         'total' => 'decimal:2',

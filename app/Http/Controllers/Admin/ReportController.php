@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     /**
-     * 🔥 HELPER: Filter hanya order selesai & tidak retur
+     * 🔥 HELPER: Filter hanya order selesai & tidak retur (untuk revenue)
      */
     private function applyCompletedFilter($query)
     {
@@ -28,6 +28,14 @@ class ReportController extends Controller
                 $q->whereNull('return_status')
                   ->orWhere('return_status', 'rejected');
             });
+    }
+
+    /**
+     * 🔥 HELPER: Filter hanya order selesai (untuk ongkir — TANPA cek retur)
+     */
+    private function applyDeliveredFilterOnly($query)
+    {
+        return $query->where('shipping_status', 'delivered');
     }
 
     private function parseMonth(Request $request)
@@ -44,6 +52,58 @@ class ReportController extends Controller
         return [$monthStart, $monthEnd, $monthParam];
     }
 
+     /**
+      * 🔥 HELPER: Hitung Total Penjualan (orders.total = subtotal - voucher + ongkir)
+      * HANYA order yang TIDAK retur — sudah termasuk ongkir, sudah termasuk diskon voucher
+      */
+     private function getOnlineProductRevenue($start, $end): float
+     {
+         return (float) Order::query()
+             ->whereBetween('created_at', [$start, $end])
+             ->where('payment_status', 'paid')
+             ->where('shipping_status', 'delivered')
+             ->where(function ($q) {
+                 $q->whereNull('return_status')
+                   ->orWhere('return_status', 'rejected');
+             })
+             ->sum('total');
+     }
+
+     private function getOfflineProductRevenue($start, $end): float
+     {
+         return (float) OfflineOrder::query()
+             ->whereBetween('created_at', [$start, $end])
+             ->where('payment_status', 'paid')
+             ->where('shipping_status', 'delivered')
+             ->where(function ($q) {
+                 $q->whereNull('return_status')
+                   ->orWhere('return_status', 'rejected');
+             })
+             ->sum('total');
+     }
+
+    /**
+     * 🔥 HELPER: Hitung Total Ongkir (SEMUA order delivered, TERMASUK yang retur)
+     * Karena ongkir sudah dibayar customer, tidak bisa ditarik lagi walaupun retur
+     */
+    private function getOnlineShippingCost($start, $end): float
+    {
+        return (float) Order::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('shipping_status', 'delivered')
+            ->whereNotNull('original_shipping_cost')
+            ->sum('original_shipping_cost');
+    }
+
+    private function getOfflineShippingCost($start, $end): float
+    {
+        return (float) OfflineOrder::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('shipping_status', 'delivered')
+            ->whereNotNull('original_shipping_cost')
+            ->sum('original_shipping_cost');
+    }
+
     // ============================================
     // INDEX — LAPORAN RINGKASAN
     // ============================================
@@ -52,8 +112,9 @@ class ReportController extends Controller
         [$start, $end, $monthParam] = $this->parseMonth($request);
 
         // ============================================
-        // 🔥 RINGKASAN UMUM — HANYA ORDER SELESAI
+        // 🔥 RINGKASAN UMUM
         // ============================================
+        // Untuk order COUNT — pakai filter completed (tidak retur)
         $onlineOrdersQuery = Order::whereBetween('created_at', [$start, $end]);
         $this->applyCompletedFilter($onlineOrdersQuery);
         $onlineOrders = $onlineOrdersQuery->get();
@@ -62,9 +123,10 @@ class ReportController extends Controller
         $this->applyCompletedFilter($offlineOrdersQuery);
         $offlineOrders = $offlineOrdersQuery->get();
 
-        $onlineRevenue   = (float) $onlineOrders->where('payment_status', 'paid')->sum('total');
-        $offlineRevenue  = (float) $offlineOrders->where('payment_status', 'paid')->sum('total');
-        $totalRevenue    = $onlineRevenue + $offlineRevenue;
+        // 🔥 REVENUE = TOTAL TRANSAKSI customer (subtotal - voucher + ongkir, tidak retur)
+        $onlineRevenue  = $this->getOnlineProductRevenue($start, $end);
+        $offlineRevenue = $this->getOfflineProductRevenue($start, $end);
+        $totalRevenue   = $onlineRevenue + $offlineRevenue;
 
         $onlineOrderCount  = $onlineOrders->count();
         $offlineOrderCount = $offlineOrders->count();
@@ -74,56 +136,60 @@ class ReportController extends Controller
             ? round($totalRevenue / $totalOrderCount)
             : 0;
 
-        // Ongkir (shipping cost) total
-        $totalShippingOnline  = (float) $onlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $totalShippingOffline = (float) $offlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
+        // 🔥 ONGKIR = SEMUA order delivered (TERMASUK yang retur)
+        // Karena ongkir sudah dibayar customer, tidak bisa ditarik
+        $totalShippingOnline  = $this->getOnlineShippingCost($start, $end);
+        $totalShippingOffline = $this->getOfflineShippingCost($start, $end);
         $totalShippingCost    = $totalShippingOnline + $totalShippingOffline;
 
-        // Biaya ongkir Biteship (order online yang memiliki biteship_order_id)
+        // 🔥 Total Transaksi = totalRevenue (sudah termasuk ongkir + diskon voucher)
+        $totalTransaction = $totalRevenue;
+
+        // Biaya ongkir Biteship
         $biteshipShippingCost = (float) Order::whereBetween('created_at', [$start, $end])
             ->whereNotNull('biteship_order_id')
             ->where('biteship_order_id', '!=', '')
             ->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')
-            ->sum('shipping_cost');
+            ->whereNotNull('original_shipping_cost')
+            ->sum('original_shipping_cost');
         $biteshipOrderCount = Order::whereBetween('created_at', [$start, $end])
             ->whereNotNull('biteship_order_id')
             ->where('biteship_order_id', '!=', '')
             ->count();
         $biteshipAvgCost = $biteshipOrderCount > 0 ? round($biteshipShippingCost / $biteshipOrderCount) : 0;
 
-        // Total stok barang
         $totalStockValue = (float) ProductVariant::sum(DB::raw('stock * price'));
-
-        // Total customer
         $totalCustomers = User::where('role', 'customer')->count();
 
-        // 🔥 Biaya API Biteship (Rp 5 per hit)
         $biteshipApiUsageCount = BiteshipApiUsage::whereBetween('created_at', [$start, $end])->count();
         $biteshipApiCost       = $biteshipApiUsageCount * BiteshipApiUsage::COST_PER_HIT;
         $biteshipApiCostPerHit = BiteshipApiUsage::COST_PER_HIT;
 
         // ============================================
-        // 🔥 PENJUALAN PER HARI — HANYA ORDER SELESAI
+        // 🔥 PENJUALAN PER HARI — TOTAL TRANSAKSI (termasuk ongkir, net diskon)
         // ============================================
-        $dailyOnlineQuery = Order::whereBetween('created_at', [$start, $end])
-            ->where('payment_status', 'paid');
-        $this->applyCompletedFilter($dailyOnlineQuery);
-
-        $dailyOnline = $dailyOnlineQuery
+        $dailyOnline = Order::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
             ->groupBy('date')
             ->orderBy('date')
             ->get()
             ->keyBy('date');
 
-        $dailyOfflineQuery = OfflineOrder::whereBetween('created_at', [$start, $end])
-            ->where('payment_status', 'paid');
-        $this->applyCompletedFilter($dailyOfflineQuery);
-
-        $dailyOffline = $dailyOfflineQuery
+        $dailyOffline = OfflineOrder::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
             ->groupBy('date')
             ->orderBy('date')
@@ -150,7 +216,7 @@ class ReportController extends Controller
         }
 
         // ============================================
-        // STATUS ORDER (semua status — untuk info)
+        // STATUS ORDER
         // ============================================
         $orderStatusData = Order::whereBetween('created_at', [$start, $end])
             ->selectRaw('shipping_status, COUNT(*) as count, SUM(total) as total')
@@ -163,30 +229,38 @@ class ReportController extends Controller
             ->get();
 
         // ============================================
-        // METODE PEMBAYARAN — HANYA ORDER SELESAI
+        // METODE PEMBAYARAN — PRODUK NET SETELAH DISKON VOUCHER (tidak retur)
         // ============================================
-        $paymentQuery = Order::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('payment_method');
-        $this->applyCompletedFilter($paymentQuery);
-
-        $paymentMethods = $paymentQuery
+        $paymentMethods = Order::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereNotNull('payment_method')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                  ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('payment_method, COUNT(*) as count, SUM(total) as total')
             ->groupBy('payment_method')
             ->get();
 
-        $offlinePaymentQuery = OfflineOrder::whereBetween('created_at', [$start, $end])
-            ->whereNotNull('payment_method');
-        $this->applyCompletedFilter($offlinePaymentQuery);
-
-        $offlinePaymentMethods = $offlinePaymentQuery
+        $offlinePaymentMethods = OfflineOrder::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereNotNull('payment_method')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                  ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('payment_method, COUNT(*) as count, SUM(total) as total')
             ->groupBy('payment_method')
             ->get();
 
         // ============================================
-        // 🔥 PRODUK TERLARIS — HANYA ORDER SELESAI
+        // PRODUK TERLARIS — PRODUK NET SETELAH DISKON (tidak retur)
         // ============================================
-        $topProductsOnlineQuery = OrderItem::query()
+        $topProductsOnline = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereBetween('orders.created_at', [$start, $end])
             ->where('orders.payment_status', 'paid')
@@ -194,16 +268,14 @@ class ReportController extends Controller
             ->where(function ($q) {
                 $q->whereNull('orders.return_status')
                   ->orWhere('orders.return_status', 'rejected');
-            });
-
-        $topProductsOnline = $topProductsOnlineQuery
-            ->selectRaw('order_items.product_name, order_items.variant_name as variant, SUM(order_items.quantity) as sold, SUM(order_items.subtotal) as revenue')
+            })
+            ->selectRaw('order_items.product_name, order_items.variant_name as variant, SUM(order_items.quantity) as sold, SUM(order_items.subtotal - (orders.discount * order_items.subtotal / NULLIF(orders.subtotal, 0))) as revenue')
             ->groupBy('order_items.product_name', 'order_items.variant_name')
             ->orderByDesc('revenue')
             ->limit(10)
             ->get();
 
-        $topProductsOfflineQuery = OfflineOrderItem::query()
+        $topProductsOffline = OfflineOrderItem::query()
             ->join('offline_orders', 'offline_orders.id', '=', 'offline_order_items.offline_order_id')
             ->whereBetween('offline_orders.created_at', [$start, $end])
             ->where('offline_orders.payment_status', 'paid')
@@ -211,10 +283,8 @@ class ReportController extends Controller
             ->where(function ($q) {
                 $q->whereNull('offline_orders.return_status')
                   ->orWhere('offline_orders.return_status', 'rejected');
-            });
-
-        $topProductsOffline = $topProductsOfflineQuery
-            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal) as revenue')
+            })
+            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal - (offline_orders.discount * offline_order_items.subtotal / NULLIF(offline_orders.subtotal, 0))) as revenue')
             ->groupBy('offline_order_items.product_name', 'offline_order_items.variant_name')
             ->orderByDesc('revenue')
             ->limit(10)
@@ -241,6 +311,7 @@ class ReportController extends Controller
             'onlineRevenue',
             'offlineRevenue',
             'totalRevenue',
+            'totalTransaction',
             'onlineOrderCount',
             'offlineOrderCount',
             'totalOrderCount',
@@ -275,29 +346,26 @@ class ReportController extends Controller
 
         $type = $request->input('type', 'all');
 
-        // ============================================
-        // 🔥 HANYA ORDER SELESAI & TIDAK RETUR
-        // ============================================
+        // 🔥 Untuk listing — pakai filter completed
         $onlineQuery = Order::whereBetween('created_at', [$start, $end]);
         $this->applyCompletedFilter($onlineQuery);
-        $onlineOrders = $onlineQuery->orderBy('created_at', 'desc')->get();
+        $onlineOrders = $onlineQuery->with('items')->orderBy('created_at', 'desc')->get();
 
         $offlineQuery = OfflineOrder::whereBetween('created_at', [$start, $end]);
         $this->applyCompletedFilter($offlineQuery);
-        $offlineOrders = $offlineQuery->orderBy('created_at', 'desc')->get();
+        $offlineOrders = $offlineQuery->with('items')->orderBy('created_at', 'desc')->get();
 
-        // ============================================
-        // Summary totals
-        // ============================================
-        $onlineTotal       = (float) $onlineOrders->where('payment_status', 'paid')->sum('total');
-        $offlineTotal      = (float) $offlineOrders->where('payment_status', 'paid')->sum('total');
-        $totalRevenue      = $onlineTotal + $offlineTotal;
+        // 🔥 Summary totals — PRODUK NET SETELAH DISKON VOUCHER
+        $onlineTotal  = $this->getOnlineProductRevenue($start, $end);
+        $offlineTotal = $this->getOfflineProductRevenue($start, $end);
+        $totalRevenue = $onlineTotal + $offlineTotal;
 
-        $onlineShipping    = (float) $onlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $offlineShipping   = (float) $offlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
+        // 🔥 ONGKIR = SEMUA order delivered (TERMASUK retur)
+        $onlineShipping    = $this->getOnlineShippingCost($start, $end);
+        $offlineShipping   = $this->getOfflineShippingCost($start, $end);
         $totalShippingCost = $onlineShipping + $offlineShipping;
+
+        $totalTransaction  = $totalRevenue;
 
         $totalOrderCount   = $onlineOrders->count() + $offlineOrders->count();
         $totalCustomers    = User::where('role', 'customer')
@@ -305,7 +373,7 @@ class ReportController extends Controller
             ->count();
         $totalStockValue   = (float) ProductVariant::sum(DB::raw('stock * price'));
 
-        // 🔥 TOTAL RETUR (semua yang pernah retur)
+        // 🔥 TOTAL RETUR
         $returnCount = Order::whereBetween('created_at', [$start, $end])
             ->whereIn('return_status', ['pending', 'approved', 'completed'])
             ->count();
@@ -321,7 +389,6 @@ class ReportController extends Controller
             ->where('shipping_status', 'cancelled')
             ->count();
 
-        // 🔥 BIAYA API BITESHIP
         $biteshipApiUsageCount = BiteshipApiUsage::whereBetween('created_at', [$start, $end])->count();
         $biteshipApiCost       = $biteshipApiUsageCount * BiteshipApiUsage::COST_PER_HIT;
         $biteshipApiCostPerHit = BiteshipApiUsage::COST_PER_HIT;
@@ -336,6 +403,7 @@ class ReportController extends Controller
             'onlineTotal',
             'offlineTotal',
             'totalRevenue',
+            'totalTransaction',
             'totalShippingCost',
             'totalOrderCount',
             'totalCustomers',
@@ -355,16 +423,11 @@ class ReportController extends Controller
     {
         [$start, $end, $monthParam] = $this->parseMonth($request);
 
-        // ============================================
-        // 1. AMBIL SEMUA PRODUK DENGAN VARIANNYA
-        // ============================================
         $allProducts = Product::with(['variants', 'category'])
             ->orderBy('name')
             ->get();
 
-        // ============================================
-        // 2. HITUNG PENJUALAN DARI ORDER ONLINE (SELESAI & TIDAK RETUR)
-        // ============================================
+        // 🔥 Penjualan online — NET SETELAH DISKON VOUCHER (tidak retur)
         $productSalesOnline = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereBetween('orders.created_at', [$start, $end])
@@ -374,13 +437,11 @@ class ReportController extends Controller
                 $q->whereNull('orders.return_status')
                 ->orWhere('orders.return_status', 'rejected');
             })
-            ->selectRaw('order_items.product_name, order_items.variant_name as variant, order_items.sku, SUM(order_items.quantity) as sold, SUM(order_items.subtotal) as revenue')
+            ->selectRaw('order_items.product_name, order_items.variant_name as variant, order_items.sku, SUM(order_items.quantity) as sold, SUM(order_items.subtotal - (orders.discount * order_items.subtotal / NULLIF(orders.subtotal, 0))) as revenue')
             ->groupBy('order_items.product_name', 'order_items.variant_name', 'order_items.sku')
             ->get();
 
-        // ============================================
-        // 3. HITUNG PENJUALAN DARI ORDER OFFLINE (SELESAI & TIDAK RETUR)
-        // ============================================
+        // 🔥 Penjualan offline — NET SETELAH DISKON VOUCHER (tidak retur)
         $productSalesOffline = OfflineOrderItem::query()
             ->join('offline_orders', 'offline_orders.id', '=', 'offline_order_items.offline_order_id')
             ->whereBetween('offline_orders.created_at', [$start, $end])
@@ -390,13 +451,10 @@ class ReportController extends Controller
                 $q->whereNull('offline_orders.return_status')
                 ->orWhere('offline_orders.return_status', 'rejected');
             })
-            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, offline_order_items.sku, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal) as revenue')
+            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, offline_order_items.sku, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal - (offline_orders.discount * offline_order_items.subtotal / NULLIF(offline_orders.subtotal, 0))) as revenue')
             ->groupBy('offline_order_items.product_name', 'offline_order_items.variant_name', 'offline_order_items.sku')
             ->get();
 
-        // ============================================
-        // 4. GABUNGKAN DATA PENJUALAN (ONLINE + OFFLINE)
-        // ============================================
         $salesData = $productSalesOnline->concat($productSalesOffline)
             ->groupBy(fn($item) => ($item->product_name ?? '') . '|' . ($item->variant ?? '') . '|' . ($item->sku ?? ''))
             ->map(function ($group) {
@@ -409,9 +467,6 @@ class ReportController extends Controller
                 ];
             });
 
-        // ============================================
-        // 5. BUAT MAP UNTUK LOOKUP CEPAT BERDASARKAN NAMA PRODUK
-        // ============================================
         $salesByProductName = [];
         foreach ($salesData as $key => $data) {
             $productName = $data['product_name'];
@@ -427,19 +482,10 @@ class ReportController extends Controller
             $salesByProductName[$productName]['variants'][] = $data;
         }
 
-        // ============================================
-        // 6. GABUNGKAN SEMUA PRODUK DENGAN DATA PENJUALAN
-        // ============================================
         $combined = $allProducts->map(function ($product) use ($salesByProductName) {
             $sales = $salesByProductName[$product->name] ?? null;
-
-            // Hitung total stok
             $totalStock = $product->variants->sum('stock');
-
-            // Ambil harga range
             $priceRange = $product->price_range;
-
-            // Tentukan SKU (dari varian pertama atau '-')
             $firstVariant = $product->variants->first();
             $sku = $firstVariant ? $firstVariant->sku : '-';
 
@@ -460,39 +506,40 @@ class ReportController extends Controller
         ->sortByDesc('revenue')
         ->values();
 
-        // ============================================
-        // 7. SUMMARY METRICS
-        // ============================================
         $totalProductsSold = $combined->sum('sold');
-        $totalRevenue = $combined->sum('revenue');
-        $totalUniqueProducts = $combined->count(); // Semua produk unik
+        $totalRevenue = $this->getOnlineProductRevenue($start, $end) + $this->getOfflineProductRevenue($start, $end);
+        $totalUniqueProducts = $combined->count();
         $totalProductsWithSales = $combined->where('has_sales', true)->count();
         $totalProductsWithoutSales = $combined->where('has_sales', false)->count();
 
-        // Total stok semua produk
         $totalStockValue = (float) ProductVariant::sum(DB::raw('stock * price'));
         $totalStockQuantity = (int) ProductVariant::sum('stock');
 
-        // Ongkir — hanya order selesai
-        $totalShippingCost = (float) Order::whereBetween('created_at', [$start, $end])
-            ->where('shipping_status', 'delivered')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $totalShippingCost += (float) OfflineOrder::whereBetween('created_at', [$start, $end])
-            ->where('shipping_status', 'delivered')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
+        // 🔥 ONGKIR — SEMUA order delivered (termasuk retur)
+        $totalShippingCost = $this->getOnlineShippingCost($start, $end)
+            + $this->getOfflineShippingCost($start, $end);
 
-        // Total order — hanya selesai
+        $totalTransaction = $totalRevenue;
+
+        // Total order — hanya delivered & tidak retur
         $totalOrderCount = Order::whereBetween('created_at', [$start, $end])
             ->where('shipping_status', 'delivered')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                  ->orWhere('return_status', 'rejected');
+            })
             ->count()
             + OfflineOrder::whereBetween('created_at', [$start, $end])
             ->where('shipping_status', 'delivered')
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                  ->orWhere('return_status', 'rejected');
+            })
             ->count();
 
         $totalCustomers = User::where('role', 'customer')
             ->whereBetween('created_at', [$start, $end])->count();
 
-        // Biaya API Biteship
         $biteshipApiUsageCount = BiteshipApiUsage::whereBetween('created_at', [$start, $end])->count();
         $biteshipApiCost = $biteshipApiUsageCount * BiteshipApiUsage::COST_PER_HIT;
         $biteshipApiCostPerHit = BiteshipApiUsage::COST_PER_HIT;
@@ -504,6 +551,7 @@ class ReportController extends Controller
             'monthParam',
             'totalProductsSold',
             'totalRevenue',
+            'totalTransaction',
             'totalUniqueProducts',
             'totalProductsWithSales',
             'totalProductsWithoutSales',
@@ -525,7 +573,6 @@ class ReportController extends Controller
     {
         [$start, $end, $monthParam] = $this->parseMonth($request);
 
-        // 🔥 Customer dengan pesanan selesai
         $customerStats = User::where('role', 'customer')
             ->whereBetween('created_at', [$start, $end])
             ->withCount([
@@ -553,7 +600,6 @@ class ReportController extends Controller
 
         $totalCustomers = $customerStats->total();
 
-        // 🔥 Total order selesai
         $totalOrderCount = Order::whereBetween('created_at', [$start, $end])
             ->where('shipping_status', 'delivered')
             ->where(function ($q) {
@@ -569,41 +615,25 @@ class ReportController extends Controller
             })
             ->count();
 
-        // 🔥 Total revenue — hanya selesai
-        $totalRevenue = Order::whereBetween('created_at', [$start, $end])
-            ->where('payment_status', 'paid')
-            ->where('shipping_status', 'delivered')
-            ->where(function ($q) {
-                $q->whereNull('return_status')
-                  ->orWhere('return_status', 'rejected');
-            })
-            ->sum('total')
-            + OfflineOrder::whereBetween('created_at', [$start, $end])
-            ->where('payment_status', 'paid')
-            ->where('shipping_status', 'delivered')
-            ->where(function ($q) {
-                $q->whereNull('return_status')
-                  ->orWhere('return_status', 'rejected');
-            })
-            ->sum('total');
+        // 🔥 Total revenue — PRODUK NET SETELAH DISKON VOUCHER (tidak retur)
+        $totalRevenue = $this->getOnlineProductRevenue($start, $end)
+            + $this->getOfflineProductRevenue($start, $end);
 
         $totalStockValue = (float) ProductVariant::sum(DB::raw('stock * price'));
 
-        // 🔥 Ongkir — hanya selesai
-        $totalShippingCost = (float) Order::whereBetween('created_at', [$start, $end])
-            ->where('shipping_status', 'delivered')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $totalShippingCost += (float) OfflineOrder::whereBetween('created_at', [$start, $end])
-            ->where('shipping_status', 'delivered')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
+        // 🔥 ONGKIR — semua order delivered (termasuk retur)
+        $totalShippingCost = $this->getOnlineShippingCost($start, $end)
+            + $this->getOfflineShippingCost($start, $end);
+
+        $totalTransaction = $totalRevenue;
 
         // Biaya ongkir Biteship
         $biteshipShippingCost = (float) Order::whereBetween('created_at', [$start, $end])
             ->whereNotNull('biteship_order_id')
             ->where('biteship_order_id', '!=', '')
             ->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')
-            ->sum('shipping_cost');
+            ->whereNotNull('original_shipping_cost')
+            ->sum('original_shipping_cost');
         $biteshipOrderCount = Order::whereBetween('created_at', [$start, $end])
             ->whereNotNull('biteship_order_id')
             ->where('biteship_order_id', '!=', '')
@@ -617,6 +647,7 @@ class ReportController extends Controller
             'totalCustomers',
             'totalOrderCount',
             'totalRevenue',
+            'totalTransaction',
             'totalStockValue',
             'totalShippingCost',
             'biteshipShippingCost',
@@ -661,7 +692,6 @@ class ReportController extends Controller
             return response()->streamDownload($callback, $filename . '.csv', $headers);
         }
 
-        // PDF export
         $data = $this->getReportData($start, $end, $reportType);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports.pdf.dashboard', $data);
         return $pdf->download($filename . '.pdf');
@@ -672,7 +702,6 @@ class ReportController extends Controller
     // ============================================
     private function exportOrdersCsv($file, $start, $end)
     {
-        // 🔥 Hanya order selesai & tidak retur
         $onlineOrdersQuery = Order::whereBetween('created_at', [$start, $end]);
         $this->applyCompletedFilter($onlineOrdersQuery);
         $onlineOrders = $onlineOrdersQuery->orderBy('created_at', 'desc')->get();
@@ -709,19 +738,20 @@ class ReportController extends Controller
             ]);
         }
 
-        $totalOnline = $onlineOrders->sum('total');
-        $totalOffline = $offlineOrders->sum('total');
-        $totalShippingOnline = $onlineOrders->where('shipping_status', '!=', 'cancelled')->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $totalShippingOffline = $offlineOrders->where('shipping_status', '!=', 'cancelled')->whereNotNull('shipping_cost')->sum('shipping_cost');
+        $totalOnline  = $this->getOnlineProductRevenue($start, $end);
+        $totalOffline = $this->getOfflineProductRevenue($start, $end);
+        $totalShippingOnline = $this->getOnlineShippingCost($start, $end);
+        $totalShippingOffline = $this->getOfflineShippingCost($start, $end);
 
         fputcsv($file, []);
         fputcsv($file, ['Total Order Online', $onlineOrders->count()]);
         fputcsv($file, ['Total Order Offline', $offlineOrders->count()]);
         fputcsv($file, ['Total Order', $onlineOrders->count() + $offlineOrders->count()]);
-        fputcsv($file, ['Total Penjualan Online', 'Rp ' . number_format($totalOnline, 0, ',', '.')]);
-        fputcsv($file, ['Total Penjualan Offline', 'Rp ' . number_format($totalOffline, 0, ',', '.')]);
-        fputcsv($file, ['Total Penjualan', 'Rp ' . number_format($totalOnline + $totalOffline, 0, ',', '.')]);
-        fputcsv($file, ['Total Ongkir', 'Rp ' . number_format($totalShippingOnline + $totalShippingOffline, 0, ',', '.')]);
+        fputcsv($file, ['Total Penjualan Online (termasuk ongkir)', 'Rp ' . number_format($totalOnline, 0, ',', '.')]);
+        fputcsv($file, ['Total Penjualan Offline (termasuk ongkir)', 'Rp ' . number_format($totalOffline, 0, ',', '.')]);
+        fputcsv($file, ['Total Penjualan (termasuk ongkir)', 'Rp ' . number_format($totalOnline + $totalOffline, 0, ',', '.')]);
+        fputcsv($file, ['Total Ongkir (asal, termasuk retur)', 'Rp ' . number_format($totalShippingOnline + $totalShippingOffline, 0, ',', '.')]);
+        fputcsv($file, ['Total Transaksi', 'Rp ' . number_format($totalOnline + $totalOffline, 0, ',', '.')]);
     }
 
     // ============================================
@@ -729,16 +759,10 @@ class ReportController extends Controller
     // ============================================
     private function exportProductsCsv($file, $start, $end)
     {
-        // ============================================
-        // 1. AMBIL SEMUA PRODUK
-        // ============================================
         $allProducts = Product::with(['variants', 'category'])
             ->orderBy('name')
             ->get();
 
-        // ============================================
-        // 2. HITUNG PENJUALAN ONLINE
-        // ============================================
         $productSalesOnline = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereBetween('orders.created_at', [$start, $end])
@@ -748,14 +772,11 @@ class ReportController extends Controller
                 $q->whereNull('orders.return_status')
                 ->orWhere('orders.return_status', 'rejected');
             })
-            ->selectRaw('order_items.product_name, SUM(order_items.quantity) as sold, SUM(order_items.subtotal) as revenue')
+            ->selectRaw('order_items.product_name, SUM(order_items.quantity) as sold, SUM(order_items.subtotal - (orders.discount * order_items.subtotal / NULLIF(orders.subtotal, 0))) as revenue')
             ->groupBy('order_items.product_name')
             ->get()
             ->keyBy('product_name');
 
-        // ============================================
-        // 3. HITUNG PENJUALAN OFFLINE
-        // ============================================
         $productSalesOffline = OfflineOrderItem::query()
             ->join('offline_orders', 'offline_orders.id', '=', 'offline_order_items.offline_order_id')
             ->whereBetween('offline_orders.created_at', [$start, $end])
@@ -765,14 +786,11 @@ class ReportController extends Controller
                 $q->whereNull('offline_orders.return_status')
                 ->orWhere('offline_orders.return_status', 'rejected');
             })
-            ->selectRaw('offline_order_items.product_name, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal) as revenue')
+            ->selectRaw('offline_order_items.product_name, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal - (offline_orders.discount * offline_order_items.subtotal / NULLIF(offline_orders.subtotal, 0))) as revenue')
             ->groupBy('offline_order_items.product_name')
             ->get()
             ->keyBy('product_name');
 
-        // ============================================
-        // 4. GABUNGKAN DATA PENJUALAN
-        // ============================================
         $salesMap = [];
         foreach ($productSalesOnline as $name => $data) {
             $salesMap[$name] = [
@@ -788,9 +806,6 @@ class ReportController extends Controller
             $salesMap[$name]['revenue'] += $data->revenue ?? 0;
         }
 
-        // ============================================
-        // 5. BUAT DATA EXPORT
-        // ============================================
         $exportData = $allProducts->map(function ($product) use ($salesMap) {
             $sales = $salesMap[$product->name] ?? null;
             $firstVariant = $product->variants->first();
@@ -806,9 +821,6 @@ class ReportController extends Controller
             ];
         })->sortByDesc('revenue')->values();
 
-        // ============================================
-        // 6. TULIS KE CSV
-        // ============================================
         fputcsv($file, ['Laporan Produk (Semua Produk)', 'Periode: ' . $start->format('d/m/Y') . ' - ' . $end->format('d/m/Y')]);
         fputcsv($file, []);
         fputcsv($file, ['No.', 'Produk', 'SKU', 'Kategori', 'Terjual', 'Pendapatan', 'Stok', 'Range Harga']);
@@ -832,11 +844,11 @@ class ReportController extends Controller
         fputcsv($file, ['Produk Terjual', $exportData->where('sold', '>', 0)->count()]);
         fputcsv($file, ['Produk Belum Terjual', $exportData->where('sold', '=', 0)->count()]);
         fputcsv($file, ['Total Terjual', $exportData->sum('sold')]);
-        fputcsv($file, ['Total Pendapatan', 'Rp ' . number_format($exportData->sum('revenue'), 0, ',', '.')]);
+        fputcsv($file, ['Total Pendapatan Produk', 'Rp ' . number_format($exportData->sum('revenue'), 0, ',', '.')]);
         fputcsv($file, ['Total Stok', $exportData->sum('stock')]);
     }
 
-        // ============================================
+    // ============================================
     // EXPORT CUSTOMERS CSV
     // ============================================
     private function exportCustomersCsv($file, $start, $end)
@@ -852,7 +864,6 @@ class ReportController extends Controller
 
         $no = 1;
         foreach ($customers as $customer) {
-            // 🔥 Hanya hitung order selesai & tidak retur
             $orderCount = $customer->orders()
                 ->whereBetween('created_at', [$start, $end])
                 ->where('shipping_status', 'delivered')
@@ -862,14 +873,14 @@ class ReportController extends Controller
                 })
                 ->count();
 
-            // 🔥 Hanya hitung revenue dari order selesai & tidak retur
-            $totalSpent = $customer->orders()
+            $totalSpent = Order::query()
+                ->where('user_id', $customer->id)
                 ->whereBetween('created_at', [$start, $end])
                 ->where('payment_status', 'paid')
                 ->where('shipping_status', 'delivered')
                 ->where(function ($q) {
                     $q->whereNull('return_status')
-                      ->orWhere('return_status', 'rejected');
+                    ->orWhere('return_status', 'rejected');
                 })
                 ->sum('total');
 
@@ -892,38 +903,37 @@ class ReportController extends Controller
     // ============================================
     private function exportDashboardCsv($file, $start, $end)
     {
-        // 🔥 Hanya order selesai & tidak retur
-        $onlineQuery = Order::whereBetween('created_at', [$start, $end])
+        $onlineOrdersQuery = Order::whereBetween('created_at', [$start, $end])
             ->where('payment_status', 'paid');
-        $this->applyCompletedFilter($onlineQuery);
-        $onlineOrders = $onlineQuery->get();
+        $this->applyCompletedFilter($onlineOrdersQuery);
+        $onlineOrders = $onlineOrdersQuery->get();
 
-        $offlineQuery = OfflineOrder::whereBetween('created_at', [$start, $end])
+        $offlineOrdersQuery = OfflineOrder::whereBetween('created_at', [$start, $end])
             ->where('payment_status', 'paid');
-        $this->applyCompletedFilter($offlineQuery);
-        $offlineOrders = $offlineQuery->get();
+        $this->applyCompletedFilter($offlineOrdersQuery);
+        $offlineOrders = $offlineOrdersQuery->get();
 
-        $onlineRevenue  = (float) $onlineOrders->sum('total');
-        $offlineRevenue = (float) $offlineOrders->sum('total');
+        // 🔥 Revenue — TOTAL TRANSAKSI customer (subtotal - voucher + ongkir, tidak retur)
+        $onlineRevenue  = $this->getOnlineProductRevenue($start, $end);
+        $offlineRevenue = $this->getOfflineProductRevenue($start, $end);
         $totalRevenue   = $onlineRevenue + $offlineRevenue;
 
-        $onlineShipping   = (float) $onlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
-        $offlineShipping  = (float) $offlineOrders->where('shipping_status', '!=', 'cancelled')
-            ->whereNotNull('shipping_cost')->sum('shipping_cost');
+        // 🔥 Ongkir — semua order delivered (termasuk retur)
+        $onlineShipping   = $this->getOnlineShippingCost($start, $end);
+        $offlineShipping  = $this->getOfflineShippingCost($start, $end);
         $totalShipping    = $onlineShipping + $offlineShipping;
+
+        $totalTransaction = $totalRevenue;
 
         $totalStockValue  = (float) ProductVariant::sum(DB::raw('stock * price'));
         $totalCustomers   = User::where('role', 'customer')->count();
         $totalOrders      = $onlineOrders->count() + $offlineOrders->count();
         $aov              = $totalOrders > 0 ? round($totalRevenue / $totalOrders) : 0;
 
-        // 🔥 Biaya API Biteship
         $biteshipApiUsageCount = BiteshipApiUsage::whereBetween('created_at', [$start, $end])->count();
         $biteshipApiCost       = $biteshipApiUsageCount * BiteshipApiUsage::COST_PER_HIT;
         $biteshipApiCostPerHit = BiteshipApiUsage::COST_PER_HIT;
 
-        // 🔥 Info tambahan: retur & batal
         $returnCount = Order::whereBetween('created_at', [$start, $end])
             ->whereIn('return_status', ['pending', 'approved', 'completed'])
             ->count();
@@ -942,19 +952,22 @@ class ReportController extends Controller
         fputcsv($file, ['Periode', $start->format('d/m/Y') . ' - ' . $end->format('d/m/Y')]);
         fputcsv($file, []);
         fputcsv($file, ['Metrik', 'Nilai']);
+        fputcsv($file, ['--- TOTAL PENJUALAN (termasuk ongkir, net diskon voucher) ---', '']);
         fputcsv($file, ['Total Penjualan Online', 'Rp ' . number_format($onlineRevenue, 0, ',', '.')]);
         fputcsv($file, ['Total Penjualan Offline', 'Rp ' . number_format($offlineRevenue, 0, ',', '.')]);
         fputcsv($file, ['Total Penjualan', 'Rp ' . number_format($totalRevenue, 0, ',', '.')]);
-        fputcsv($file, ['Total Ongkir', 'Rp ' . number_format($totalShipping, 0, ',', '.')]);
+        fputcsv($file, []);
+        fputcsv($file, ['--- INFO TAMBAHAN ---', '']);
+        fputcsv($file, ['Total Ongkir (asal, termasuk retur)', 'Rp ' . number_format($totalShipping, 0, ',', '.')]);
+        fputcsv($file, ['Total Transaksi (termasuk ongkir)', 'Rp ' . number_format($totalTransaction, 0, ',', '.')]);
         fputcsv($file, ['Biaya API Biteship', 'Rp ' . number_format($biteshipApiCost, 0, ',', '.') . ' (' . number_format($biteshipApiUsageCount) . ' hit × Rp ' . number_format($biteshipApiCostPerHit) . ')']);
         fputcsv($file, ['Total Stok Barang', 'Rp ' . number_format($totalStockValue, 0, ',', '.')]);
         fputcsv($file, ['Total Pelanggan', $totalCustomers]);
         fputcsv($file, ['Total Order Online', $onlineOrders->count()]);
         fputcsv($file, ['Total Order Offline', $offlineOrders->count()]);
         fputcsv($file, ['Total Order', $totalOrders]);
-        fputcsv($file, ['Rata-rata Order Value', 'Rp ' . number_format($aov, 0, ',', '.')]);
+        fputcsv($file, ['Rata-rata Order Value (Produk)', 'Rp ' . number_format($aov, 0, ',', '.')]);
         fputcsv($file, []);
-        fputcsv($file, ['=== INFO TAMBAHAN ===']);
         fputcsv($file, ['Total Retur', $returnCount]);
         fputcsv($file, ['Total Order Batal', $cancelledCount]);
         fputcsv($file, []);
@@ -966,7 +979,6 @@ class ReportController extends Controller
     // ============================================
     private function getReportData($start, $end, $type)
     {
-        // 🔥 Hanya order selesai & tidak retur
         $onlineQuery = Order::whereBetween('created_at', [$start, $end])
             ->where('payment_status', 'paid');
         $this->applyCompletedFilter($onlineQuery);
@@ -977,9 +989,25 @@ class ReportController extends Controller
         $this->applyCompletedFilter($offlineQuery);
         $offlineOrders = $offlineQuery->with('items')->orderBy('created_at', 'desc')->get();
 
-        $onlineRevenue  = (float) $onlineOrders->sum('total');
+        $onlineRevenue = (float) $onlineOrders->sum('total');
         $offlineRevenue = (float) $offlineOrders->sum('total');
+        $totalRevenue = $onlineRevenue + $offlineRevenue;
 
-        return compact('onlineOrders', 'offlineOrders', 'onlineRevenue', 'offlineRevenue', 'start', 'end');
+        // 🔥 ONGKIR — semua order delivered (termasuk retur)
+        $totalShipping = $this->getOnlineShippingCost($start, $end)
+                       + $this->getOfflineShippingCost($start, $end);
+        $totalTransaction = $totalRevenue;
+
+        return compact(
+            'onlineOrders',
+            'offlineOrders',
+            'onlineRevenue',
+            'offlineRevenue',
+            'totalRevenue',
+            'totalShipping',
+            'totalTransaction',
+            'start',
+            'end'
+        );
     }
 }

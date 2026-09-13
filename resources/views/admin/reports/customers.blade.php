@@ -49,46 +49,6 @@
         </div>
     </form>
 
-    {{-- SUMMARY METRICS --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-xl border p-3 text-center"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-            <p class="text-[10px] font-bold uppercase" style="color: var(--text-5);">Total Pelanggan</p>
-            <p class="text-xl font-bold mt-1" style="color: var(--gold-bright)">
-                {{ number_format($totalCustomers) }}
-            </p>
-        </div>
-        <div class="rounded-xl border p-3 text-center"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-            <p class="text-[10px] font-bold uppercase" style="color: var(--text-5);">Total Pendapatan</p>
-            <p class="text-xl font-bold mt-1" style="color: #34d399">
-                Rp {{ number_format($totalRevenue, 0, ',', '.') }}
-            </p>
-        </div>
-        <div class="rounded-xl border p-3 text-center"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-            <p class="text-[10px] font-bold uppercase" style="color: var(--text-5);">Total Order</p>
-            <p class="text-xl font-bold mt-1" style="color: #a78bfa">
-                {{ number_format($totalOrderCount) }}
-            </p>
-        </div>
-        <div class="rounded-xl border p-3 text-center"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-            <p class="text-[10px] font-bold uppercase" style="color: var(--text-5);">Total Stok Barang</p>
-            <p class="text-xl font-bold mt-1" style="color: var(--text-1)">
-                Rp {{ number_format($totalStockValue, 0, ',', '.') }}
-            </p>
-        </div>
-        <div class="rounded-xl border p-3 text-center"
-             style="background: var(--bg-card); border-color: var(--border-2);">
-            <p class="text-[10px] font-bold uppercase" style="color: var(--text-5);">Dana Biteship</p>
-            <p class="text-xl font-bold mt-1" style="color: #ef4444">
-                Rp {{ number_format($biteshipShippingCost, 0, ',', '.') }}
-            </p>
-            <p class="text-[10px] mt-0.5" style="color: var(--text-5)">{{ number_format($biteshipOrderCount) }} order</p>
-        </div>
-    </div>
-
     {{-- CUSTOMERS TABLE --}}
     <div class="rounded-2xl border overflow-hidden"
          style="background: var(--bg-card); border-color: var(--border-2);">

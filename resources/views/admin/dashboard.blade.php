@@ -509,9 +509,6 @@
                             <th class="px-3 py-2 text-center text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
                                 Terjual
                             </th>
-                            <th class="px-3 py-2 text-right text-[9px] font-bold uppercase tracking-wider" style="color: var(--text-5);">
-                                Penjualan
-                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -544,13 +541,6 @@
                                 <td class="px-3 py-3 text-center">
                                     <span class="text-xs font-bold" style="color: var(--text-2);">
                                         {{ $product->sold ?? 0 }}
-                                    </span>
-                                </td>
-
-                                {{-- Revenue --}}
-                                <td class="px-3 py-3 text-right">
-                                    <span class="text-xs font-bold" style="color: #ecbc42;">
-                                        Rp {{ number_format($product->revenue ?? 0, 0, ',', '.') }}
                                     </span>
                                 </td>
                             </tr>

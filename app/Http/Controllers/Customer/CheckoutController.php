@@ -853,6 +853,14 @@ private function resetCheckoutData(): void
 
         $shippingCost = (int) $request->input('shipping_cost', 0);
         $selectedCourier = $request->input('courier', 'JNE');
+
+        // 🔥 RESTORE original shipping cost dari session agar perhitungan
+        // diskon voucher baru selalu dari nilai asli, bukan nilai yang sudah diskon
+        $originalShippingCost = (int) session()->get('original_shipping_cost', 0);
+        if ($originalShippingCost > 0) {
+            $shippingCost = $originalShippingCost;
+        }
+
         $hasCourierSelected = $shippingCost > 0;
 
         $isShippingVoucher = ($voucher->discount_target === 'shipping' || $voucher->is_free_shipping);
@@ -961,28 +969,31 @@ private function resetCheckoutData(): void
     // ============================================
 
     public function removeVoucher(Request $request)
-{
-    $cart = session()->get('cart', []);
-    $subtotal = $this->getSubtotalFromCart($cart);
-    $shippingCost = 0;
+    {
+        // 🔥 CLEAR SESSION VOUCHER & RESTORE original shipping cost
+        $this->clearVoucherSession();
 
-    $total = $subtotal + $shippingCost;
+        $cart = session()->get('cart', []);
+        $subtotal = $this->getSubtotalFromCart($cart);
+        $shippingCost = (int) session()->get('shipping_cost', 0);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Voucher dibatalkan.',
-        'new_subtotal' => $subtotal,
-        'new_subtotal_formatted' => 'Rp ' . number_format($subtotal, 0, ',', '.'),
-        'new_shipping_cost' => $shippingCost,
-        'new_shipping_cost_formatted' => 'Rp 0',
-        'new_total' => $total,
-        'new_total_formatted' => 'Rp ' . number_format($total, 0, ',', '.'),
-        'voucher_discount' => 0,
-        'voucher_discount_formatted' => 'Rp 0',
-        'auto_applied' => false,
-        'has_courier_selected' => false,
-        'voucher_removed' => true
-    ]);
+        $total = $subtotal + $shippingCost;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher dibatalkan.',
+            'new_subtotal' => $subtotal,
+            'new_subtotal_formatted' => 'Rp ' . number_format($subtotal, 0, ',', '.'),
+            'new_shipping_cost' => $shippingCost,
+            'new_shipping_cost_formatted' => 'Rp ' . number_format($shippingCost, 0, ',', '.'),
+            'new_total' => $total,
+            'new_total_formatted' => 'Rp ' . number_format($total, 0, ',', '.'),
+            'voucher_discount' => 0,
+            'voucher_discount_formatted' => 'Rp 0',
+            'auto_applied' => false,
+            'has_courier_selected' => $shippingCost > 0,
+            'voucher_removed' => true
+        ]);
 }
 
 
@@ -1291,8 +1302,9 @@ private function resetCheckoutData(): void
                 'courier' => $validated['courier'] ?? null,
                 'service' => $validated['shipping_service'] ?? null,
                 'subtotal' => $subtotal,
-                'shipping_cost' => $shippingCost,
-                'product_discount' => $productDiscount,
+                 'shipping_cost' => $shippingCost,
+                 'original_shipping_cost' => session()->get('original_shipping_cost', $shippingCost),
+                 'product_discount' => $productDiscount,
                 'shipping_discount' => $shippingDiscount,
                 'is_free_shipping' => $isFreeShipping,
                 'discount' => $totalDiscount,

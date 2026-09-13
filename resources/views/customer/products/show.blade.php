@@ -313,7 +313,7 @@
                 {{-- Kategori --}}
                 <span class="product_category_badge">{{ $product->category->name ?? 'Tanpa Kategori' }}</span>
 
-                <div class="product_price_display product_price_display_mobile" id="price-display-container">
+                <div class="product_price_display product_price_display_mobile" id="price-display-container-mobile" data-price-display>
                     @if($hasAnyDiscount)
                         {{-- Ada Diskon - Tampilkan Range Harga dengan Coret --}}
                         <div class="product_price_box" id="default-price-box">
@@ -362,7 +362,7 @@
                     $maxPrice = $maxPrice ?? 0;
                 @endphp
 
-                <div class="product_price_display" id="price-display-container">
+                <div class="product_price_display" id="price-display-container" data-price-display>
                     @if($hasAnyDiscount)
                         {{-- Ada Diskon - Tampilkan Range Harga dengan Coret --}}
                         <div class="product_price_box" id="default-price-box">

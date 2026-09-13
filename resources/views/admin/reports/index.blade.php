@@ -355,9 +355,6 @@
                             <p class="text-xs font-bold" style="color: #27c98d;">
                                 {{ number_format($product->sold ?? 0) }}
                             </p>
-                            <p class="text-[10px]" style="color: #ecbc42;">
-                                Rp {{ number_format($product->revenue ?? 0, 0, ',', '.') }}
-                            </p>
                         </div>
                     </div>
                 @empty
@@ -380,9 +377,6 @@
                     <div class="text-right">
                         <span class="text-xs font-bold" style="color: var(--text-1);">
                             {{ number_format($topProducts->sum('sold')) }} pcs
-                        </span>
-                        <span class="text-[10px] ml-2" style="color: #ecbc42;">
-                            Rp {{ number_format($topProducts->sum('revenue'), 0, ',', '.') }}
                         </span>
                     </div>
                 </div>

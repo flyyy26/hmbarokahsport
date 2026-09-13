@@ -3005,6 +3005,7 @@
                             <span class="picker-arrow">›</span>
                         </button>
                         <input type="hidden" name="shipping_cost" id="shipping_cost" value="0">
+                        <input type="hidden" name="original_shipping_cost" id="original_shipping_cost" value="0">
                         <div id="shipping-error" class="error-text hidden">
                             <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>
                             Silakan pilih kurir dan layanan pengiriman terlebih dahulu!
@@ -3428,6 +3429,7 @@ function doUpdateCartItem(itemKey, newQuantity) {
                         window.shippingSelection = null;
                         window.hasCourierSelected = false;
                         $('#shipping_cost').val(0);
+                        $('#original_shipping_cost').val(0);
                         $('#shipping-cost-text').text('Rp 0');
                         resetShippingPicker('Berat berubah — memperbarui ongkir...');
                     }
@@ -3766,8 +3768,11 @@ function applyVoucherFromPopup(code) {
     btn.disabled = true;
     btn.textContent = 'Memproses...';
 
-    // 🔥 AMBIL SHIPPING COST DARI UI (BUKAN SESSION)
-    var shippingCost = parseInt($('#shipping_cost').val()) || 0;
+    // 🔥 AMBIL ORIGINAL SHIPPING COST dari hidden input (bukan dari #shipping_cost yang mungkin sudah diskon)
+    var originalShippingCost = parseInt($('#original_shipping_cost').val()) || 0;
+    var shippingCost = originalShippingCost > 0
+        ? originalShippingCost
+        : (parseInt($('#shipping_cost').val()) || 0);
     var courier = $('#courier').val() || 'JNE';
     var service = $('#service').val() || 'Reguler';
 
@@ -3964,14 +3969,22 @@ function removeVoucher() {
     })
     .then(function(data) {
         if (data.success) {
-            // 🔥 RESET UI VOUCHER
+            // 🔥 RESET UI VOUCHER (restore original shipping cost)
             resetVoucherUI();
 
             // Reset hidden inputs
             $('#applied-voucher-code').val('');
             $('#applied-voucher-discount').val(0);
 
-            // Update total
+            // 🔥 RESTORE shipping cost & total dari response server
+            if (data.new_shipping_cost !== undefined) {
+                $('#shipping_cost').val(data.new_shipping_cost);
+                var shippingCostText = document.getElementById('shipping-cost-text');
+                if (shippingCostText) {
+                    shippingCostText.textContent = 'Rp ' + formatNumber(data.new_shipping_cost);
+                }
+            }
+
             if (data.new_total !== undefined) {
                 $('#total-display').text(data.new_total_formatted);
             }
@@ -4080,10 +4093,17 @@ function resetVoucherUI() {
 
     var shippingCostText = document.getElementById('shipping-cost-text');
     if (shippingCostText) {
-        shippingCostText.textContent = 'Belum dipilih';
+        var originalCost = parseInt($('#original_shipping_cost').val()) || 0;
+        if (originalCost > 0) {
+            shippingCostText.textContent = 'Rp ' + formatNumber(originalCost);
+        } else {
+            shippingCostText.textContent = 'Belum dipilih';
+        }
     }
 
-    $('#shipping_cost').val(0);
+    // 🔥 RESTORE original shipping cost (bukan 0) agar tidak kehilangan ongkir asli
+    var originalCost = parseInt($('#original_shipping_cost').val()) || 0;
+    $('#shipping_cost').val(originalCost);
 
     var input = document.getElementById('popup-voucher-input');
     if (input) input.value = '';
@@ -4365,6 +4385,7 @@ function showNewAddressForm(e) {
     $('#cancel-new-address').show();
 
     $('#shipping_cost').val(0);
+    $('#original_shipping_cost').val(0);
     $('#shipping-cost-text').text('Rp 0');
     window.shippingSelection = null;
     window.hasCourierSelected = false;
@@ -4874,7 +4895,10 @@ function saveCheckoutDataToSession(callback) {
 
     $('#shipping_cost').val(cost);
 
-    // 🔥 FORMAT HARGA
+    // 🔥 SIMPAN ORIGINAL SHIPPING COST (bukan yang diskon) untuk restore saat ganti voucher
+    if (cost > 0) {
+        $('#original_shipping_cost').val(cost);
+    }
     var costDisplay = 'Rp ' + formatNumber(cost);
 
     // 🔥 UPDATE RINGKASAN PESANAN (KANAN) — SELALU DILAKUKAN DULU
@@ -5469,6 +5493,7 @@ function saveCheckoutDataToSession(callback) {
         $('#district_id').val('');
         $('#subdistrict_id').val('');
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5499,6 +5524,7 @@ function saveCheckoutDataToSession(callback) {
         $('#district_id').val('');
         $('#subdistrict_id').val('');
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5523,6 +5549,7 @@ function saveCheckoutDataToSession(callback) {
         $('#district_id').val(districtCode);
         $('#subdistrict_id').val('');
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5551,6 +5578,7 @@ function saveCheckoutDataToSession(callback) {
         $('#subdistrict_id').val(villageCode);
         $('#shipping_postal_code').val(zipCode);
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5593,6 +5621,7 @@ function saveCheckoutDataToSession(callback) {
 
         $('#service').prop('disabled', true).html('<option value="">-- Memuat Layanan --</option>');
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5647,6 +5676,7 @@ function saveCheckoutDataToSession(callback) {
 
     if (!serviceName || cost <= 0) {
         $('#shipping_cost').val(0);
+        $('#original_shipping_cost').val(0);
         $('#shipping-cost-text').text('Rp 0');
         window.shippingSelection = null;
         window.hasCourierSelected = false;
@@ -5656,6 +5686,7 @@ function saveCheckoutDataToSession(callback) {
 
     // 🔥 UPDATE UI
     $('#shipping_cost').val(cost);
+    $('#original_shipping_cost').val(cost);
     $('#shipping-cost-text').text('Rp ' + formatNumber(cost));
 
     var costDisplay = 'Rp ' + formatNumber(cost);

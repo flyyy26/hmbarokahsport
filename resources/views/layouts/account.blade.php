@@ -490,9 +490,6 @@
                        class="menu-link {{ request()->routeIs('customer.orders*') ? 'active' : '' }}">
                         <iconify-icon icon="mdi:package-variant"></iconify-icon>
                         Pesanan Saya
-                        @if(($orderCount ?? 0) > 0)
-                            <span class="menu-badge count">{{ $orderCount }}</span>
-                        @endif
                     </a>
 
                     <a href="{{ route('customer.addresses.index') }}"

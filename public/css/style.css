@@ -198,6 +198,8 @@
     color:white;
     font-family:heading;
     text-transform:uppercase;
+    text-align:center;
+    line-height:1.1;
 }
 .kategori_box_layout a{
     text-decoration:none;

@@ -481,20 +481,41 @@
                 </div>
 
 
-                {{-- Submit Button --}}
-                <button type="submit"
-                        id="submitBtn"
-                        disabled
-                        class="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl
-                               text-sm font-bold transition-all active:scale-[0.98]
-                               bg-gradient-to-r from-[#FDDD57] to-[#ecbc42]
-                               text-slate-900
-                               shadow-lg shadow-amber-500/20
-                               hover:shadow-xl hover:shadow-amber-500/40
-                               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg">
-                    <iconify-icon icon="mdi:printer-check" class="text-lg"></iconify-icon>
-                    Simpan & Cetak Nota
-                </button>
+                {{-- Hidden Print Type --}}
+                <input type="hidden" name="print_type" id="printType" value="nota">
+
+                {{-- Submit Buttons --}}
+                <div class="flex gap-3">
+                    <button type="submit"
+                            onclick="document.getElementById('printType').value = 'nota'"
+                            id="submitBtnNota"
+                            disabled
+                            class="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl
+                                   text-sm font-bold transition-all active:scale-[0.98]
+                                   bg-gradient-to-r from-[#FDDD57] to-[#ecbc42]
+                                   text-slate-900
+                                   shadow-lg shadow-amber-500/20
+                                   hover:shadow-xl hover:shadow-amber-500/40
+                                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg">
+                        <iconify-icon icon="mdi:printer-check" class="text-lg"></iconify-icon>
+                        Simpan & Cetak Nota
+                    </button>
+
+                    <button type="submit"
+                            onclick="document.getElementById('printType').value = 'faktur'"
+                            id="submitBtnFaktur"
+                            disabled
+                            class="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl
+                                   text-sm font-bold transition-all active:scale-[0.98]
+                                   bg-gradient-to-r from-[#3b82f6] to-[#2563eb]
+                                   text-white
+                                   shadow-lg shadow-blue-500/20
+                                   hover:shadow-xl hover:shadow-blue-500/40
+                                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg">
+                        <iconify-icon icon="mdi:file-document-multiple-outline" class="text-lg"></iconify-icon>
+                        Simpan & Cetak Faktur
+                    </button>
+                </div>
 
             </div>
         </div>
@@ -704,7 +725,8 @@ function removeFromCart(index) {
 
 function updateCartUI() {
     const cartEl = document.getElementById('cartItems');
-    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnNota = document.getElementById('submitBtnNota');
+    const submitBtnFaktur = document.getElementById('submitBtnFaktur');
     const itemsInput = document.getElementById('itemsInput');
 
     if (cart.length === 0) {
@@ -714,7 +736,8 @@ function updateCartUI() {
                 <p class="text-xs" style="color: var(--text-5);">Belum ada produk ditambahkan</p>
             </div>
         `;
-        submitBtn.disabled = true;
+        submitBtnNota.disabled = true;
+        submitBtnFaktur.disabled = true;
     } else {
         cartEl.innerHTML = cart.map((item, index) => {
             const itemSubtotal = (item.price * item.quantity) - ((item.discount || 0) * item.quantity);
@@ -830,7 +853,8 @@ function updateCartUI() {
                 </div>
             `;
         }).join('');
-        submitBtn.disabled = false;
+        submitBtnNota.disabled = false;
+    submitBtnFaktur.disabled = false;
     }
 
     itemsInput.value = JSON.stringify(cart);

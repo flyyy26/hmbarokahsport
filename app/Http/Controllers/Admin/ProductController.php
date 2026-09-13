@@ -514,7 +514,6 @@ class ProductController extends Controller
 
         // ============================================
         // 🔥 HELPER: Filter HANYA order SELESAI & tidak retur
-        // SAMA PERSIS dengan ReportController
         // ============================================
         $filterCompletedOrders = function ($query) {
             return $query
@@ -526,19 +525,31 @@ class ProductController extends Controller
         };
 
         // ============================================
-        // 🔥 HELPER: Combined Sales Range (delivered only)
+        // 🔥 HELPER: Combined Total Penjualan (orders.total = subtotal - voucher + ongkir)
         // ============================================
-        $getCombinedSales = function ($start, $end = null) use ($filterCompletedOrders) {
-            $query = function ($model) use ($start, $end, $filterCompletedOrders) {
-                $q = $model::where('payment_status', 'paid');
-                $filterCompletedOrders($q);
+        $getCombinedSales = function ($start, $end = null) {
+            $onlineQuery = Order::query()
+                ->where('payment_status', 'paid')
+                ->where('shipping_status', 'delivered')
+                ->where(function ($q) {
+                    $q->whereNull('return_status')
+                    ->orWhere('return_status', 'rejected');
+                })
+                ->when($end, fn($q) => $q->whereBetween('created_at', [$start, $end]))
+                ->when(!$end, fn($q) => $q->where('created_at', '>=', $start));
 
-                return $q
-                    ->when($end, fn($q2) => $q2->whereBetween('created_at', [$start, $end]))
-                    ->when(!$end, fn($q2) => $q2->where('created_at', '>=', $start))
-                    ->sum('total');
-            };
-            return (float) $query(Order::class) + (float) $query(OfflineOrder::class);
+            $offlineQuery = OfflineOrder::query()
+                ->where('payment_status', 'paid')
+                ->where('shipping_status', 'delivered')
+                ->where(function ($q) {
+                    $q->whereNull('return_status')
+                    ->orWhere('return_status', 'rejected');
+                })
+                ->when($end, fn($q) => $q->whereBetween('created_at', [$start, $end]))
+                ->when(!$end, fn($q) => $q->where('created_at', '>=', $start));
+
+            return (float) $onlineQuery->sum('total')
+                + (float) $offlineQuery->sum('total');
         };
 
         // ============================================
@@ -557,23 +568,39 @@ class ProductController extends Controller
         $change_90d = $prev_90d > 0 ? round((($sales_90d - $prev_90d) / $prev_90d) * 100, 1) : 0;
 
         // ============================================
-        // 🔥 CHART (7 HARI) — delivered only
+        // 🔥 CHART (7 HARI) — TOTAL TRANSAKSI (termasuk ongkir, net diskon)
         // ============================================
         $chartDefaultStart = $now->copy()->subDays(6)->startOfDay();
 
-        $qOnline7 = Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $chartDefaultStart);
-        $filterCompletedOrders($qOnline7);
-        $dailyOnline = $qOnline7
+        // Daily online — total transaksi
+        $dailyOnline = Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $chartDefaultStart)
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
-        $qOffline7 = OfflineOrder::where('payment_status', 'paid')
-            ->where('created_at', '>=', $chartDefaultStart);
-        $filterCompletedOrders($qOffline7);
-        $dailyOffline = $qOffline7
+        // Daily offline — total transaksi
+        $dailyOffline = OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $chartDefaultStart)
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
         $chartLabels = [];
         $chartSales  = [];
@@ -597,19 +624,33 @@ class ProductController extends Controller
         // ============================================
         // 🔥 SPARKLINE 30 HARI
         // ============================================
-        $qOnline30 = Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay());
-        $filterCompletedOrders($qOnline30);
-        $daily30Online = $qOnline30
+        $daily30Online = Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
-        $qOffline30 = OfflineOrder::where('payment_status', 'paid')
-            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay());
-        $filterCompletedOrders($qOffline30);
-        $daily30Offline = $qOffline30
+        $daily30Offline = OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
         $sales30 = [];
         for ($i = 29; $i >= 0; $i--) {
@@ -621,19 +662,33 @@ class ProductController extends Controller
         // ============================================
         // 🔥 SPARKLINE 90 HARI
         // ============================================
-        $qOnline90 = Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay());
-        $filterCompletedOrders($qOnline90);
-        $daily90Online = $qOnline90
+        $daily90Online = Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay())
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
-        $qOffline90 = OfflineOrder::where('payment_status', 'paid')
-            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay());
-        $filterCompletedOrders($qOffline90);
-        $daily90Offline = $qOffline90
+        $daily90Offline = OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $now->copy()->subDays(89)->startOfDay())
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
         $sales90 = [];
         for ($i = 89; $i >= 0; $i--) {
@@ -643,34 +698,54 @@ class ProductController extends Controller
         $sparkline_90d = $this->generateSparklinePath($sales90, 300, 60);
 
         // ============================================
-        // 🔥 4 CARD STATS (TENGAH) — FILTER BULAN + delivered only
+        // 🔥 4 CARD STATS (TENGAH) — FILTER BULAN + TOTAL TRANSAKSI
         // ============================================
 
-        // Total Penjualan Online (bulan)
-        $cashInQ = Order::where('payment_status', 'paid')
-            ->whereBetween('created_at', [$monthStart, $monthEnd]);
-        $filterCompletedOrders($cashInQ);
-        $cashIn = (float) $cashInQ->sum('total');
+        // Total Penjualan Online (bulan) — total transaksi (termasuk ongkir, net diskon)
+        $cashIn = (float) Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
+            ->sum('total');
 
-        $prevCashInQ = Order::where('payment_status', 'paid')
-            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd]);
-        $filterCompletedOrders($prevCashInQ);
-        $prevCashIn = (float) $prevCashInQ->sum('total');
+        $prevCashIn = (float) Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
+            ->sum('total');
 
         $changeCashIn = $prevCashIn > 0
             ? round((($cashIn - $prevCashIn) / $prevCashIn) * 100, 1)
             : 0;
 
-        // Total Penjualan Offline (bulan)
-        $offlineSalesQ = OfflineOrder::where('payment_status', 'paid')
-            ->whereBetween('created_at', [$monthStart, $monthEnd]);
-        $filterCompletedOrders($offlineSalesQ);
-        $offlineSales = (float) $offlineSalesQ->sum('total');
+        // Total Penjualan Offline (bulan) — total transaksi (termasuk ongkir, net diskon)
+        $offlineSales = (float) OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
+            ->sum('total');
 
-        $prevOfflineSalesQ = OfflineOrder::where('payment_status', 'paid')
-            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd]);
-        $filterCompletedOrders($prevOfflineSalesQ);
-        $prevOfflineSales = (float) $prevOfflineSalesQ->sum('total');
+        $prevOfflineSales = (float) OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->whereBetween('created_at', [$prevMonthStart, $prevMonthEnd])
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
+            ->sum('total');
 
         $changeOffline = $prevOfflineSales > 0
             ? round((($offlineSales - $prevOfflineSales) / $prevOfflineSales) * 100, 1)
@@ -701,7 +776,7 @@ class ProductController extends Controller
             ? round((($totalOrders - $prevTotalOrders) / $prevTotalOrders) * 100, 1)
             : 0;
 
-        // AOV (bulan)
+        // AOV (bulan) — total transaksi ÷ order count
         $totalRevenue = $cashIn + $offlineSales;
         $aov = $totalOrders > 0 ? round($totalRevenue / $totalOrders) : 0;
 
@@ -710,7 +785,7 @@ class ProductController extends Controller
         $changeAOV = $prevAOV > 0 ? round((($aov - $prevAOV) / $prevAOV) * 100, 1) : 0;
 
         // ============================================
-        // 🔥 TOP 5 PRODUK TERLARIS — 90 HARI + delivered only
+        // 🔥 TOP 5 PRODUK TERLARIS — 90 HARI
         // ============================================
         $topProductsOnlineQ = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -723,11 +798,11 @@ class ProductController extends Controller
             });
 
         $topProductsOnline = $topProductsOnlineQ
-            ->selectRaw('order_items.product_name, order_items.variant_name as variant, SUM(order_items.quantity) as sold, SUM(order_items.subtotal) as revenue')
+            ->selectRaw('order_items.product_name, order_items.variant_name as variant, SUM(order_items.quantity) as sold, SUM(order_items.subtotal - (orders.discount * order_items.subtotal / NULLIF(orders.subtotal, 0))) as revenue')
             ->groupBy('order_items.product_name', 'order_items.variant_name')
             ->get();
 
-        $topProductsOfflineQ = \App\Models\OfflineOrderItem::query()
+        $topProductsOfflineQ = OfflineOrderItem::query()
             ->join('offline_orders', 'offline_orders.id', '=', 'offline_order_items.offline_order_id')
             ->where('offline_orders.payment_status', 'paid')
             ->where('offline_orders.created_at', '>=', $now->copy()->subDays(90))
@@ -738,7 +813,7 @@ class ProductController extends Controller
             });
 
         $topProductsOffline = $topProductsOfflineQ
-            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal) as revenue')
+            ->selectRaw('offline_order_items.product_name, offline_order_items.variant_name as variant, SUM(offline_order_items.quantity) as sold, SUM(offline_order_items.subtotal - (offline_orders.discount * offline_order_items.subtotal / NULLIF(offline_orders.subtotal, 0))) as revenue')
             ->groupBy('offline_order_items.product_name', 'offline_order_items.variant_name')
             ->get();
 
@@ -761,7 +836,6 @@ class ProductController extends Controller
         // STATS ARRAY
         // ============================================
         $stats = [
-            // Card atas (7/30/90 hari)
             'sales_7d'       => $sales_7d,
             'sales_30d'      => $sales_30d,
             'sales_90d'      => $sales_90d,
@@ -771,13 +845,9 @@ class ProductController extends Controller
             'sparkline_7d'   => $sparkline_7d,
             'sparkline_30d'  => $sparkline_30d,
             'sparkline_90d'  => $sparkline_90d,
-
-            // Chart (7 hari)
             'chart_labels'   => $chartLabels,
             'chart_sales'    => $chartSales,
             'chart_orders'   => $chartOrders,
-
-            // 4 Card tengah — FILTER BULAN
             'cash_in'        => $cashIn,
             'change_cash_in' => $changeCashIn,
             'sales_offline'  => $offlineSales,
@@ -786,14 +856,12 @@ class ProductController extends Controller
             'change_orders'  => $changeOrders,
             'aov'            => $aov,
             'change_aov'     => $changeAOV,
-
-            // Info bulan
             'month_label'    => $selectedMonth->translatedFormat('F Y'),
             'month_param'    => $selectedMonth->format('Y-m'),
         ];
 
         // ============================================
-        // STOCK DATA (tidak berubah)
+        // STOCK DATA
         // ============================================
         $criticalProducts = Product::with(['variants', 'category'])
             ->where('is_active', true)->criticalStock()->get()
@@ -837,33 +905,36 @@ class ProductController extends Controller
         $now = now();
         $startDate = $now->copy()->subDays($period - 1)->startOfDay();
 
-        // 🔥 HELPER: Filter HANYA order SELESAI & tidak retur
-        $filterCompletedOrders = function ($query) {
-            return $query
-                ->where('shipping_status', 'delivered')
-                ->where(function ($q) {
-                    $q->whereNull('return_status')
-                    ->orWhere('return_status', 'rejected');
-                });
-        };
-
-        // Online
-        $qOnline = Order::where('payment_status', 'paid')
-            ->where('created_at', '>=', $startDate);
-        $filterCompletedOrders($qOnline);
-        $dailyOnline = $qOnline
+        // 🔥 Online — total transaksi (termasuk ongkir, net diskon)
+        $dailyOnline = Order::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $startDate)
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
-        // Offline
-        $qOffline = OfflineOrder::where('payment_status', 'paid')
-            ->where('created_at', '>=', $startDate);
-        $filterCompletedOrders($qOffline);
-        $dailyOffline = $qOffline
+        // 🔥 Offline — total transaksi (termasuk ongkir, net diskon)
+        $dailyOffline = OfflineOrder::query()
+            ->where('payment_status', 'paid')
+            ->where('shipping_status', 'delivered')
+            ->where('created_at', '>=', $startDate)
+            ->where(function ($q) {
+                $q->whereNull('return_status')
+                ->orWhere('return_status', 'rejected');
+            })
             ->selectRaw('DATE(created_at) as date, SUM(total) as sales, COUNT(*) as orders')
-            ->groupBy('date')->orderBy('date')->get()->keyBy('date');
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
 
-        // Merge
         $labels = [];
         $sales = [];
         $orders = [];

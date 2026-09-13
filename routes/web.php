@@ -552,6 +552,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/offline', [OfflineOrderController::class, 'index'])->name('admin.orders.offline');
     Route::post('/offline/create', [OfflineOrderController::class, 'createOrder'])->name('admin.orders.offline.create');
     Route::get('/offline/receipt/{order}', [OfflineOrderController::class, 'printReceipt'])->name('admin.orders.offline.receipt');
+    Route::get('/offline/faktur/{order}', [OfflineOrderController::class, 'printFaktur'])->name('admin.orders.offline.faktur');
 
     // 🔥 RETURNS MANAGEMENT
     Route::get('/returns', [ReturnController::class, 'index'])->name('admin.returns.index');

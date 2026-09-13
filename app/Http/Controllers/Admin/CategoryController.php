@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Models\Category;
 use App\Models\SizeGuide;
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class CategoryController extends Controller
         }
 
         $category = Category::create($validated);
+
+        CustomerHomeController::clearCache();
 
         // 🔥 SIMPAN SIZE GUIDE
         if (!empty($validated['size_guides'])) {
@@ -111,6 +114,8 @@ class CategoryController extends Controller
         }
 
         $category->update($validated);
+
+        CustomerHomeController::clearCache();
 
         // 🔥 PERBAIKI: UPDATE SIZE GUIDE - HAPUS SEMUA DULU, BARU INSERT ULANG
         if ($request->has('size_guides') && !empty($request->size_guides)) {
@@ -188,6 +193,8 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+
+        CustomerHomeController::clearCache();
 
         return redirect()
             ->route('admin.categories.index')
