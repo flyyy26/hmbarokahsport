@@ -355,7 +355,7 @@
         <tr>
             <td>
                 <div class="footer-text">
-                    Dicetak pada {{ now()->format('d M Y H:i') }} | {{ $setting->store_name ?? 'Barokah Sport' }}
+                    Dicetak pada {{ now()->format('d M Y H:i') }} | barokahsport.com
                 </div>
             </td>
         </tr>

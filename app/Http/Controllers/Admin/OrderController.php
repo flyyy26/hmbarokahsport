@@ -302,6 +302,9 @@ class OrderController extends Controller
             if ($result['success']) {
                 $tracking = $result['data'];
 
+                // 🔥 Sync Biteship status & metadata to local order
+                $order->syncTrackingStatus($tracking);
+
                 if (empty($tracking['history'] ?? [])) {
                     $trackingError = 'Tracking belum memiliki riwayat pengiriman.';
                     $tracking = $this->getSimulatedTracking($order);
@@ -321,18 +324,19 @@ class OrderController extends Controller
     }
 
     /**
-     * 🔥 REFRESH TRACKING - TAMBAHKAN METHOD INI
+     * 🔥 REFRESH TRACKING
      */
     public function refreshTracking(Request $request, Order $order)
     {
         try {
-            Cache::forget('admin:tracking:'.$order->id.':'.$order->updated_at->timestamp);
-
-            Log::info('Refresh tracking called:', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'biteship_order_id' => $order->biteship_order_id,
-            ]);
+            // 🔥 Clear BOTH controller-level cache and service-level cache
+            $cacheKey = 'admin:tracking:'.$order->id.':'.$order->updated_at->timestamp;
+            Cache::forget($cacheKey);
+            $this->biteship->clearTrackingCache(
+                $order->biteship_order_id,
+                $order->tracking_number,
+                $order->biteship_tracking_url
+            );
 
             if (! $order->biteship_order_id) {
                 return response()->json([
@@ -348,19 +352,24 @@ class OrderController extends Controller
             );
 
             if ($result['success']) {
-                // 🔥 SIMPAN STATUS TERBARU KE ORDER AGAR TAMPILAN SELALU UPDATE
-                $this->syncTrackingToOrder($order, $result['data']);
+                $tracking = $result['data'] ?? [];
+
+                // 🔥 Sync Biteship status & metadata to local order
+                $order->syncTrackingStatus($tracking);
+
+                // 🔥 Re-load order karena syncTrackingStatus bisa mengubah updated_at
+                $order->refresh();
 
                 return response()->json([
                     'success' => true,
-                    'data' => $result['data'],
+                    'data' => $tracking,
                     'message' => 'Tracking berhasil diperbarui.',
                 ]);
             }
 
-            // 🔥 ORDER ID TIDAK DITEMUKAN DI BITESHIP (DATA TESTING / SUDAH TERHAPUS)
-            // → fallback ke data simulasi dari status order lokal agar halaman tetap jalan
-            if (str_contains(strtolower($result['message'] ?? ''), 'not found') || str_contains(strtolower($result['message'] ?? ''), 'tidak ditemukan')) {
+            // Fallback simulasi kalau order tidak ditemukan
+            if (str_contains(strtolower($result['message'] ?? ''), 'not found') ||
+                str_contains(strtolower($result['message'] ?? ''), 'tidak ditemukan')) {
                 $simulated = $this->getSimulatedTracking($order);
 
                 return response()->json([
@@ -689,53 +698,6 @@ class OrderController extends Controller
             'success' => false,
             'message' => $result['message'] ?? 'Unknown error',
         ];
-    }
-
-    /**
-     * 🔥 SINKRONKAN DATA TRACKING BITESHIP KE ORDER LOKAL
-     */
-    private function syncTrackingToOrder($order, array $tracking): void
-    {
-        $updates = [];
-
-        if (! empty($tracking['waybill_id']) && $tracking['waybill_id'] !== $order->tracking_number) {
-            $updates['tracking_number'] = $tracking['waybill_id'];
-        }
-
-        if (! empty($tracking['waybill_url']) && $tracking['waybill_url'] !== $order->biteship_tracking_url) {
-            $updates['biteship_tracking_url'] = $tracking['waybill_url'];
-        }
-
-        // 🔥 PETAKAN STATUS BITESHIP → shipping_status LOKAL
-        $statusMap = [
-            'allocated' => 'processing',
-            'picking_up' => 'processing',
-            'picked' => 'shipped',
-            'dropping_off' => 'shipped',
-            'on_hold' => 'processing',
-            'delivered' => 'delivered',
-            'rejected' => 'pending',
-            'cancelled' => 'pending',
-            'disposed' => 'pending',
-        ];
-        $biteshipStatus = strtolower($tracking['status'] ?? '');
-        $mappedStatus = $statusMap[$biteshipStatus] ?? null;
-
-        if ($mappedStatus && $mappedStatus !== $order->shipping_status) {
-            $updates['shipping_status'] = $mappedStatus;
-
-            if ($mappedStatus === 'delivered' && ! $order->delivered_at) {
-                $updates['delivered_at'] = now();
-            }
-
-            if ($mappedStatus === 'shipped' && ! $order->shipped_at) {
-                $updates['shipped_at'] = now();
-            }
-        }
-
-        if (! empty($updates)) {
-            $order->update($updates);
-        }
     }
 
     /**

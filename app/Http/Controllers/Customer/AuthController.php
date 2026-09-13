@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\PasswordResetRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -193,4 +194,169 @@ class AuthController extends Controller
             ->route('customer.login')
             ->with('success', 'Berhasil keluar.');
     }
+
+    public function showForgotPassword()
+    {
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('customer.account');
+        }
+
+        return view('customer.auth.forgot-password');
+    }
+
+    public function submitForgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|string|max:30',
+        ], [
+            'phone.required' => 'Nomor WhatsApp wajib diisi.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // Normalisasi nomor HP (hapus spasi, strip, +62 → 0)
+        $phone = $this->normalizePhone($request->phone);
+
+        // Cari user
+        $user = User::where('phone', $phone)->first();
+
+        // Selalu tampilkan pesan sukses (security: jangan bocorin nomor terdaftar)
+        // Tapi kalau gak terdaftar, tetap kasih halaman "tidak terdaftar" via flash
+        if (!$user) {
+            return redirect()
+                ->route('customer.forgot-password.result')
+                ->with('not_registered', true)
+                ->with('phone', $phone);
+        }
+
+        // Cek apakah user sudah punya request pending
+        if (PasswordResetRequest::hasPendingRequest($user->id)) {
+            return redirect()
+                ->route('customer.forgot-password.result')
+                ->with('already_pending', true)
+                ->with('phone', $phone);
+        }
+
+        // Cek apakah user aktif
+        if (!$user->is_active) {
+            return redirect()
+                ->route('customer.forgot-password.result')
+                ->with('inactive_account', true)
+                ->with('phone', $phone);
+        }
+
+        // Buat request baru
+        $resetRequest = PasswordResetRequest::create([
+            'user_id' => $user->id,
+            'phone' => $phone,
+            'status' => 'pending',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()
+            ->route('customer.forgot-password.result')
+            ->with('request_created', true)
+            ->with('phone', $phone)
+            ->with('request_id', $resetRequest->id);
+    }
+
+    public function showForgotPasswordResult(Request $request)
+    {
+        return view('customer.auth.forgot-password-result');
+    }
+
+    public function showResetPassword(string $token)
+    {
+        $resetRequest = PasswordResetRequest::where('token', $token)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$resetRequest) {
+            return view('customer.auth.reset-password-invalid', [
+                'reason' => 'Token tidak ditemukan atau tidak valid.',
+            ]);
+        }
+
+        if (!$resetRequest->isTokenValid()) {
+            // Update status expired
+            $resetRequest->update(['status' => 'expired']);
+            return view('customer.auth.reset-password-invalid', [
+                'reason' => 'Token sudah kadaluarsa. Silakan ajukan permintaan baru.',
+            ]);
+        }
+
+        return view('customer.auth.reset-password', [
+            'token' => $token,
+            'user' => $resetRequest->user,
+        ]);
+    }
+
+    /**
+     * Proses reset password
+     */
+    public function processResetPassword(Request $request, string $token)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min' => 'Kata sandi minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
+        }
+
+        $resetRequest = PasswordResetRequest::where('token', $token)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$resetRequest || !$resetRequest->isTokenValid()) {
+            return view('customer.auth.reset-password-invalid', [
+                'reason' => 'Token tidak valid atau sudah kadaluarsa.',
+            ]);
+        }
+
+        // Update password user
+        $user = $resetRequest->user;
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        // Tandai request sudah dipakai
+        $resetRequest->markAsUsed();
+
+        // Logout semua session user (opsional, biar aman)
+        // Auth::guard('customer')->logoutOtherDevices($request->password);
+
+        return redirect()
+            ->route('customer.login')
+            ->with('success', 'Kata sandi berhasil diubah. Silakan masuk dengan kata sandi baru.');
+    }
+
+    /**
+     * Helper: normalisasi nomor HP
+     */
+    protected function normalizePhone(string $phone): string
+    {
+        // Hapus semua karakter kecuali angka
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        // Kalau mulai dengan 62, ubah ke 0
+        if (str_starts_with($phone, '62')) {
+            $phone = '0' . substr($phone, 2);
+        }
+
+        // Kalau mulai dengan 8, tambah 0
+        if (str_starts_with($phone, '8')) {
+            $phone = '0' . $phone;
+        }
+
+        return $phone;
+    }
+
 }

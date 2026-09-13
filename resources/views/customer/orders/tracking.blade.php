@@ -913,6 +913,13 @@
             Kembali ke Detail
         </a>
 
+        @if($order->biteship_order_id)
+            <button type="button" id="refresh-tracking-btn" class="tk-btn tk-btn-outline">
+                <iconify-icon icon="mdi:refresh"></iconify-icon>
+                Refresh
+            </button>
+        @endif
+
         @if($order->biteship_tracking_url)
             <a href="{{ $order->biteship_tracking_url }}" target="_blank" class="tk-btn tk-btn-gold">
                 <iconify-icon icon="mdi:open-in-new"></iconify-icon>
@@ -922,4 +929,42 @@
     </div>
 </div>
 
-@endsection
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var refreshBtn = document.getElementById('refresh-tracking-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            var originalHTML = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '<iconify-icon icon="mdi:loading" class="animate-spin"></iconify-icon> Memperbarui...';
+            refreshBtn.disabled = true;
+
+            fetch('{{ route('customer.orders.tracking.refresh', $order) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Gagal refresh tracking: ' + (data.message || 'Unknown error'));
+                    refreshBtn.innerHTML = originalHTML;
+                    refreshBtn.disabled = false;
+                }
+            })
+            .catch(function(error) {
+                console.error('Refresh error:', error);
+                alert('Terjadi kesalahan: ' + error.message);
+                refreshBtn.innerHTML = originalHTML;
+                refreshBtn.disabled = false;
+            });
+        });
+    }
+});
+</script>
+@endpush

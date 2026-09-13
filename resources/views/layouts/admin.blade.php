@@ -24,6 +24,8 @@
     <title>
         @yield('title', 'Admin E-Commerce')
     </title>
+    <link rel="icon" src="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/png">
+    <link rel="shortcut icon" href="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/x-icon">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
@@ -82,6 +84,17 @@
             --gold-bright: #FDDD57;
             --gold-dark: #a17319;
             --gold-text: #422006;
+            --alert-success-text: #6ee7b7;
+            --alert-success-text-strong: #a7f3d0;
+            --alert-success-border: rgba(16, 185, 129, 0.3);
+            --alert-success-bg: rgba(16, 185, 129, 0.1);
+            --alert-success-bg-inner: rgba(16, 185, 129, 0.15);
+            --alert-reject-text: #fbbf24;
+            --alert-reject-text-strong: #fcd34d;
+            --alert-reject-border: rgba(251, 191, 36, 0.3);
+            --alert-reject-bg: rgba(251, 191, 36, 0.1);
+            --alert-reject-bg-inner: rgba(251, 191, 36, 0.15);
+            --alert-reject-link-text: #fcd34d;
         }
 
         html.light-mode {
@@ -99,6 +112,17 @@
             --text-4: #475569;
             --text-5: #64748b;
             --text-6: #94a3b8;
+            --alert-success-text: #15803d;
+            --alert-success-text-strong: #166534;
+            --alert-success-border: rgba(22, 163, 74, 0.35);
+            --alert-success-bg: rgba(22, 163, 74, 0.08);
+            --alert-success-bg-inner: rgba(22, 163, 74, 0.12);
+            --alert-reject-text: #b45309;
+            --alert-reject-text-strong: #92400e;
+            --alert-reject-border: rgba(217, 119, 6, 0.35);
+            --alert-reject-bg: rgba(251, 191, 36, 0.15);
+            --alert-reject-bg-inner: rgba(251, 191, 36, 0.2);
+            --alert-reject-link-text: #92400e;
         }
 
         /* ============================================
@@ -569,13 +593,24 @@
                 <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#ecbc42] to-transparent"></div>
 
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 group">
-                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FDDD57] to-[#ecbc42] flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                        <iconify-icon icon="mdi:store" class="text-slate-900 text-xl"></iconify-icon>
-                    </div>
-                    <div class="flex flex-col leading-tight">
-                        <span class="text-base font-bold tracking-tight" style="color: var(--text-1)">Barokah</span>
-                        <span class="text-[10px] font-semibold text-[#ecbc42] uppercase tracking-widest">Sport Admin</span>
-                    </div>
+                    @if(!empty($setting?->logo) && Storage::disk('public')->exists($setting->logo))
+                        {{-- 🔥 LOGO DARI SETTINGS --}}
+                        <img 
+                            src="{{ Storage::url($setting->logo) }}" 
+                            alt="{{ $setting->store_name ?? 'Admin' }}"
+                            class="h-9 w-auto max-w-[120px] object-contain group-hover:scale-105 transition-transform"
+                            onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        {{-- Fallback jika gambar gagal load --}}
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FDDD57] to-[#ecbc42] items-center justify-center shadow-lg shadow-amber-500/20 hidden">
+                            <iconify-icon icon="mdi:store" class="text-slate-900 text-xl"></iconify-icon>
+                        </div>
+                    @else
+                        {{-- 🔥 FALLBACK: Ikon default kalau belum ada logo --}}
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FDDD57] to-[#ecbc42] flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                            <iconify-icon icon="mdi:store" class="text-slate-900 text-xl"></iconify-icon>
+                        </div>
+                    @endif
                 </a>
             </div>
 
@@ -621,10 +656,23 @@
                 </div>
 
                 <a href="{{ route('admin.orders.index') }}"
-                class="sidebar-link {{ request()->routeIs('admin.orders.index') ? 'active' : '' }}
+                    class="sidebar-link {{ request()->routeIs('admin.orders.index') ? 'active' : '' }}
                         flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
                     <iconify-icon icon="mdi:cart-outline" class="sidebar-icon text-lg"></iconify-icon>
                     <span class="flex-1">Pesanan</span>
+
+                    {{-- 🔥 Badge Order Perlu Diproses (pending + processing + paid) --}}
+                    @if(($pendingOrderCount ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-[#FDDD57] text-slate-900
+                                    shadow-md shadow-amber-500/50
+                                    animate-pulse">
+                            {{ $pendingOrderCount > 99 ? '99+' : $pendingOrderCount }}
+                        </span>
+                    @endif
 
                     {{-- 🔥 Badge Permintaan Pembatalan --}}
                     @if(($pendingCancellationCount ?? 0) > 0)
@@ -673,9 +721,23 @@
                 </a>
 
                 <a href="{{ route('admin.customers.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                class="sidebar-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }} 
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
                     <iconify-icon icon="mdi:account-multiple-outline" class="sidebar-icon text-lg"></iconify-icon>
-                    <span>Pelanggan</span>
+                    <span class="flex-1">Pelanggan</span>
+
+                    {{-- 🔐 Badge Permintaan Reset Password --}}
+                    @if(($pendingPasswordResetCount ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-red-500 text-white
+                                    shadow-md shadow-red-500/50
+                                    animate-pulse">
+                            {{ $pendingPasswordResetCount > 99 ? '99+' : $pendingPasswordResetCount }}
+                        </span>
+                    @endif
                 </a>
 
                 <a href="{{ route('admin.testimonials.index') }}"

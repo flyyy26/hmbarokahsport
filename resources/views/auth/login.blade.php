@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Login Admin - Barokah Sport</title>
+    <link rel="icon" src="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/png">
+    <link rel="shortcut icon" href="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/x-icon">
 
     {{-- Script tema (sebelum render biar no flash) --}}
     <script>
@@ -263,16 +265,37 @@
                 <div class="text-center mb-8">
 
                     {{-- Logo --}}
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4
-                                bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
-                                logo-glow">
-                        <iconify-icon icon="mdi:store" class="text-slate-900 text-3xl"></iconify-icon>
-                    </div>
+                    @if(!empty($setting?->logo) && Storage::disk('public')->exists($setting->logo))
+                        {{-- 🔥 LOGO DARI SETTINGS --}}
+                        <div class="inline-flex items-center justify-center mb-4 logo-glow
+                                    rounded-2xl px-4 py-3"
+                            style="background: var(--bg-card);
+                                    border: 1px solid rgba(236,188,66,0.2);">
+                            <img
+                                src="{{ Storage::url($setting->logo) }}"
+                                alt="{{ $setting->store_name ?? 'Admin' }}"
+                                class="h-16 w-auto max-w-[220px] object-contain"
+                                onerror="this.onerror=null; this.parentElement.style.display='none'; document.getElementById('fallback-logo').style.display='inline-flex';"
+                            >
+                        </div>
+                        {{-- Fallback jika gambar gagal load --}}
+                        <div id="fallback-logo"
+                            class="hidden items-center justify-center w-16 h-16 rounded-2xl mb-4
+                                    bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                    logo-glow">
+                            <iconify-icon icon="mdi:store" class="text-slate-900 text-3xl"></iconify-icon>
+                        </div>
+                    @else
+                        {{-- 🔥 FALLBACK: Ikon default kalau belum ada logo --}}
+                        <div id="fallback-logo"
+                            class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4
+                                    bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                    logo-glow">
+                            <iconify-icon icon="mdi:store" class="text-slate-900 text-3xl"></iconify-icon>
+                        </div>
+                    @endif
 
-                    {{-- Title --}}
-                    <h1 class="text-2xl font-bold tracking-tight" style="color: var(--text-1);">
-                        Barokah Sport
-                    </h1>
+                    {{-- Subtitle "Admin Panel" --}}
                     <div class="flex items-center justify-center gap-2 mt-1">
                         <div class="h-px flex-1 max-w-[60px]" style="background: linear-gradient(90deg, transparent, #ecbc42);"></div>
                         <p class="text-xs font-bold text-[#ecbc42] uppercase tracking-[0.2em]">
@@ -431,7 +454,7 @@
 
         {{-- Copyright --}}
         <p class="text-center text-xs mt-6" style="color: var(--text-5);">
-            &copy; {{ date('Y') }} Barokah Sport. All rights reserved.
+            &copy; {{ date('Y') }} {{ $setting?->store_name ?? 'Barokah Sport' }}. All rights reserved.
         </p>
 
     </div>

@@ -47,6 +47,7 @@ use App\Http\Controllers\Customer\CustomerTestimonialController;
 use App\Http\Controllers\Admin\AccountAdminController;
 use App\Http\Controllers\Admin\DashboardExportController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\PasswordResetController;
 
 // ============================================
 // CUSTOMER FRONTEND
@@ -68,6 +69,19 @@ Route::post('/api/articles/post-comment', [CustomerArticleController::class, 'po
 Route::delete('/api/articles/delete-comment', [CustomerArticleController::class, 'deleteComment'])->name('customer.articles.delete-comment');
 Route::get('/cara-pesan', [CaraPesanController::class, 'index'])->name('customer.cara-pesan');
 Route::get('/flash-sale', [CustomerProductController::class, 'flashSale'])->name('customer.products.flash-sale');
+Route::get('/lupa-password', [CustomerAuthController::class, 'showForgotPassword'])
+    ->name('customer.forgot-password');
+Route::post('/lupa-password', [CustomerAuthController::class, 'submitForgotPassword'])
+    ->name('customer.forgot-password.submit');
+Route::get('/lupa-password/status', [CustomerAuthController::class, 'showForgotPasswordResult'])
+    ->name('customer.forgot-password.result');
+
+Route::get('/reset-password/{token}', [CustomerAuthController::class, 'showResetPassword'])
+    ->name('customer.reset-password')
+    ->where('token', '[A-Za-z0-9]{64}');
+Route::post('/reset-password/{token}', [CustomerAuthController::class, 'processResetPassword'])
+    ->name('customer.reset-password.process')
+    ->where('token', '[A-Za-z0-9]{64}');
 
 Route::post('/checkout/apply-voucher', [CheckoutController::class, 'applyVoucher'])
     ->name('customer.checkout.apply-voucher');
@@ -390,6 +404,7 @@ Route::middleware(['customer'])->group(function () {
 
     Route::get('/akun/pesanan', [AccountController::class, 'orders'])->name('customer.orders');
     Route::get('/akun/pesanan/{order}/tracking', [AccountController::class, 'tracking'])->name('customer.orders.tracking');
+    Route::post('/akun/pesanan/{order}/tracking/refresh', [AccountController::class, 'refreshTracking'])->name('customer.orders.tracking.refresh');
     Route::get('/akun/pesanan/{order}', [AccountController::class, 'showOrder'])->name('customer.orders.show');
     Route::post('/akun/pesanan/{order}/request-cancel', [AccountController::class, 'requestCancellation'])
         ->name('customer.orders.request-cancel');
@@ -488,6 +503,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::put('/banners/{banner}', [BannerController::class, 'update'])->name('admin.banners.update');
     Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('admin.banners.destroy');
 
+    Route::get('/password-requests', [PasswordResetController::class, 'index'])
+        ->name('admin.password-requests.index');
+    Route::get('/password-requests/{passwordRequest}', [PasswordResetController::class, 'show'])
+        ->name('admin.password-requests.show');
+    Route::post('/customers/password-requests/{passwordRequest}/approve', 
+        [UserController::class, 'approveReset']
+    )->name('admin.customers.password-approve');
+    Route::post('/customers/password-requests/{passwordRequest}/reject', 
+        [UserController::class, 'rejectReset']
+    )->name('admin.customers.password-reject');
+    Route::delete('/password-requests/{passwordRequest}', [PasswordResetController::class, 'destroy'])
+        ->name('admin.password-requests.destroy');
     
 
     // MARKETPLACE

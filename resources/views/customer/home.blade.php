@@ -242,7 +242,6 @@
 <div class="testimonial_section">
     <div class="heading_product_layout">
         <h3>MEREKA SUDAH <span>MEMBUKTIKAN</span></h3>
-        <a href="">LIHAT SEMUA</a>
     </div>
      <div class="testimonial_layout">
          <div class="swiper testimonialSwiper">

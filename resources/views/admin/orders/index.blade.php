@@ -25,106 +25,136 @@
 
 
     {{-- ============================================ --}}
-    {{-- STATUS SUMMARY CARDS --}}
-    {{-- ============================================ --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-8">
-
-        @php
-            $statusCards = [
-                ['key' => 'total',      'label' => 'Total',       'color' => null],
-                ['key' => 'pending',    'label' => 'Menunggu',    'color' => '#fbbf24'],
-                ['key' => 'processing', 'label' => 'Diproses',    'color' => '#60a5fa'],
-                ['key' => 'shipped',    'label' => 'Dikirim',     'color' => '#a78bfa'],
-                ['key' => 'delivered',  'label' => 'Selesai',     'color' => '#34d399'],
-                ['key' => 'cancelled',  'label' => 'Dibatalkan',  'color' => '#f87171'],
-                ['key' => 'cancellation_requested', 'label' => 'Minta Batal', 'color' => '#f97316'],
-                ['key' => 'unpaid',     'label' => 'Belum Bayar', 'color' => '#fb923c'],
-            ];
-        @endphp
-
-        @foreach($statusCards as $card)
-            @php
-                $count = $statusCounts[$card['key']] ?? 0;
-                $hasColor = $card['color'] !== null;
-            @endphp
-
-            <div class="rounded-xl border p-4 text-center transition-colors"
-                 style="background: var(--bg-card); border-color: var(--border-2);"
-                 onmouseover="this.style.borderColor='rgba(236,188,66,0.3)'"
-                 onmouseout="this.style.borderColor='var(--border-2)'">
-
-                <p class="text-2xl font-bold" style="color: {{ $hasColor ? $card['color'] : 'var(--text-1)' }};">
-                    {{ $count }}
-                </p>
-                <p class="text-[11px] font-semibold uppercase tracking-wider mt-1"
-                   style="color: {{ $hasColor ? $card['color'] : 'var(--text-5)' }}; opacity: {{ $hasColor ? '0.8' : '1' }};">
-                    {{ $card['label'] }}
-                </p>
-            </div>
-        @endforeach
-    </div>
-
-
-    {{-- ============================================ --}}
-    {{-- FILTER & SEARCH --}}
+    {{-- FILTER TABS + BADGE + SEARCH --}}
     {{-- ============================================ --}}
     <div class="flex flex-col lg:flex-row lg:items-center gap-3">
 
-        {{-- Filter Buttons --}}
+        {{-- Filter Tabs dengan Badge --}}
         <div class="flex flex-wrap gap-2 flex-1">
 
             @php
                 $filters = [
-                    ['value' => null,            'label' => 'Semua'],
-                    ['value' => 'pending',       'label' => 'Menunggu'],
-                    ['value' => 'processing',    'label' => 'Diproses'],
-                    ['value' => 'shipped',       'label' => 'Dikirim'],
-                    ['value' => 'delivered',     'label' => 'Selesai'],
-                    ['value' => 'cancelled',     'label' => 'Dibatalkan'],
-                    ['value' => 'cancellation_requested', 'label' => 'Permintaan Pembatalan', 'highlight' => true],
+                    [
+                        'value'  => null,
+                        'label'  => 'Semua',
+                        'count'  => $statusCounts['total'] ?? 0,
+                        'color'  => null,
+                    ],
+                    [
+                        'value'  => 'pending',
+                        'label'  => 'Menunggu',
+                        'count'  => $statusCounts['pending'] ?? 0,
+                        'color'  => '#fbbf24',
+                    ],
+                    [
+                        'value'  => 'processing',
+                        'label'  => 'Diproses',
+                        'count'  => $statusCounts['processing'] ?? 0,
+                        'color'  => '#60a5fa',
+                    ],
+                    [
+                        'value'  => 'shipped',
+                        'label'  => 'Dikirim',
+                        'count'  => $statusCounts['shipped'] ?? 0,
+                        'color'  => '#a78bfa',
+                    ],
+                    [
+                        'value'  => 'delivered',
+                        'label'  => 'Selesai',
+                        'count'  => $statusCounts['delivered'] ?? 0,
+                        'color'  => '#34d399',
+                    ],
+                    [
+                        'value'  => 'cancelled',
+                        'label'  => 'Dibatalkan',
+                        'count'  => $statusCounts['cancelled'] ?? 0,
+                        'color'  => '#f87171',
+                    ],
+                    [
+                        'value'  => 'cancellation_requested',
+                        'label'  => 'Permintaan Pembatalan',
+                        'count'  => $statusCounts['cancellation_requested'] ?? 0,
+                        'color'  => '#f97316',
+                        'highlight' => true,
+                    ],
+                    [
+                        'value'  => 'unpaid',
+                        'label'  => 'Belum Bayar',
+                        'count'  => $statusCounts['unpaid'] ?? 0,
+                        'color'  => '#fb923c',
+                        'payment_filter' => true,
+                    ],
                 ];
             @endphp
 
             @foreach($filters as $filter)
                 @php
-                    $isActive = request('shipping_status') == $filter['value']
-                            || ($filter['value'] === null && !request('shipping_status'));
-                    $url = $filter['value']
-                        ? route('admin.orders.index', ['shipping_status' => $filter['value']])
-                        : route('admin.orders.index');
+                    // Cek active state
+                    if (isset($filter['payment_filter']) && $filter['payment_filter']) {
+                        // Filter payment_status (bukan shipping_status)
+                        $isActive = request('payment_status') === $filter['value'];
+                        $url = route('admin.orders.index', ['payment_status' => $filter['value']]);
+                    } else {
+                        $isActive = request('shipping_status') == $filter['value']
+                                || ($filter['value'] === null && !request('shipping_status') && !request('payment_status'));
+                        $url = $filter['value']
+                            ? route('admin.orders.index', ['shipping_status' => $filter['value']])
+                            : route('admin.orders.index');
+                    }
+
+                    $count = $filter['count'] ?? 0;
+                    $color = $filter['color'];
                     $isHighlight = $filter['highlight'] ?? false;
-                    $hasPending = $isHighlight && ($statusCounts['cancellation_requested'] ?? 0) > 0;
+                    $showBadge = $count > 0;
                 @endphp
 
                 <a href="{{ $url }}"
-                class="relative px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all"
-                @if($isActive)
+                   class="group relative inline-flex items-center gap-2
+                          px-3.5 py-2 text-xs font-semibold rounded-lg border
+                          transition-all active:scale-95"
+                   @if($isActive)
                         style="background: {{ $isHighlight ? '#f97316' : '#ecbc42' }};
-                            color: {{ $isHighlight ? '#ffffff' : '#422006' }};
-                            border-color: {{ $isHighlight ? '#f97316' : '#ecbc42' }};"
-                @elseif($isHighlight)
+                               color: {{ $isHighlight ? '#ffffff' : '#422006' }};
+                               border-color: {{ $isHighlight ? '#f97316' : '#ecbc42' }};"
+                   @elseif($isHighlight && $count > 0)
                         style="background: rgba(249,115,22,0.1);
-                            color: #f97316;
-                            border-color: rgba(249,115,22,0.3);"
+                               color: #f97316;
+                               border-color: rgba(249,115,22,0.3);"
                         onmouseover="this.style.background='rgba(249,115,22,0.2)'; this.style.borderColor='#f97316'"
                         onmouseout="this.style.background='rgba(249,115,22,0.1)'; this.style.borderColor='rgba(249,115,22,0.3)'"
-                @else
+                   @else
                         style="background: var(--bg-input); color: var(--text-4); border-color: var(--border-2);"
                         onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
                         onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-4)'"
-                @endif>
+                   @endif>
 
-                    {{ $filter['label'] }}
+                    <span>{{ $filter['label'] }}</span>
 
-                    {{-- 🔥 Counter bubble untuk permintaan pembatalan --}}
-                    @if($hasPending)
-                        <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1
-                                    inline-flex items-center justify-center
-                                    text-[9px] font-bold rounded-full
-                                    bg-red-500 text-white
-                                    shadow-md shadow-red-500/50
-                                    animate-pulse">
-                            {{ $statusCounts['cancellation_requested'] }}
+                    {{-- 🔥 BADGE COUNTER --}}
+                    @if($showBadge)
+                        @php
+                            // Warna badge menyesuaikan status
+                            if ($isActive) {
+                                // Kalau tab aktif, badge putih transparan
+                                $badgeStyle = 'background: rgba(255,255,255,0.25); color: inherit;';
+                            } elseif ($isHighlight) {
+                                // Untuk tab highlight (permintaan pembatalan)
+                                $badgeStyle = 'background: #ef4444; color: #ffffff;';
+                            } elseif ($color) {
+                                // Warna badge sesuai status
+                                $badgeStyle = "background: {$color}20; color: {$color}; border: 1px solid {$color}40;";
+                            } else {
+                                $badgeStyle = 'background: rgba(236,188,66,0.15); color: #ecbc42;';
+                            }
+                        @endphp
+
+                        <span class="inline-flex items-center justify-center
+                                     min-w-[20px] h-5 px-1.5
+                                     text-[10px] font-bold
+                                     rounded-full
+                                     {{ $isHighlight && !$isActive ? 'animate-pulse' : '' }}"
+                              style="{{ $badgeStyle }}">
+                            {{ $count > 99 ? '99+' : $count }}
                         </span>
                     @endif
                 </a>
@@ -135,6 +165,9 @@
         <form method="GET" class="flex gap-2">
             @if(request('shipping_status'))
                 <input type="hidden" name="shipping_status" value="{{ request('shipping_status') }}">
+            @endif
+            @if(request('payment_status'))
+                <input type="hidden" name="payment_status" value="{{ request('payment_status') }}">
             @endif
 
             <input type="text"

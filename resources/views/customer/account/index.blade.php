@@ -413,13 +413,13 @@
         }
 
         .avatar-info-title {
-            font-size: 3.5vw;
+            font-size: 4vw;
             margin-bottom: 0.8vw;
             color: rgb(102, 72, 9);
         }
 
         .avatar-info-desc {
-            font-size: 2.8vw;
+            font-size: 3.4vw;
             color: rgb(102, 72, 9);
             opacity: 0.75;
             line-height: 1.5;
@@ -430,13 +430,13 @@
         }
 
         .form-label {
-            font-size: 3.2vw;
+            font-size: 3.8vw;
         }
 
         .form-input {
             padding: 3vw 3.5vw;
             border-radius: 2vw;
-            font-size: 3.2vw;
+            font-size: 3.8vw;
             border-width: 0.3vw;
         }
 
@@ -445,7 +445,7 @@
         }
 
         .form-error {
-            font-size: 2.7vw;
+            font-size: 3vw;
             gap: 1vw;
         }
 
@@ -461,7 +461,7 @@
             width: 100%;
             padding: 3.2vw 4vw;
             border-radius: 2.5vw;
-            font-size: 3.2vw;
+            font-size: 3.8vw;
             gap: 1.5vw;
             justify-content: center;
         }
@@ -485,7 +485,7 @@
         }
 
         .password-section p {
-            font-size: 3vw;
+            font-size: 3.5vw;
             margin-bottom: 3.5vw;
         }
     }

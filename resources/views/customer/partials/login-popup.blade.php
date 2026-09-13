@@ -186,7 +186,6 @@
 
     .login-popup-overlay.active {
         display: flex;
-        animation: loginFadeIn 0.3s ease;
     }
 
     @keyframes loginFadeIn {
@@ -207,7 +206,6 @@
         box-shadow: 0 1vw 4vw rgba(0, 0, 0, 0.2);
         max-height: 92vh;
         overflow-y: auto;
-        animation: loginSlideIn 0.25s ease-out;
     }
 
     @keyframes loginSlideIn {

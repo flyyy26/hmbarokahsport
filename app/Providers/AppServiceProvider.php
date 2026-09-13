@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Http\ViewComposers\MarketplaceComposer;
 use App\Models\Order;
+use App\Models\PasswordResetRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
@@ -28,25 +29,31 @@ class AppServiceProvider extends ServiceProvider
         // ============================================
         // 🔥 MARKETPLACE COMPOSER (EXISTING)
         // ============================================
-        View::composer('layouts.customer', MarketplaceComposer::class);
-        View::composer('layouts.account', MarketplaceComposer::class);
-        View::composer('customer.partials.navbar', MarketplaceComposer::class);
-        View::composer('customer.partials.footer', MarketplaceComposer::class);
-        View::composer('customer.home', MarketplaceComposer::class);
-        View::composer('customer.products.show', MarketplaceComposer::class);
-        
+        View::composer([
+            'layouts.customer',
+            'layouts.account',
+            'layouts.admin',         
+            'customer.partials.navbar',
+            'customer.partials.footer',
+            'customer.home',
+            'auth.login',
+            'customer.products.show',
+            'admin.*',                   
+        ], MarketplaceComposer::class);
+
 
         // ============================================
-        // 🔥 SIDEBAR BADGE NOTIFICATION (BARU)
-        // Untuk menu Pesanan & Retur di admin
+        // 🔥 SIDEBAR BADGE NOTIFICATION (ADMIN)
+        // Untuk menu:
+        //   - Pesanan (pending cancellation)
+        //   - Retur (pending return)
+        //   - Pelanggan (pending password reset) ← BARU
         // ============================================
         View::composer('layouts.admin', function ($view) {
-            // Skip jika user belum login atau bukan admin
             if (!Auth::check() || !Auth::user()->isAdmin()) {
                 return;
             }
 
-            // 🔥 Cache 60 detik untuk optimasi query
             $data = Cache::remember('sidebar_badges', 60, function () {
                 return [
                     // Permintaan pembatalan yang belum diproses
@@ -57,11 +64,41 @@ class AppServiceProvider extends ServiceProvider
                     // Permintaan retur yang belum diproses
                     'pendingReturnCount' => Order::where('return_status', 'pending')
                         ->count(),
+
+                    // 🔐 Permintaan reset password yang belum diproses
+                    'pendingPasswordResetCount' => PasswordResetRequest::where('status', 'pending')
+                        ->count(),
+
+                    // 🔥 BARU: Order yang butuh diproses (pending + processing)
+                    'pendingOrderCount' => Order::whereIn('shipping_status', ['pending', 'processing'])
+                        ->where('payment_status', 'paid')
+                        ->count(),
                 ];
             });
 
             $view->with($data);
         });
+
+
+        // ============================================
+        // 🔥 AUTO INVALIDATE CACHE
+        // Setiap ada perubahan di Order / PasswordResetRequest,
+        // hapus cache 'sidebar_badges' agar badge langsung update.
+        // ============================================
+        Order::saved(function () {
+            Cache::forget('sidebar_badges');
+        });
+        Order::deleted(function () {
+            Cache::forget('sidebar_badges');
+        });
+
+        PasswordResetRequest::saved(function () {
+            Cache::forget('sidebar_badges');
+        });
+        PasswordResetRequest::deleted(function () {
+            Cache::forget('sidebar_badges');
+        });
+
 
         // ============================================
         // 🔥 SCHEDULER (EXISTING)

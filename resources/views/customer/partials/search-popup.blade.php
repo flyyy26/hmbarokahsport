@@ -92,7 +92,6 @@
         display: none;
         justify-content: center;
         align-items: center;
-        animation: searchFadeIn 0.3s ease;
     }
 
     .search-popup-overlay.active {
@@ -119,10 +118,6 @@
             opacity: 0;
             transform: scale(0.95);
         }
-    }
-
-    .search-popup-overlay.fade-out {
-        animation: searchFadeOut 0.3s ease forwards;
     }
 
     /* ============================================

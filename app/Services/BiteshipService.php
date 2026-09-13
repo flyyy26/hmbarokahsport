@@ -119,9 +119,18 @@ class BiteshipService
                 if ($response->successful()) {
                     $data = $response->json();
 
+                    // 🔥 Normalize: Biteship returns 'link' as the tracking URL.
+                    // Map it to 'waybill_url' so all consumers use a consistent field name.
+                    if (isset($data['link']) && !isset($data['waybill_url'])) {
+                        $data['waybill_url'] = $data['link'];
+                    }
+
+                    // 🔥 Normalize message (Biteship API has a typo: "messsage")
+                    $message = $data['message'] ?? $data['messsage'] ?? 'Tracking berhasil dimuat';
+
                     $result = [
                         'success' => true,
-                        'message' => 'Tracking berhasil dimuat',
+                        'message' => $message,
                         'data' => $data,
                     ];
 
@@ -153,6 +162,15 @@ class BiteshipService
                 'data' => null,
             ];
         }
+    }
+
+    /**
+     * 🔥 Clear cached tracking data so the next call hits the Biteship API fresh.
+     */
+    public function clearTrackingCache(string $biteshipOrderId, ?string $waybillId = null, ?string $trackingUrl = null): void
+    {
+        $cacheKey = 'biteship:tracking:' . md5($biteshipOrderId . '|' . ($waybillId ?? '') . '|' . ($trackingUrl ?? ''));
+        Cache::forget($cacheKey);
     }
 
     /**

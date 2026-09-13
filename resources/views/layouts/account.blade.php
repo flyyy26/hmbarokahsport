@@ -322,7 +322,7 @@
             }
 
             .account-content .content-header p {
-                font-size: 3.2vw;
+                font-size: 3.8vw;
                 margin-top: 1vw;
             }
 

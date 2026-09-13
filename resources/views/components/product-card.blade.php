@@ -5,30 +5,51 @@
 ])
 
 @php
-    $maxDiscount = $product->max_discount_percent ?? 0;
-    $minEffectivePrice = $product->min_effective_price ?? 0;
-    $maxOriginalPrice = $product->max_price ?? 0;
-    $minOriginalPrice = $product->variants->min('price') ?? 0;
-    $isFlashSale = $showFlashSale && ($product->is_flash_sale ?? false);
-    $isOutOfStock = $product->isOutOfStock();
+    // ============================================
+    // 🔥 AMBIL LANGSUNG DARI TRAIT — TIDAK HITUNG ULANG
+    // ============================================
+    $maxDiscount       = $product->max_discount_percent ?? 0;
+    $isFlashSale       = $showFlashSale && ($product->is_flash_sale ?? false);
+    $isOutOfStock      = $product->isOutOfStock();
+    $inWishlist        = in_array($product->id, array_keys(session()->get('wishlist', [])));
+    $badgeText         = $product->badge_label ?? '';
+
+    // 🔥 HARGA — pakai property dari trait
+    $hasDiscount       = $product->has_discount ?? false;
+    $priceLabel        = $product->price_label ?? null;
+    $originalPriceLabel = $product->original_price_display ?? null;
+
+    // 🔥 FALLBACK — kalau trait tidak jalan, hitung manual
+    if (!$priceLabel) {
+        $minEff = $product->min_effective_price ?? 0;
+        $maxEff = $product->max_effective_price ?? $minEff;
+        $minOrig = $product->min_price ?? 0;
+        $maxOrig = $product->max_price ?? $minOrig;
+
+        if ($hasDiscount) {
+            $priceLabel = ($minEff == $maxEff)
+                ? 'Rp ' . number_format($minEff, 0, ',', '.')
+                : 'Rp ' . number_format($minEff, 0, ',', '.') . ' - Rp ' . number_format($maxEff, 0, ',', '.');
+        } else {
+            $priceLabel = ($minOrig == $maxOrig)
+                ? 'Rp ' . number_format($minOrig, 0, ',', '.')
+                : 'Rp ' . number_format($minOrig, 0, ',', '.') . ' - Rp ' . number_format($maxOrig, 0, ',', '.');
+        }
+    }
+
+    if (!$originalPriceLabel && $hasDiscount) {
+        $minOrig = $product->min_price ?? 0;
+        $maxOrig = $product->max_price ?? $minOrig;
+
+        $originalPriceLabel = ($minOrig == $maxOrig)
+            ? 'Rp ' . number_format($minOrig, 0, ',', '.')
+            : 'Rp ' . number_format($minOrig, 0, ',', '.') . ' - Rp ' . number_format($maxOrig, 0, ',', '.');
+    }
+
+    // 🔥 THUMBNAIL
     $thumbnail = $product->thumbnail ?? null;
     if (!$thumbnail && $product->images->isNotEmpty()) {
         $thumbnail = Storage::url($product->images->first()->image);
-    }
-    $badgeText = $product->badge_label ?? '';
-    $inWishlist = in_array($product->id, array_keys(session()->get('wishlist', [])));
-
-    // Format harga
-    if ($minEffectivePrice == $maxOriginalPrice) {
-        $discountedPriceDisplay = 'Rp ' . number_format($minEffectivePrice, 0, ',', '.');
-    } else {
-        $discountedPriceDisplay = 'Rp ' . number_format($minEffectivePrice, 0, ',', '.') . ' - Rp ' . number_format($maxOriginalPrice, 0, ',', '.');
-    }
-    
-    if ($minOriginalPrice == $maxOriginalPrice) {
-        $originalPriceDisplay = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.');
-    } else {
-        $originalPriceDisplay = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.') . ' - Rp ' . number_format($maxOriginalPrice, 0, ',', '.');
     }
 
     $skeletonId = "skeleton-{$skeletonPrefix}-{$product->id}";
@@ -41,7 +62,7 @@
         </div>
         <a href="{{ route('customer.products.show', $product->slug) }}">
             @if($thumbnail)
-                <img src="{{ $thumbnail }}" 
+                <img src="{{ $thumbnail }}"
                     alt="{{ $product->name }}"
                     loading="lazy"
                     width="300"
@@ -57,11 +78,11 @@
                 <script>document.getElementById('{{ $skeletonId }}')?.classList.add('hidden');</script>
             @endif
         </a>
-        
+
         @if($isOutOfStock)
             <span class="product_badge out-of-stock">HABIS</span>
         @endif
-        
+
         @if($isFlashSale)
             <span class="discount_badge flash-sale-badge">
                 ⚡ Flash Sale{{ $maxDiscount > 0 ? ' ' . round($maxDiscount) . '%' : '' }}
@@ -72,33 +93,37 @@
             <span class="discount_badge">{{ $badgeText }}</span>
         @endif
     </div>
-    
+
     <div class="product_layout_content">
         <h5>{{ $product->name }}</h5>
         <div class="product_layout_price">
-            @if($maxDiscount > 0 || $isFlashSale)
+            @if($hasDiscount || $isFlashSale)
                 <div class="product_layout_price_box">
-                    <p class="price-discount {{ $isFlashSale ? 'flash-sale-price' : '' }}">{{ $discountedPriceDisplay }}</p>
-                    <span class="price-original">{{ $originalPriceDisplay }}</span>
+                    <p class="price-discount {{ $isFlashSale ? 'flash-sale-price' : '' }}">
+                        {{ $priceLabel }}
+                    </p>
+                    @if($originalPriceLabel)
+                        <span class="price-original">{{ $originalPriceLabel }}</span>
+                    @endif
                 </div>
             @else
-                <p>{{ $discountedPriceDisplay }}</p>
+                <p>{{ $priceLabel }}</p>
             @endif
         </div>
     </div>
-    
+
     <div class="product_layout_button">
-        <button class="buy_now_btn {{ $isOutOfStock ? 'disabled' : '' }}" 
+        <button class="buy_now_btn {{ $isOutOfStock ? 'disabled' : '' }}"
                 onclick="{{ $isOutOfStock ? '' : 'buyNow(' . $product->id . ')' }}"
                 {{ $isOutOfStock ? 'disabled' : '' }}>
             {{ $isOutOfStock ? 'HABIS' : 'BELI SEKARANG' }}
         </button>
-        <button class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}" 
+        <button class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}"
                 onclick="{{ $isOutOfStock ? '' : 'addToCart(' . $product->id . ')' }}"
                 {{ $isOutOfStock ? 'disabled' : '' }}>
             <iconify-icon icon="solar:cart-linear"></iconify-icon>
         </button>
-        <button class="add_to_wishlist_btn" 
+        <button class="add_to_wishlist_btn"
                 data-product-id="{{ $product->id }}"
                 data-in-wishlist="{{ $inWishlist ? 'true' : 'false' }}"
                 onclick="addToWishlist({{ $product->id }})">

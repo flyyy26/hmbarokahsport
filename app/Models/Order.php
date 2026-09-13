@@ -131,6 +131,66 @@ class Order extends Model
         return $status === 'delivered';
     }
 
+    /**
+     * 🔥 Sync Biteship tracking status & metadata back to the local order.
+     * Maps Biteship statuses to local shipping_status values.
+     */
+    public function syncTrackingStatus(array $tracking): array
+    {
+        $updates = [];
+
+        // 🔥 Sync waybill_id -> tracking_number
+        if (!empty($tracking['waybill_id']) && $tracking['waybill_id'] !== ($this->tracking_number ?? null)) {
+            $updates['tracking_number'] = $tracking['waybill_id'];
+        }
+
+        // 🔥 Sync waybill_url -> biteship_tracking_url (Biteship returns 'link')
+        $trackingUrl = $tracking['waybill_url'] ?? $tracking['link'] ?? null;
+        if (!empty($trackingUrl) && $trackingUrl !== ($this->biteship_tracking_url ?? null)) {
+            $updates['biteship_tracking_url'] = $trackingUrl;
+        }
+
+        // 🔥 Map Biteship status -> local shipping_status
+        $statusMap = [
+            'confirmed'        => 'processing',
+            'scheduled'        => 'processing',
+            'allocated'        => 'processing',
+            'picking_up'       => 'processing',
+            'picked'           => 'shipped',
+            'in_transit'       => 'shipped',
+            'dropping_off'     => 'shipped',
+            'on_hold'          => 'processing',
+            'delivered'        => 'delivered',
+            'return_in_transit' => 'shipped',
+            'returned'         => 'cancelled',
+            'rejected'         => 'cancelled',
+            'courier_not_found' => 'cancelled',
+            'cancelled'        => 'cancelled',
+            'disposed'         => 'cancelled',
+        ];
+
+        $biteshipStatus = strtolower($tracking['status'] ?? '');
+        $mappedStatus = $statusMap[$biteshipStatus] ?? null;
+
+        if ($mappedStatus && $mappedStatus !== ($this->shipping_status ?? 'pending')) {
+            $updates['shipping_status'] = $mappedStatus;
+
+            if ($mappedStatus === 'delivered' && !$this->delivered_at) {
+                $updates['delivered_at'] = now();
+            }
+
+            if ($mappedStatus === 'shipped' && !$this->shipped_at) {
+                $updates['shipped_at'] = now();
+            }
+        }
+
+        if (!empty($updates)) {
+            $this->update($updates);
+        }
+
+        return $updates;
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

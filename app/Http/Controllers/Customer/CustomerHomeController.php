@@ -145,7 +145,7 @@ class CustomerHomeController extends Controller
 
         foreach ($productCollections as $products) {
             foreach ($products as $product) {
-                $this->attachDiscountDataFast($product);
+                $this->attachDiscountData($product);      // ✅ PAKAI TRAIT
                 $this->attachThumbnailFast($product);
             }
         }

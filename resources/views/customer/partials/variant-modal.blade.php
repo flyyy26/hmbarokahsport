@@ -61,32 +61,6 @@
     /* ============================================
        VARIANT MODAL STYLES
        ============================================ */
-    .variant-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(0.3vw);
-        -webkit-backdrop-filter: blur(0.3vw);
-        z-index: 99999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5vw;
-        animation: variantFadeIn 0.25s ease-out;
-    }
-
-    .variant-modal-overlay.hidden {
-        display: none;
-    }
-
-    @keyframes variantFadeIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-    }
-
     /* --------------------------------------------
        BOX
        -------------------------------------------- */
@@ -100,7 +74,6 @@
         padding: 1.5vw;
         position: relative;
         box-shadow: 0 1vw 4vw rgba(0, 0, 0, 0.2);
-        animation: variantSlideIn 0.3s ease-out;
     }
 
     @keyframes variantSlideIn {
@@ -540,7 +513,6 @@
             max-height: 90vh;
             border-radius: 4vw 4vw 0 0;
             padding: 6vw 5vw 6vw;
-            animation: variantSlideUp 0.3s ease-out;
         }
 
         @keyframes variantSlideUp {

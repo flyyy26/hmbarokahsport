@@ -472,16 +472,19 @@ class AccountController extends Controller
             $trackingError = $cached['trackingError'] ?? null;
         } elseif ($order->biteship_order_id) {
             $biteship = app(BiteshipService::class);
-            
+
             $result = $biteship->getTrackingDetails(
                 $order->biteship_order_id,
                 $order->tracking_number,
                 $order->biteship_tracking_url
             );
-            
+
             if ($result['success']) {
                 $tracking = $result['data'];
-                
+
+                // 🔥 Sync Biteship status & metadata to local order
+                $order->syncTrackingStatus($tracking);
+
                 if (empty($tracking['history'] ?? [])) {
                     $trackingError = 'Tracking belum memiliki riwayat pengiriman.';
                     $tracking = $this->getSimulatedTracking($order);
@@ -498,6 +501,86 @@ class AccountController extends Controller
         }
 
         return view('customer.orders.tracking', compact('order', 'tracking', 'trackingError'));
+    }
+
+    /**
+     * 🔥 REFRESH TRACKING (AJAX) - Clear cache and fetch fresh data from Biteship
+     */
+    public function refreshTracking(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::guard('customer')->id()) {
+            abort(403);
+        }
+
+        try {
+            // 🔥 Clear BOTH controller-level cache and service-level cache
+            $cacheKey = 'tracking:' . $order->id . ':' . $order->updated_at->timestamp;
+            \Cache::forget($cacheKey);
+
+            $biteship = app(BiteshipService::class);
+            $biteship->clearTrackingCache(
+                $order->biteship_order_id,
+                $order->tracking_number,
+                $order->biteship_tracking_url
+            );
+
+            if (! $order->biteship_order_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order tidak memiliki ID tracking Biteship.',
+                ], 400);
+            }
+
+            $result = $biteship->getTrackingDetails(
+                $order->biteship_order_id,
+                $order->tracking_number,
+                $order->biteship_tracking_url
+            );
+
+            if ($result['success']) {
+                $tracking = $result['data'] ?? [];
+
+                // 🔥 Sync Biteship status & metadata to local order
+                $order->syncTrackingStatus($tracking);
+                $order->refresh();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $tracking,
+                    'message' => 'Tracking berhasil diperbarui.',
+                ]);
+            }
+
+            // Fallback simulasi
+            if (str_contains(strtolower($result['message'] ?? ''), 'not found') ||
+                str_contains(strtolower($result['message'] ?? ''), 'tidak ditemukan')) {
+                $simulated = $this->getSimulatedTracking($order);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $simulated,
+                    'message' => 'Menampilkan data lokal (order tidak ditemukan di Biteship).',
+                    'simulated' => true,
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Gagal refresh tracking',
+            ], 500);
+
+        } catch (\Exception $e) {
+            \Log::error('Customer refresh tracking error:', [
+                'order_id' => $order->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function requestCancellation(Request $request, Order $order)
