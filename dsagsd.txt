@@ -1,0 +1,999 @@
+# FITUR LENGKAP WEBSITE ECOMMERCE BAROKAH SPORT
+
+Website ecommerce full-stack yang dibangun dari awal dengan sistem **Customer, Admin, Checkout, Pembayaran, Pesanan, Stok, Retur, Laporan, Keuangan, dan Manajemen Konten**.
+
+---
+
+# A. SISTEM CUSTOMER / PENGGUNA
+
+## 1. Registrasi & Login Customer
+
+* Registrasi akun customer
+* Login customer
+* Logout
+* Manajemen sesi login
+* Login menggunakan nomor WhatsApp
+* Validasi data customer
+* Proteksi halaman akun customer
+* Fitur lupa kata sandi
+* Reset kata sandi melalui verifikasi admin
+
+## 2. Manajemen Profil Customer
+
+* Melihat profil
+* Mengubah nama
+* Mengubah nomor WhatsApp
+* Mengubah informasi akun
+* Mengubah kata sandi
+* Status akun aktif/nonaktif
+
+## 3. Manajemen Alamat
+
+* Menambahkan alamat baru
+* Mengubah alamat
+* Menghapus alamat
+* Menyimpan banyak alamat
+* Memilih alamat utama
+* Memilih alamat saat checkout
+* Data provinsi
+* Data kota/kabupaten
+* Data kecamatan
+* Data kelurahan/desa
+* Kode pos
+* Nama penerima
+* Nomor WhatsApp penerima
+* Detail alamat
+
+---
+
+# B. KATALOG PRODUK
+
+## 4. Katalog Produk
+
+* Menampilkan seluruh produk
+* Produk unggulan
+* Produk terlaris
+* Produk terbaru
+* Produk berdasarkan kategori
+* Produk berdasarkan gender
+* Pencarian produk
+* Pagination produk
+
+## 5. Sistem Multi-Filter Produk
+
+* Filter kategori
+* Filter harga
+* Filter gender
+* Filter ukuran
+* Filter warna
+* Filter ketersediaan stok
+* Sorting produk
+* Produk termurah
+* Produk termahal
+* Produk terbaru
+* Produk terlaris
+
+## 6. Pencarian Produk
+
+* Popup pencarian produk
+* Pencarian berdasarkan nama produk
+* Pencarian berdasarkan informasi produk
+* Hasil pencarian secara cepat
+* Tampilan produk yang relevan
+
+---
+
+# C. SISTEM VARIAN PRODUK
+
+## 7. Variant System
+
+* Varian warna
+* Varian ukuran
+* Kombinasi warna & ukuran
+* Stok per kombinasi varian
+* Harga per varian
+* Diskon per varian
+* SKU per varian
+* Status stok per varian
+
+## 8. Manajemen Warna
+
+* Menambahkan warna
+* Warna menggunakan gambar
+* Gambar berbeda untuk setiap warna
+
+## 9. Manajemen Ukuran
+
+* Menambahkan ukuran
+* Memilih ukuran existing
+* Pengaturan ukuran produk
+* Panduan ukuran
+
+## 10. Generate Varian Otomatis
+
+* Memilih warna
+* Memilih ukuran
+* Generate kombinasi varian otomatis
+* Pengaturan stok setiap varian
+* Pengaturan harga setiap varian
+* Pengaturan SKU setiap varian
+
+---
+
+# D. HALAMAN DETAIL PRODUK
+
+## 11. Product Detail
+
+* Galeri gambar produk
+* Multiple gambar produk
+* Thumbnail gambar
+* Zoom gambar utama
+* Pemilihan warna
+* Pemilihan ukuran
+* Informasi stok
+* Harga produk
+* Harga setelah diskon
+* Deskripsi produk
+* Detail teknis
+* Fitur produk
+* Panduan ukuran
+* Testimoni produk
+* Rating produk
+* Produk terkait
+
+## 12. Aksi Produk
+
+* Beli sekarang
+* Tambah ke keranjang
+* Tambah ke wishlist
+* Memilih varian sebelum pembelian
+* Validasi stok sebelum pembelian
+
+---
+
+# E. SISTEM DISKON & PROMO
+
+## 13. Diskon Produk
+
+* Diskon produk
+* Diskon berdasarkan persentase
+* Diskon berdasarkan nominal
+* Periode diskon
+* Status diskon
+
+## 14. Diskon Varian
+
+* Diskon khusus varian
+* Diskon per kombinasi varian
+* Pengaturan periode diskon
+
+## 15. Flash Sale
+
+* Flash sale produk
+* Timer flash sale
+* Countdown real-time
+* Countdown per produk
+* Waktu mulai flash sale
+* Waktu berakhir flash sale
+* Harga khusus flash sale
+* Status flash sale
+
+## 16. Sistem Diskon Berlapis
+
+Sistem dapat menangani beberapa sumber harga/promo seperti:
+
+* Harga normal
+* Diskon varian
+* Diskon produk
+* Flash sale
+* Voucher
+
+Dengan perhitungan harga mengikuti aturan bisnis yang telah diterapkan pada sistem.
+
+---
+
+# F. SISTEM VOUCHER
+
+## 17. Manajemen Voucher
+
+* Membuat voucher
+* Mengedit voucher
+* Menghapus voucher
+* Mengaktifkan/nonaktifkan voucher
+* Kode voucher
+* Nama voucher
+* Deskripsi voucher
+* Syarat & ketentuan
+* Periode voucher
+
+## 18. Jenis Voucher
+
+* Diskon persentase
+* Potongan nominal
+* Diskon produk
+* Diskon ongkir
+* Gratis ongkir
+
+## 19. Aturan Voucher
+
+* Minimal transaksi
+* Maksimal nominal diskon
+* Kuota penggunaan
+* Batas penggunaan per akun
+* Masa berlaku voucher
+* Produk tertentu
+* Kategori tertentu
+* Syarat & ketentuan
+
+## 20. Validasi Voucher
+
+* Validasi kode voucher
+* Validasi periode
+* Validasi kuota
+* Validasi batas penggunaan customer
+* Validasi minimal transaksi
+* Validasi produk/kategori
+* Perhitungan diskon otomatis
+* Perhitungan gratis ongkir
+
+---
+
+# G. WISHLIST & KERANJANG
+
+## 21. Wishlist
+
+* Menambahkan produk ke wishlist
+* Menghapus wishlist
+* Melihat wishlist
+* Memilih varian
+* Menambahkan produk wishlist langsung ke keranjang
+
+## 22. Keranjang Belanja
+
+* Menambah produk
+* Mengurangi jumlah produk
+* Menghapus produk
+* Memilih varian
+* Mengubah jumlah pembelian
+* Perhitungan harga otomatis
+* Perhitungan diskon
+* Validasi stok real-time
+* Validasi stok setiap varian
+* Sinkronisasi keranjang
+
+---
+
+# H. CHECKOUT
+
+## 23. Checkout Flow
+
+* Ringkasan produk
+* Ringkasan harga
+* Pemilihan alamat
+* Tambah alamat baru
+* Penggunaan alamat existing
+* Pemilihan voucher
+* Input kode voucher
+* Perhitungan subtotal
+* Perhitungan diskon
+* Perhitungan ongkir
+* Perhitungan total pembayaran
+
+## 24. Sistem Wilayah Indonesia
+
+* Provinsi
+* Kota/Kabupaten
+* Kecamatan
+* Kelurahan/Desa
+* Kode pos
+* Pemilihan wilayah secara bertingkat
+
+## 25. Perhitungan Ongkir
+
+Integrasi perhitungan ongkir dengan beberapa ekspedisi:
+
+* AnterAja
+* ID Express
+* J&T
+* JNE
+* Lion Parcel
+* Ninja
+* SiCepat
+* TIKI
+
+## 26. Manajemen Produk Saat Checkout
+
+* Menghapus produk
+* Menambah produk
+* Mengubah jumlah produk
+* Validasi stok
+* Perhitungan total secara otomatis
+
+---
+
+# I. SISTEM PEMBAYARAN
+
+## 27. Integrasi Midtrans
+
+* Integrasi payment gateway Midtrans
+* Pembuatan transaksi pembayaran
+* Halaman pembayaran
+* Status pembayaran otomatis
+* Callback/webhook pembayaran
+* Sinkronisasi status transaksi
+
+## 28. Status Pembayaran
+
+* Menunggu pembayaran
+* Pembayaran berhasil
+* Pembayaran gagal
+* Pembayaran expired
+* Transaksi dibatalkan
+
+## 29. Pembayaran Belum Dibayar
+
+Customer dapat:
+
+* Melihat transaksi belum dibayar
+* Membuka kembali pembayaran Midtrans
+* Melakukan pembayaran ulang
+
+Jika transaksi tidak dibayar dalam waktu **30 menit**:
+
+* Order otomatis dibatalkan
+* Stok dikembalikan
+* Data transaksi diperbarui
+
+---
+
+# J. MANAJEMEN PESANAN CUSTOMER
+
+## 30. Daftar Pesanan
+
+Customer dapat melihat:
+
+* Semua pesanan
+* Belum bayar
+* Sedang diproses
+* Sedang dikemas
+* Dikirim
+* Selesai
+* Dibatalkan
+* Retur
+
+## 31. Pembatalan Pesanan
+
+Untuk pesanan yang sudah dibayar:
+
+* Customer dapat mengajukan pembatalan
+* Pembatalan membutuhkan persetujuan admin
+* Admin dapat menyetujui/menolak pembatalan
+* Jika dibatalkan, stok dikembalikan
+
+## 32. Tracking Pesanan
+
+* Tracking status pengiriman
+* Nomor resi
+* Ekspedisi
+* Status pengiriman
+* Update status pesanan
+* Integrasi tracking pengiriman
+
+## 33. Konfirmasi Penerimaan
+
+* Customer dapat menekan "Pesanan Diterima"
+* Status order menjadi selesai
+* Jika customer tidak melakukan konfirmasi tetapi tracking sudah selesai, sistem otomatis menyelesaikan order setelah **24 jam**
+
+---
+
+# K. RETUR PESANAN
+
+## 34. Pengajuan Retur
+
+Customer dapat mengajukan retur setelah order selesai/diterima.
+
+Fitur:
+
+* Pengajuan retur
+* Alasan retur
+* Detail pengajuan
+* Status retur
+
+## 35. Batas Waktu Retur
+
+* Retur tersedia dalam periode yang ditentukan
+* Setelah batas waktu **24/7** sesuai aturan sistem, fitur retur tidak lagi tersedia
+
+## 36. Persetujuan Retur Admin
+
+* Melihat permintaan retur
+* Menyetujui retur
+* Menolak retur
+* Melihat detail retur
+* Status retur
+
+## 37. Pengembalian Stok Retur
+
+Produk retur **tidak otomatis masuk stok**.
+
+Admin dapat:
+
+* Memeriksa kondisi produk
+* Menentukan apakah produk layak masuk stok
+* Mengembalikan stok secara manual
+* Sistem membuat histori perubahan stok
+
+---
+
+# L. TESTIMONI & RATING
+
+## 38. Testimoni Customer
+
+Setelah order selesai:
+
+* Customer dapat memberikan rating
+* Menulis testimoni
+* Mengunggah foto produk
+* Memberikan testimoni berdasarkan produk/varian
+
+## 39. Testimoni Admin
+
+Admin dapat:
+
+* Menambahkan testimoni
+* Memilih produk
+* Memilih varian
+* Memberikan rating
+* Menambahkan teks
+* Menambahkan foto
+* Menentukan nama customer
+
+## 40. Testimoni Produk
+
+Pada detail produk ditampilkan:
+
+* Rating
+* Jumlah review
+* Isi testimoni
+* Foto customer
+* Informasi varian
+* Testimoni berdasarkan produk
+
+---
+
+# M. ARTIKEL & CONTENT
+
+## 41. Manajemen Artikel
+
+* Membuat artikel
+* Mengedit artikel
+* Menghapus artikel
+* Status artikel
+* Thumbnail
+* Isi artikel
+* Penulis
+* Tanggal publikasi
+
+## 42. Interaksi Artikel
+
+* Like artikel
+* Komentar
+* Share
+* Total dilihat
+* View counter
+
+## 43. Kategori & Tags Artikel
+
+* Kategori artikel
+* Multiple tags
+* Tag management
+* Artikel berdasarkan tag
+
+## 44. SEO Artikel
+
+* Meta title
+* Meta description
+* SEO-friendly URL
+* Struktur artikel
+* Informasi SEO
+
+---
+
+# N. BANNER & PROMOSI HOMEPAGE
+
+## 45. Custom Banner
+
+Admin dapat membuat banner sendiri.
+
+Fitur:
+
+* Upload banner desktop
+* Upload banner mobile
+* Banner dengan gambar
+* Banner dengan text
+* Link/URL banner
+* Pengaturan waktu tampil
+* Waktu mulai
+* Waktu berakhir
+* Status banner
+* Pengaturan urutan banner
+
+---
+
+# O. MANAJEMEN PRODUK ADMIN
+
+## 46. Manajemen Produk
+
+* Tambah produk
+* Edit produk
+* Hapus produk
+* Status produk
+* Produk unggulan
+* Produk terlaris
+* Produk tampil di homepage
+
+## 47. Kategori Produk
+
+* Tambah kategori
+* Multiple kategori pada produk
+* Pilih kategori existing
+* Edit kategori
+* Hapus kategori
+* Gambar kategori
+* Panduan ukuran per kategori
+
+## 48. Informasi Produk
+
+* Nama produk
+* Kategori
+* Gender
+* Bahan
+* Deskripsi
+* Detail teknis
+* Fitur produk
+* Gambar produk
+* Multiple gambar
+* Status produk
+
+## 49. Product Feature
+
+* Memilih fitur existing
+* Menambahkan fitur baru
+* Menghubungkan fitur dengan produk
+
+---
+
+# P. MANAJEMEN STOK
+
+## 50. Dashboard Stok
+
+* Produk stok habis
+* Produk stok menipis
+* Produk stok aman
+* Parameter stok kritis
+* Parameter stok menipis
+
+## 51. Stok Per Varian
+
+* Melihat stok setiap varian
+* Edit stok per varian
+* Update stok
+* Update stok massal
+* Semua varian dapat diperbarui sekaligus
+
+## 52. Histori Stok
+
+Mencatat perubahan stok akibat:
+
+* Penjualan
+* Pembatalan order
+* Retur
+* Penambahan stok
+* Pengurangan stok
+* Koreksi stok manual
+
+Setiap perubahan stok memiliki histori sehingga perubahan stok dapat ditelusuri.
+
+---
+
+# Q. MANAJEMEN PESANAN ADMIN
+
+## 53. Daftar Pesanan Admin
+
+Pesanan dibagi berdasarkan status:
+
+* Menunggu pembayaran
+* Diproses
+* Dikemas
+* Dikirim
+* Selesai
+* Dibatalkan
+
+## 54. Proses Pengiriman
+
+Admin dapat:
+
+* Memproses order
+* Mengirim produk
+* Memilih ekspedisi
+* Menggabungkan beberapa order untuk proses pengiriman
+* Mendapatkan nomor resi
+* Menyimpan nomor resi
+* Update status pengiriman
+
+## 55. Cetak Label Pengiriman
+
+* Cetak label satu order
+* Cetak label massal
+* Generate label otomatis
+* Layout label custom
+
+---
+
+# R. CUSTOM SHIPPING LABEL
+
+## 56. Label Pengiriman Custom Barokah Sport
+
+Label berisi:
+
+* Logo Barokah Sport
+* Logo ekspedisi
+* Nama pengirim
+* Alamat pengirim
+* Nama penerima
+* Alamat penerima
+* Nomor WhatsApp penerima
+* Nomor resi
+* Rincian order
+* QR tracking order
+* Informasi pengiriman
+
+---
+
+# S. PESANAN OFFLINE / KASIR
+
+## 57. Offline Order / POS
+
+Admin dapat membuat transaksi offline secara langsung.
+
+Fitur:
+
+* Daftar produk
+* Kategori produk
+* Pilihan varian
+* Harga varian
+* Keranjang transaksi
+* Tambah produk
+* Kurangi produk
+* Hapus produk
+* Informasi pelanggan
+
+## 58. Diskon Transaksi Offline
+
+* Diskon per varian
+* Diskon nominal
+* Diskon persentase
+* Diskon per transaksi
+
+## 59. Pembayaran Offline
+
+* Pemilihan metode pembayaran
+* Perhitungan total
+* Penyelesaian transaksi
+* Pengurangan stok
+* Cetak nota
+
+---
+
+# T. NOTA TRANSAKSI
+
+## 60. Custom Receipt
+
+Nota transaksi dengan desain khusus Barokah Sport.
+
+Informasi:
+
+* Logo Barokah Sport
+* Nomor transaksi
+* Tanggal transaksi
+* Customer
+* Produk
+* Varian
+* Harga
+* Diskon
+* Total
+* Metode pembayaran
+* Informasi toko
+
+---
+
+# U. MANAJEMEN PELANGGAN
+
+## 61. Data Pelanggan
+
+Admin dapat melihat:
+
+* Nama customer
+* Nomor WhatsApp
+* Email jika tersedia
+* Status akun
+* Tanggal bergabung
+* Order terakhir
+
+## 62. Statistik Pelanggan
+
+* Jumlah order
+* Total belanja
+* Produk yang pernah dibeli
+* Status order
+* Riwayat pembelian
+* Frekuensi pembelian
+
+## 63. Alamat Pelanggan
+
+Admin dapat melihat:
+
+* Alamat customer
+* Multiple alamat
+* Wilayah
+* Alamat utama
+
+## 64. Status Customer
+
+Admin dapat:
+
+* Menonaktifkan customer
+* Mengaktifkan kembali customer
+
+Customer yang dinonaktifkan tidak dapat login ke akun.
+
+---
+
+# V. LAPORAN
+
+## 65. Laporan Penjualan
+
+* Total penjualan
+* Total order
+* Produk terjual
+* Total diskon
+* Total voucher
+* Total ongkir
+* Order selesai
+* Order dibatalkan tidak masuk ke total penjualan
+
+## 66. Laporan Produk
+
+* Daftar produk
+* Total produk terjual
+* Stok produk
+* Stok setiap varian
+* Produk terlaris
+* Produk stok menipis
+* Produk stok habis
+
+## 67. Laporan Pesanan
+
+* Order menunggu
+* Order diproses
+* Order dikirim
+* Order selesai
+* Order dibatalkan
+* Order retur
+
+## 68. Laporan Ongkir
+
+* Total ongkir yang dibayar customer
+* Total biaya pengiriman
+* Biaya berdasarkan ekspedisi
+* Riwayat ongkir
+
+## 69. Laporan Biteship
+
+* Biaya API Biteship
+* Penggunaan biaya pengiriman
+* Biaya pengiriman berdasarkan order
+* Biaya berdasarkan ekspedisi
+* Riwayat penggunaan saldo/biaya Biteship
+
+## 70. Laporan Nilai Stok
+
+* Total nominal stok barang
+* Nilai stok seluruh produk
+* Nilai stok per produk
+* Nilai stok per varian
+
+---
+
+# W. KEUANGAN
+
+## 71. Pencatatan Keuangan
+
+* Pendapatan
+* Pengeluaran
+* Refund
+* Biaya operasional
+* Biaya pengiriman
+* Biaya payment gateway
+* Biaya API
+* Transaksi keuangan
+
+## 72. Integrasi Keuangan dengan Midtrans
+
+Ketika pembayaran berhasil:
+
+* Status pembayaran diperbarui otomatis
+* Transaksi tercatat
+* Pendapatan masuk ke data keuangan
+
+## 73. Keuangan Biteship
+
+Pencatatan:
+
+* Ongkir yang dibayar customer
+* Biaya aktual Biteship
+* Penggunaan saldo Biteship
+* Biaya API Biteship
+* Selisih ongkir
+
+---
+
+# X. WHATSAPP
+
+## 74. Floating WhatsApp
+
+* Tombol WhatsApp floating
+* Selalu tersedia di halaman website
+* Posisi di pojok halaman
+* Langsung menuju chat admin
+* Pesan WhatsApp dapat dibuat otomatis
+
+---
+
+# Y. MANAJEMEN KONTEN WEBSITE
+
+## 75. Dynamic Content
+
+Setiap halaman tertentu dapat dikelola melalui admin.
+
+Admin dapat mengubah:
+
+* Judul
+* Deskripsi
+* Text
+* CTA
+* Konten halaman
+* Informasi promosi
+
+Sehingga perubahan konten tidak selalu membutuhkan perubahan kode.
+
+---
+
+# Z. RESPONSIVE DESIGN
+
+## 76. Responsive Customer Website
+
+Seluruh halaman customer dibuat responsive untuk:
+
+* Desktop
+* Laptop
+* Tablet
+* Mobile
+
+## 77. Responsive Admin Dashboard
+
+Halaman admin juga dibuat responsive untuk:
+
+* Desktop
+* Laptop
+* Tablet
+* Mobile
+
+---
+
+# AA. SISTEM OTOMATIS
+
+## 78. Automatic Stock Management
+
+Stok otomatis berkurang ketika transaksi berhasil.
+
+Stok otomatis dikembalikan ketika:
+
+* Order dibatalkan
+* Pembayaran expired
+* Pembatalan disetujui
+* Kondisi lain sesuai business logic
+
+Retur menggunakan proses pengembalian stok manual oleh admin.
+
+## 79. Automatic Order Status
+
+Status order diperbarui berdasarkan:
+
+* Status pembayaran
+* Proses admin
+* Status pengiriman
+* Tracking ekspedisi
+* Konfirmasi customer
+* Batas waktu otomatis
+
+## 80. Automatic Payment Status
+
+Integrasi Midtrans memperbarui status pembayaran secara otomatis berdasarkan callback/webhook.
+
+## 81. Automatic Expired Order
+
+Order yang belum dibayar selama 30 menit:
+
+* Otomatis dibatalkan
+* Stok dikembalikan
+* Order tidak dihitung sebagai penjualan
+
+---
+
+# AB. RINGKASAN SKALA SISTEM
+
+Website ini bukan hanya website katalog, tetapi merupakan **full ecommerce system** yang mencakup:
+
+### Customer
+
+* Authentication
+* Profile
+* Address
+* Catalog
+* Search
+* Filter
+* Wishlist
+* Cart
+* Checkout
+* Voucher
+* Payment
+* Order
+* Tracking
+* Cancellation
+* Return
+* Review
+* Testimonial
+
+### Admin
+
+* Dashboard
+* Product Management
+* Category Management
+* Variant Management
+* Stock Management
+* Order Management
+* Shipping Management
+* Customer Management
+* Voucher Management
+* Flash Sale
+* Banner Management
+* Article Managements
+* Testimonial Management
+* Offline POS
+* Receipt
+* Shipping Label
+* Reports
+* Finance
+* Dynamic Content
+
+### Integrasi
+
+* Midtrans Payment Gateway
+* Biteship Shipping
+* Tracking Pengiriman
+* WhatsApp
+* Database wilayah Indonesia
+
+### Total Halaman
+
+* **±35 halaman Customer**
+* **±22 halaman Admin**
+* Seluruh halaman responsive
+* Full-stack development
+* Database & backend logic
+* API integration
+* Automation system
+* Admin management system
+* Customer management system
