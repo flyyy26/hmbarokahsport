@@ -2,6 +2,176 @@
 
 @section('title', $product->name . ' - Barokah Sport')
 
+@php
+    $metaDescription = Str::limit(strip_tags($product->description ?? ''), 160);
+    if (empty($metaDescription)) {
+        $metaDescription = 'Beli ' . $product->name . ' di ' . ($setting?->store_name ?? 'Barokah Sport') . 
+            ' dengan harga terbaik. Kualitas premium, pengiriman cepat.';
+    }
+
+    $minPrice = $product->min_effective_price ?? 0;
+    $priceFormatted = 'Rp ' . number_format($minPrice, 0, ',', '.');
+
+    $ogImage = null;
+    if ($product->images->isNotEmpty()) {
+        $ogImage = Storage::url($product->images->first()->image);
+    } elseif ($product->display_image ?? null) {
+        $ogImage = $product->display_image;
+    } else {
+        $ogImage = asset('images/default-product.jpg');
+    }
+
+    $avgRating = $product->testimonials->avg('rating') ?? 0;
+    $ratingCount = $product->testimonials->count();
+
+    $inStock = !$product->isOutOfStock();
+@endphp
+
+@section('meta')
+    {{-- Basic Meta --}}
+    <title>{{ $product->name }} - {{ $setting?->store_name ?? 'Barokah Sport' }}</title>
+    <meta name="description" content="{{ $metaDescription }}">
+
+    {{-- Keywords (opsional, kurang penting sekarang tapi bagus untuk berjaga-jaga) --}}
+    @if($product->category)
+        <meta name="keywords" content="{{ $product->name }}, {{ $product->category->name }}, 
+            {{ $product->gender ?? '' }}, 
+            {{ implode(', ', $product->variants->pluck('sku')->filter()->toArray()) }}">
+    @endif
+
+    {{-- Canonical --}}
+    <link rel="canonical" href="{{ route('customer.products.show', $product->slug) }}">
+
+    {{-- Robots --}}
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+    {{-- Open Graph --}}
+    <meta property="og:type" content="product">
+    <meta property="og:title" content="{{ $product->name }} - {{ $setting?->store_name ?? 'Barokah Sport' }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ route('customer.products.show', $product->slug) }}">
+    <meta property="og:image" content="{{ $ogImage }}">
+    <meta property="product:price:amount" content="{{ $minPrice }}">
+    <meta property="product:price:currency" content="IDR">
+    <meta property="product:availability" content="{{ $inStock ? 'in stock' : 'out of stock' }}">
+@endsection
+
+{{-- ============================================ --}}
+{{-- 🔥 JSON-LD STRUCTURED DATA --}}
+{{-- ============================================ --}}
+@section('schema')
+@php
+    $schemaImages = [];
+    if ($ogImage) {
+        $schemaImages[] = $ogImage;
+    }
+    if ($product->images->count() > 1) {
+        foreach ($product->images->skip(1)->take(3) as $img) {
+            $schemaImages[] = Storage::url($img->image);
+        }
+    }
+
+    $productSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        'name' => $product->name,
+        'description' => $metaDescription,
+        'image' => $schemaImages,
+        'sku' => $product->variants->first()->sku ?? 'SKU-' . $product->id,
+        'mpn' => (string) $product->id,
+        'brand' => [
+            '@type' => 'Brand',
+            'name' => $setting?->store_name ?? 'Barokah Sport',
+        ],
+        'url' => route('customer.products.show', $product->slug),
+    ];
+
+    if ($product->category) {
+        $productSchema['category'] = $product->category->name;
+    }
+
+    if ($product->variants->isNotEmpty()) {
+        $productSchema['offers'] = [
+            '@type' => 'AggregateOffer',
+            'priceCurrency' => 'IDR',
+            'lowPrice' => $product->variants->min('price'),
+            'highPrice' => $product->variants->max('price'),
+            'offerCount' => $product->variants->count(),
+            'availability' => $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            'url' => route('customer.products.show', $product->slug),
+            'seller' => [
+                '@type' => 'Organization',
+                'name' => $setting?->store_name ?? 'Barokah Sport',
+            ],
+        ];
+    }
+
+    if ($ratingCount > 0) {
+        $productSchema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => number_format($avgRating, 1),
+            'bestRating' => '5',
+            'worstRating' => '1',
+            'ratingCount' => $ratingCount,
+        ];
+    }
+
+    if ($product->material) {
+        $productSchema['material'] = $product->material;
+    }
+
+    if ($product->gender) {
+        $productSchema['audience'] = [
+            '@type' => 'PeopleAudience',
+            'suggestedGender' => $product->gender,
+        ];
+    }
+
+    // Breadcrumb
+    $breadcrumbItems = [
+        [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Beranda',
+            'item' => route('customer.home'),
+        ],
+        [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Katalog',
+            'item' => route('customer.products.index'),
+        ],
+    ];
+
+    if ($product->category) {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $product->category->name,
+            'item' => route('customer.categories.show', $product->category->slug),
+        ];
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 4,
+            'name' => $product->name,
+            'item' => route('customer.products.show', $product->slug),
+        ];
+    } else {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $product->name,
+            'item' => route('customer.products.show', $product->slug),
+        ];
+    }
+
+    $breadcrumbSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $breadcrumbItems,
+    ];
+@endphp
+
 @section('content')
 
 <div class="product_show_layout">
@@ -1855,6 +2025,23 @@
 {{-- ============================================ --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof gtag === 'function') {
+        gtag('event', 'view_item', {
+            currency: 'IDR',
+            value: {{ $product->min_effective_price ?? $product->min_price ?? 0 }},
+            items: [{
+                item_id: '{{ $product->id }}',
+                item_name: @json($product->name),
+                item_category: @json($product->category->name ?? ''),
+                price: {{ $product->min_effective_price ?? $product->min_price ?? 0 }},
+                quantity: 1
+            }]
+        });
+    }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
 
     const productVariants = @json($variantData ?? []);
     const productImages = @json($product->images);
@@ -2797,13 +2984,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 window.location.href = data.redirect || '{{ route("customer.checkout.index") }}';
             } else {
-                alert(data.message || 'Gagal memproses pesanan');
+                showToast(data.message || 'Gagal memproses pesanan', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Beli Sekarang';
             }
         })
-        .catch(() => {
-            alert('Terjadi kesalahan. Silakan coba lagi.');
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
             btn.disabled = false;
             btn.textContent = 'Beli Sekarang';
         });
@@ -3258,7 +3446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 300);
                 }
                 
-                showToast(data.message, 'success');
+                 showToast(data.message, 'success');
             } else {
                 showToast(data.message || 'Gagal menambahkan ke keranjang', 'error');
             }

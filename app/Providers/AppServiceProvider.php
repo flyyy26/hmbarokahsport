@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Http\ViewComposers\MarketplaceComposer;
 use App\Models\Order;
 use App\Models\PasswordResetRequest;
+use App\Models\SearchAnalytics;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
@@ -43,8 +44,26 @@ class AppServiceProvider extends ServiceProvider
 
 
         // ============================================
-        // 🔥 SIDEBAR BADGE NOTIFICATION (ADMIN)
-        // Untuk menu:
+        // 🔥 TRENDING SEARCHES (untuk search-popup)
+        // ============================================
+        View::composer('customer.partials.search-popup', function ($view) {
+            $trendingSearches = Cache::remember('trending_searches', 300, function () {
+                return SearchAnalytics::query()
+                    ->whereNotNull('keyword')
+                    ->where('keyword', '!=', '')
+                    ->selectRaw('keyword, COUNT(*) as total, COUNT(DISTINCT ip) as unique_visitors')
+                    ->groupBy('keyword')
+                    ->orderByDesc('total')
+                    ->limit(8)
+                    ->get();
+            });
+
+            $view->with('trendingSearches', $trendingSearches);
+        });
+
+
+        // ============================================
+        // 🔥 SIDEBAR BADGE NOTIFICATION (ADMIN)        // Untuk menu:
         //   - Pesanan (pending cancellation)
         //   - Retur (pending return)
         //   - Pelanggan (pending password reset) ← BARU

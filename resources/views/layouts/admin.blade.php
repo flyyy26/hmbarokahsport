@@ -625,6 +625,26 @@
                     <span>Dashboard</span>
                 </a>
 
+                <a href="{{ route('admin.analytics.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
+                    <iconify-icon icon="mdi:chart-line" class="sidebar-icon text-lg"></iconify-icon>
+                    <span class="flex-1">Analytics</span>
+
+                    {{-- 🔥 Badge realtime visitor (opsional) --}}
+                    @if(($realtimeVisitorCount ?? 0) > 0)
+                        <span class="inline-flex items-center gap-1
+                                    px-2 py-0.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-emerald-500/15 text-emerald-400
+                                    border border-emerald-500/30">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            {{ $realtimeVisitorCount }}
+                        </span>
+                    @endif
+                </a>
+
 
                 {{-- SECTION: KATALOG --}}
                 <div class="pt-4 pb-1 px-3">
@@ -774,9 +794,43 @@
                 </div>
 
                 <a href="{{ route('admin.articles.index') }}"
-                   class="sidebar-link {{ request()->routeIs('admin.articles.*') ? 'active' : '' }} flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                class="sidebar-link {{ request()->routeIs('admin.articles.*') ? 'active' : '' }}
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
                     <iconify-icon icon="mdi:newspaper-variant-outline" class="sidebar-icon text-lg"></iconify-icon>
-                    <span>Artikel</span>
+                    <span class="flex-1">Artikel</span>
+
+                    {{-- 🔥 Badge Komentar Baru --}}
+                    @if(($newArticleComments ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-emerald-500 text-white
+                                    shadow-md shadow-emerald-500/50
+                                    animate-pulse">
+                            {{ $newArticleComments > 99 ? '99+' : $newArticleComments }}
+                        </span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.careers.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.careers.*') ? 'active' : '' }}
+                        flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium relative">
+                    <iconify-icon icon="mdi:briefcase-outline" class="sidebar-icon text-lg"></iconify-icon>
+                    <span class="flex-1">Karir</span>
+
+                    {{-- 🔥 Badge Pelamar Baru (belum dibaca) --}}
+                    @if(($unreadCareerApplications ?? 0) > 0)
+                        <span class="inline-flex items-center justify-center
+                                    min-w-[20px] h-5 px-1.5
+                                    text-[10px] font-bold
+                                    rounded-full
+                                    bg-[#FDDD57] text-slate-900
+                                    shadow-md shadow-amber-500/50
+                                    animate-pulse">
+                            {{ $unreadCareerApplications > 99 ? '99+' : $unreadCareerApplications }}
+                        </span>
+                    @endif
                 </a>
 
                 <a href="{{ route('admin.faqs.index') }}"
@@ -964,23 +1018,22 @@
 
                         {{-- Divider --}}
                         <div class="w-px h-6 mx-1" style="background: var(--border-2)"></div>
-
-                        {{-- Theme Toggle --}}
-                        <button type="button"
-                                id="themeToggle"
-                                title="Ganti Tema"
-                                class="flex items-center justify-center
-                                       w-9 h-9 rounded-lg
-                                       transition-all duration-200 active:scale-95"
-                                style="color: var(--text-4)"
-                                onmouseover="this.style.color='var(--gold-bright)'; this.style.background='rgba(236,188,66,0.1)'"
-                                onmouseout="this.style.color='var(--text-4)'; this.style.background='transparent'">
-                            {{-- Sun (muncul di dark mode) --}}
-                            <iconify-icon id="themeIcon-sun" icon="mdi:weather-sunny" class="text-xl"></iconify-icon>
-                            {{-- Moon (muncul di light mode) --}}
-                            <iconify-icon id="themeIcon-moon" icon="mdi:weather-night" class="text-xl"></iconify-icon>
-                        </button>
                     </div>
+
+                    <button type="button"
+                            id="themeToggle"
+                            title="Ganti Tema"
+                            class="flex items-center justify-center
+                                w-9 h-9 rounded-lg
+                                transition-all duration-200 active:scale-95"
+                            style="color: var(--text-4)"
+                            onmouseover="this.style.color='var(--gold-bright)'; this.style.background='rgba(236,188,66,0.1)'"
+                            onmouseout="this.style.color='var(--text-4)'; this.style.background='transparent'">
+                        {{-- Sun (muncul di dark mode) --}}
+                        <iconify-icon id="themeIcon-sun" icon="mdi:weather-sunny" class="text-xl"></iconify-icon>
+                        {{-- Moon (muncul di light mode) --}}
+                        <iconify-icon id="themeIcon-moon" icon="mdi:weather-night" class="text-xl"></iconify-icon>
+                    </button>
 
                     {{-- User Profile --}}
                     <div class="relative" id="userDropdownWrapper">
@@ -1095,6 +1148,8 @@
                                                 style="color: var(--text-5);"></iconify-icon>
                                     <span class="transition-colors group-hover:text-[#FDDD57]">Dashboard</span>
                                 </a>
+
+                                
 
                                 {{-- Lihat Toko --}}
                                 <a href="{{ route('customer.home') }}"

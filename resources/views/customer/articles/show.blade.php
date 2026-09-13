@@ -855,7 +855,6 @@
         display: flex;
         align-items: center;
         gap: 0.6vw;
-        margin-bottom: 0.3vw;
     }
 
     .comment-delete-btn {
@@ -1146,7 +1145,7 @@
         /* GAMBAR */
         /* ============================================ */
         .article-detail-image {
-            aspect-ratio: 16/9;
+            aspect-ratio: inherit;
             border-radius: 0;
             margin: 0;
             width: 100%;
@@ -1547,7 +1546,6 @@
             display: flex;
             align-items: center;
             gap: 2.5vw;
-            margin-bottom: 1vw;
             flex-wrap: wrap;
         }
 
@@ -1567,12 +1565,12 @@
 
         .comment-user {
             font-weight: 600;
-            font-size: 4vw;
+            font-size: 3.2vw;
             color: #0f172a;
         }
 
         .comment-time {
-            font-size: 3.5vw;
+            font-size: 2.8vw;
             color: #94a3b8;
         }
 
@@ -1669,7 +1667,7 @@
         }
 
         .comment-reply .comment-actions button {
-            font-size: 2.5vw;
+            font-size: 2.8vw;
         }
 
         /* 🔥 NESTED REPLY - LEVEL LEBIH DALAM */
@@ -2226,21 +2224,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const articleId = {{ $article->id }};
-    const storageKey = 'article_viewed_' + articleId;
-    const viewsKey = 'article_views_count_' + articleId;
-    
-    const serverViews = {{ $article->views ?? 0 }};
-    
+    const storageKey = 'article_viewed_' + articleId + '_' + new Date().toISOString().split('T')[0]; // 🔥 per hari
     const viewsSpan = document.getElementById('article-views-count');
+
+    const serverViews = {{ $article->views ?? 0 }};
     if (viewsSpan) {
         viewsSpan.textContent = new Intl.NumberFormat('id-ID').format(serverViews);
     }
-    
-    const alreadyViewed = localStorage.getItem(storageKey);
-    
-    if (!alreadyViewed) {
+
+    // 🔥 Cek apakah sudah view hari ini
+    const alreadyViewedToday = localStorage.getItem(storageKey);
+
+    if (!alreadyViewedToday) {
         localStorage.setItem(storageKey, 'true');
-        
+
         fetch('{{ route("customer.articles.record-view") }}', {
             method: 'POST',
             headers: {
@@ -2250,27 +2247,14 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({ article_id: articleId })
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-            if (data.success) {
-                console.log('✅ Views recorded:', data.views);
-                localStorage.setItem(viewsKey, data.views);
-                if (viewsSpan) {
-                    viewsSpan.textContent = new Intl.NumberFormat('id-ID').format(data.views);
-                }
+            if (data.success && viewsSpan) {
+                viewsSpan.textContent = new Intl.NumberFormat('id-ID').format(data.views);
             }
         })
-        .catch(error => {
-            console.error('❌ Error recording view:', error);
-        });
-    } else {
-        console.log('ℹ️ Article already viewed, skip counting');
-        if (viewsSpan) {
-            viewsSpan.textContent = new Intl.NumberFormat('id-ID').format(serverViews);
-        }
+        .catch(err => console.warn('View tracking failed:', err));
     }
-    
-    console.log('📊 Article view tracking initialized');
 });
 
 function checkLoginStatus() {
@@ -2498,7 +2482,7 @@ function loadComments() {
 
 function renderComments(comments) {
     const list = document.getElementById('comment-list');
-    
+
     if (!comments || comments.length === 0) {
         list.innerHTML = `
             <div class="comment-empty">
@@ -2508,24 +2492,21 @@ function renderComments(comments) {
         return;
     }
 
-    // 🔥 AMBIL USER ROLE DARI META
     const metaRole = document.querySelector('meta[name="user-role"]');
     const userRole = metaRole ? metaRole.getAttribute('content') : 'guest';
     const metaUserId = document.querySelector('meta[name="user-id"]');
     const currentUserId = metaUserId ? parseInt(metaUserId.getAttribute('content')) : 0;
-    
-    // 🔥 ADMIN BISA HAPUS SEMUA KOMENTAR
     const isAdmin = userRole === 'admin';
 
     let html = '';
-    comments.forEach(function(comment) {
+    comments.forEach(function (comment) {
         const isOwner = currentUserId === comment.user_id;
         const canDelete = isOwner || isAdmin;
-        
+
         html += `
             <div class="comment-item" id="comment-${comment.id}">
                 <div class="comment-header">
-                    <div class="comment-avatar">${comment.user_avatar || 'U'}</div>
+                    ${renderAvatar(comment)}
                     <span class="comment-user">${comment.user_name || 'User'}</span>
                     <span class="comment-time">${comment.created_at || 'Baru saja'}</span>
                     ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment(${comment.id})" title="Hapus komentar">✕</button>` : ''}
@@ -2545,7 +2526,6 @@ function renderComments(comments) {
 function renderReplies(replies, level = 1) {
     if (!replies || replies.length === 0) return '';
 
-    // 🔥 AMBIL USER ROLE DARI META
     const metaRole = document.querySelector('meta[name="user-role"]');
     const userRole = metaRole ? metaRole.getAttribute('content') : 'guest';
     const metaUserId = document.querySelector('meta[name="user-id"]');
@@ -2553,31 +2533,43 @@ function renderReplies(replies, level = 1) {
     const isAdmin = userRole === 'admin';
 
     let html = `<div class="comment-reply" style="margin-left: ${level * 1.5}vw;">`;
-    replies.forEach(function(reply) {
+    replies.forEach(function (reply) {
         const isOwner = currentUserId === reply.user_id;
         const canDelete = isOwner || isAdmin;
-        
         const hasNestedReplies = reply.replies && reply.replies.length > 0;
-        
+
         html += `
             <div class="comment-item" id="comment-${reply.id}" style="border-left: 0.15vw solid #e2e8f0; padding-left: 0.8vw;">
                 <div class="comment-header">
-                    <div class="comment-avatar">${reply.user_avatar || 'U'}</div>
+                    ${renderAvatar(reply, true)}
                     <span class="comment-user">${reply.user_name || 'User'}</span>
                     <span class="comment-time">${reply.created_at || 'Baru saja'}</span>
                     ${canDelete ? `<button class="comment-delete-btn" onclick="deleteComment(${reply.id})" title="Hapus komentar">✕</button>` : ''}
                 </div>
                 <div class="comment-content">${escapeHtml(reply.content)}</div>
-                <div class="comment-actions">
-                    <button onclick="setReply(${reply.id}, '${escapeHtml(reply.user_name || 'User')}')">Balas</button>
-                </div>
-                ${hasNestedReplies ? renderReplies(reply.replies, level + 1) : ''}
             </div>
         `;
     });
     html += '</div>';
 
     return html;
+}
+
+function renderAvatar(comment, isReply = false) {
+
+    if (comment.avatar_url) {
+        return `
+            <div class="comment-avatar">
+                <img src="${comment.avatar_url}"
+                     alt="${escapeHtml(comment.user_name || 'User')}"
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='${comment.user_avatar || 'U'}';">
+            </div>
+        `;
+    }
+
+    // Fallback: inisial
+    return `<div class="comment-avatar" style="${sizeStyle}">${comment.user_avatar || 'U'}</div>`;
 }
 
 function escapeHtml(text) {
@@ -2722,20 +2714,16 @@ function submitCommentDirect(articleId, content, parentId) {
 
 function addNewComment(comment) {
     const list = document.getElementById('comment-list');
-    
-    // Hapus empty state jika ada
+
     const emptyState = list.querySelector('.comment-empty');
-    if (emptyState) {
-        list.innerHTML = '';
-    }
-    
-    // Buat elemen comment baru
+    if (emptyState) list.innerHTML = '';
+
     const newComment = document.createElement('div');
     newComment.className = 'comment-item';
     newComment.id = 'comment-' + comment.id;
     newComment.innerHTML = `
         <div class="comment-header">
-            <div class="comment-avatar">${comment.user_avatar || 'U'}</div>
+            ${renderAvatar(comment)}
             <span class="comment-user">${comment.user_name || 'User'}</span>
             <span class="comment-time">${comment.created_at || 'Baru saja'}</span>
         </div>
@@ -2745,8 +2733,7 @@ function addNewComment(comment) {
         </div>
         <div class="comment-reply" id="replies-for-${comment.id}"></div>
     `;
-    
-    // Tambahkan ke paling atas
+
     list.prepend(newComment);
 }
 
@@ -2777,7 +2764,7 @@ function addReplyToThread(parentId, reply) {
     replyElement.style.cssText = 'border-left: 0.15vw solid #e2e8f0; padding-left: 0.8vw;';
     replyElement.innerHTML = `
         <div class="comment-header">
-            <div class="comment-avatar" style="width: 1.8vw; height: 1.8vw; font-size: 0.6vw;">${reply.user_avatar || 'U'}</div>
+            ${renderAvatar(reply, true)}
             <span class="comment-user" style="font-size: 0.75vw;">${reply.user_name || 'User'}</span>
             <span class="comment-time" style="font-size: 0.6vw;">${reply.created_at || 'Baru saja'}</span>
         </div>

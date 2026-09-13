@@ -22,7 +22,9 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return view('customer.auth.login');
+        $redirectTo = request()->query('redirect') ?: route('customer.account');
+
+        return view('customer.auth.login', compact('redirectTo'));
     }
 
     public function login(Request $request)
@@ -33,6 +35,7 @@ class AuthController extends Controller
         ]);
 
         $isAjax = $request->ajax() || $request->wantsJson();
+        $redirectTo = $request->input('redirect') ?: $request->query('redirect') ?: route('customer.account');
 
         $user = User::where('phone', $request->phone)->first();
 
@@ -77,8 +80,7 @@ class AuthController extends Controller
                 ]);
             }
 
-            return redirect()
-                ->route('customer.account')
+            return redirect($redirectTo)
                 ->with('success', 'Selamat datang, ' . $user->name . '!');
         }
 

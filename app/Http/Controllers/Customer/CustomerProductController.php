@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ProductAnalyticsService;
+use App\Services\SearchAnalyticsService;
 
 class CustomerProductController extends Controller
 {
@@ -31,7 +33,6 @@ class CustomerProductController extends Controller
             'variants.values.option'
         ])->where('is_active', true);
 
-        // 🔥 SEARCH
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -125,6 +126,7 @@ class CustomerProductController extends Controller
         
         if ($request->filled('search')) {
             $products->appends(['search' => $request->search]);
+            SearchAnalyticsService::record($request->search, $products->total());
         }
 
         // 🔥 TAMBAHKAN DATA DISKON DAN GAMBAR VARIAN
@@ -418,7 +420,9 @@ class CustomerProductController extends Controller
             ->limit(10)
             ->get();
 
-        return view('customer.products.show', compact(
+         ProductAnalyticsService::recordView($product->id);
+
+         return view('customer.products.show', compact(
             'product', 
             'variantData', 
             'firstVariant', 

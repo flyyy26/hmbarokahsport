@@ -566,6 +566,7 @@
     {{-- Form Login --}}
     <form action="{{ route('customer.login.process') }}" method="POST" id="login-form">
         @csrf
+        <input type="hidden" name="redirect" value="{{ $redirectTo }}">
 
         <div class="form_group">
             <label for="phone">

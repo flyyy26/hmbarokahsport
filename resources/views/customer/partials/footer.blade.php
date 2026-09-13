@@ -56,6 +56,7 @@
                     <li><a href="{{ route('customer.contact', ['category' => 'pengiriman']) }}#faq-section">Pengiriman</a></li>
                     <li><a href="{{ route('customer.contact', ['category' => 'pembayaran']) }}#faq-section">Pembayaran</a></li>
                     <li><a href="{{ route('customer.size-guide') }}">Panduan Ukuran</a></li>
+                    <li><a href="{{ route('customer.careers.index') }}">Karir</a></li>
                 </ul>
             </div>
         </div>

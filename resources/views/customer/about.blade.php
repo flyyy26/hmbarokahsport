@@ -240,6 +240,180 @@
         flex-shrink: 0;
     }
 
+    .about_cta_section {
+        width: 100%;
+        padding: 0 7.54vw 3.5vw;
+    }
+
+    .about_cta_inner {
+        position: relative;
+        background: linear-gradient(135deg, #FDDD57 0%, #ecbc42 50%, #d4a72e 100%);
+        border-radius: 1.2vw;
+        padding: 3vw 4vw;
+        overflow: hidden;
+        box-shadow: 0 1vw 3vw rgba(236, 188, 66, 0.25);
+        text-align: center;
+    }
+
+    /* Decorative circles */
+    .about_cta_deco {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+    }
+
+    .about_cta_deco_1 {
+        top: -4vw;
+        right: -4vw;
+        width: 14vw;
+        height: 14vw;
+    }
+
+    .about_cta_deco_2 {
+        bottom: -5vw;
+        left: -5vw;
+        width: 12vw;
+        height: 12vw;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .about_cta_content {
+        position: relative;
+        z-index: 1;
+        max-width: 50vw;
+        margin: 0 auto;
+    }
+
+    .about_cta_badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4vw;
+        padding: 0.4vw 1vw;
+        background: rgba(255, 255, 255, 0.5);
+        border: 0.1vw solid rgba(255, 255, 255, 0.7);
+        border-radius: 100vw;
+        font-size: 0.72vw;
+        font-weight: 700;
+        color: rgb(102, 72, 9);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        backdrop-filter: blur(0.3vw);
+    }
+
+    .about_cta_badge iconify-icon {
+        font-size: 0.95vw;
+    }
+
+    .about_cta_title {
+        font-size: 2vw;
+        font-weight: 800;
+        color: rgb(102, 72, 9);
+        line-height: 1.2;
+        margin-top: 1vw;
+        letter-spacing: -0.01em;
+    }
+
+    .about_cta_title span {
+        color: #ffffff;
+        text-shadow: 0 0.15vw 0.4vw rgba(102, 72, 9, 0.3);
+    }
+
+    .about_cta_desc {
+        font-size: 0.9vw;
+        color: rgba(102, 72, 9, 0.85);
+        line-height: 1.6;
+        margin-top: 0.8vw;
+        max-width: 40vw;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .about_cta_actions {
+        display: flex;
+        justify-content: center;
+        gap: 0.8vw;
+        margin-top: 1.5vw;
+        flex-wrap: wrap;
+    }
+
+    .about_cta_btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5vw;
+        padding: 0.9vw 1.5vw;
+        border-radius: 0.7vw;
+        font-size: 0.85vw;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        border: 0.1vw solid transparent;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    .about_cta_btn iconify-icon {
+        font-size: 1.1vw;
+    }
+
+    .about_cta_btn_arrow {
+        transition: transform 0.25s ease;
+    }
+
+    .about_cta_btn_primary {
+        background: #ffffff;
+        color: rgb(102, 72, 9);
+        box-shadow: 0 0.3vw 0.8vw rgba(102, 72, 9, 0.2);
+    }
+
+    .about_cta_btn_primary:hover {
+        transform: translateY(-0.15vw);
+        box-shadow: 0 0.5vw 1.2vw rgba(102, 72, 9, 0.3);
+    }
+
+    .about_cta_btn_primary:hover .about_cta_btn_arrow {
+        transform: translateX(0.3vw);
+    }
+
+    .about_cta_btn_outline {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgb(102, 72, 9);
+        border-color: rgba(102, 72, 9, 0.4);
+        backdrop-filter: blur(0.3vw);
+    }
+
+    .about_cta_btn_outline:hover {
+        background: rgba(255, 255, 255, 0.35);
+        border-color: rgb(102, 72, 9);
+        transform: translateY(-0.15vw);
+    }
+
+    .about_cta_perks {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1.2vw;
+        margin-top: 1.5vw;
+        padding-top: 1.2vw;
+        border-top: 0.1vw dashed rgba(102, 72, 9, 0.25);
+    }
+
+    .about_cta_perk {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35vw;
+        font-size: 0.75vw;
+        font-weight: 600;
+        color: rgb(102, 72, 9);
+        opacity: 0.85;
+    }
+
+    .about_cta_perk iconify-icon {
+        font-size: 0.9vw;
+        color: rgb(102, 72, 9);
+    }
+
     /* ============================================
        🔥 RESPONSIVE MOBILE (max-width: 768px)
        ============================================ */
@@ -402,6 +576,95 @@
         .about_sidebar_box ul li iconify-icon {
             font-size: 3.7vw;
         }
+
+        .about_cta_section {
+            padding: 0 4vw 8vw;
+        }
+
+        .about_cta_inner {
+            border-radius: 3vw;
+            padding: 8vw 5vw;
+            box-shadow: 0 2vw 6vw rgba(236, 188, 66, 0.3);
+        }
+
+        .about_cta_deco_1 {
+            top: -10vw;
+            right: -10vw;
+            width: 35vw;
+            height: 35vw;
+        }
+
+        .about_cta_deco_2 {
+            bottom: -12vw;
+            left: -12vw;
+            width: 30vw;
+            height: 30vw;
+        }
+
+        .about_cta_content {
+            max-width: 100%;
+        }
+
+        .about_cta_badge {
+            padding: 1.5vw 3vw;
+            font-size: 2.8vw;
+            gap: 1.2vw;
+            border-radius: 100vw;
+        }
+
+        .about_cta_badge iconify-icon {
+            font-size: 3.5vw;
+        }
+
+        .about_cta_title {
+            font-size: 6.5vw;
+            width: 70%;
+            margin: auto;
+            margin-top: 3vw;
+            line-height: 1.25;
+        }
+        .about_cta_desc {
+            font-size: 3.4vw;
+            margin-top: 2.5vw;
+            max-width: 100%;
+            line-height: 1.7;
+        }
+
+        .about_cta_actions {
+            flex-direction: column;
+            gap: 2.5vw;
+            margin-top: 5vw;
+        }
+
+        .about_cta_btn {
+            width: 100%;
+            padding: 3.5vw 4vw;
+            border-radius: 2.5vw;
+            font-size: 3.4vw;
+            gap: 1.8vw;
+        }
+
+        .about_cta_btn iconify-icon {
+            font-size: 4.2vw;
+        }
+
+        .about_cta_perks {
+            flex-direction: column;
+            gap: 2vw;
+            margin-top: 5vw;
+            padding-top: 4vw;
+            border-top: 0.4vw dashed rgba(102, 72, 9, 0.25);
+            align-items: center;
+        }
+
+        .about_cta_perk {
+            font-size: 3vw;
+            gap: 1.2vw;
+        }
+
+        .about_cta_perk iconify-icon {
+            font-size: 3.6vw;
+        }
     }
 </style>
 
@@ -452,6 +715,62 @@
             @endif
         </div>
     </div>
+    {{-- ============================================ --}}
+    {{-- 🔥 CTA SECTION - JOIN OUR TEAM --}}
+    {{-- ============================================ --}}
+    <section class="about_cta_section">
+        <div class="about_cta_inner">
+
+            <div class="about_cta_deco about_cta_deco_1"></div>
+            <div class="about_cta_deco about_cta_deco_2"></div>
+
+            <div class="about_cta_content">
+                <div class="about_cta_badge">
+                    <iconify-icon icon="mdi:briefcase-outline"></iconify-icon>
+                    Karier di Barokah Sport
+                </div>
+
+                <h2 class="about_cta_title">
+                    Bergabung Bersama <span>Tim Kami</span>
+                </h2>
+
+                <p class="about_cta_desc">
+                    Kami percaya bahwa tim yang hebat akan menciptakan karya yang luar biasa.
+                    Temukan posisi yang sesuai dengan passion dan keahlianmu, lalu
+                    tumbuh bersama kami.
+                </p>
+
+                <div class="about_cta_actions">
+                    <a href="{{ route('customer.careers.index') }}" class="about_cta_btn about_cta_btn_primary">
+                        <iconify-icon icon="mdi:briefcase-search-outline"></iconify-icon>
+                        Lihat Lowongan
+                        <iconify-icon icon="mdi:arrow-right" class="about_cta_btn_arrow"></iconify-icon>
+                    </a>
+
+                    <a href="{{ route('customer.contact') }}" class="about_cta_btn about_cta_btn_outline">
+                        <iconify-icon icon="mdi:chat-outline"></iconify-icon>
+                        Hubungi Kami
+                    </a>
+                </div>
+
+                <div class="about_cta_perks">
+                    <span class="about_cta_perk">
+                        <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                        Lingkungan kerja suportif
+                    </span>
+                    <span class="about_cta_perk">
+                        <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                        Pengembangan karier
+                    </span>
+                    <span class="about_cta_perk">
+                        <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                        Benefit kompetitif
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </section>
 </div>
 
 @endsection

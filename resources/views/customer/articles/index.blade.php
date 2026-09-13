@@ -266,7 +266,7 @@
             border: none;
             background: linear-gradient(90deg, #FDDD57 0%, #ecbc42 49.04%, #FDDD57 100%);
             text-transform: uppercase;
-            font-size: 3.5vw;
+            font-size: 3vw;
             color:rgb(102, 72, 9) !important;
             padding: 1vw 2.8vw;
             border-radius: 1.4vw;

@@ -128,10 +128,11 @@ function addToCartFromVariant(productId, variantId, quantity, mode) {
                 document.dispatchEvent(new CustomEvent('cart-updated', {
                     detail: { count: data.count, message: data.message }
                 }));
-                showToast(data.message || 'Produk ditambahkan ke keranjang!', 'success');
-                if (typeof window.loadCartPopup === 'function') {
-                    window.loadCartPopup();
-                }
+            showToast(data.message || 'Produk ditambahkan ke keranjang!', 'success');
+            
+            if (typeof window.loadCartPopup === 'function') {
+                window.loadCartPopup();
+            }
                 closeVariantModal();
             }
         } else {

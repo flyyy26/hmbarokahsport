@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\ProductDiscountTrait;
+use App\Services\ProductAnalyticsService;
 
 class CartController extends Controller
 {
@@ -218,6 +219,8 @@ class CartController extends Controller
         }
 
         $this->syncCartSession($user->id);
+
+        ProductAnalyticsService::recordAddToCart($product->id, $quantity);
 
         $count = Cart::where('user_id', $user->id)->count();
 

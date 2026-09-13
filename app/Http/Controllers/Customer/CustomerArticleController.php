@@ -177,14 +177,23 @@ class CustomerArticleController extends Controller
         ]);
 
         $article = Article::find($request->article_id);
-        
-        // 🔥 INCREMENT VIEWS
+
+        // 🔥 Increment total views (kolom `views` di tabel articles)
         $article->increment('views');
-        
+
+        // 🔥 LOG VIEW ke article_views — GUEST BOLEH
+        \App\Models\ArticleView::create([
+            'article_id' => $article->id,
+            // user_id NULL kalau guest
+            'user_id'    => Auth::guard('customer')->id() ?? Auth::id() ?? null,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'View recorded',
-            'views' => $article->views
+            'views'   => $article->views,
         ]);
     }
 
@@ -285,34 +294,57 @@ class CustomerArticleController extends Controller
 
     private function formatCommentsWithReplies($comments)
     {
-        return $comments->map(function($comment) {
-            return [
-                'id' => $comment->id,
-                'user_name' => $comment->user->name ?? 'User',
-                'user_avatar' => strtoupper(substr($comment->user->name ?? 'U', 0, 1)),
-                'content' => $comment->content,
-                'created_at' => $comment->formatted_date,
-                'user_id' => $comment->user_id,
-                'replies' => $this->formatRepliesRecursive($comment->replies),
-            ];
+        return $comments->map(function ($comment) {
+            return $this->formatSingleComment($comment, true);
         });
     }
 
     private function formatRepliesRecursive($replies)
     {
-        return $replies->map(function($reply) {
-            return [
-                'id' => $reply->id,
-                'user_name' => $reply->user->name ?? 'User',
-                'user_avatar' => strtoupper(substr($reply->user->name ?? 'U', 0, 1)),
-                'content' => $reply->content,
-                'created_at' => $reply->formatted_date,
-                'user_id' => $reply->user_id,
-                'replies' => $reply->replies->isNotEmpty() 
-                    ? $this->formatRepliesRecursive($reply->replies) 
-                    : [],
-            ];
+        return $replies->map(function ($reply) {
+            return $this->formatSingleComment($reply, false);
         });
+    }
+
+    /**
+     * 🔥 FORMAT 1 KOMENTAR (dipakai untuk top-level & reply)
+     */
+    private function formatSingleComment($comment, $withReplies = false)
+    {
+        $user = $comment->user;
+
+        // Avatar: URL kalau ada, inisial kalau tidak
+        $avatarUrl = null;
+        if ($user && $user->avatar) {
+            $avatarUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)
+                ? \Illuminate\Support\Facades\Storage::url($user->avatar)
+                : null;
+        }
+
+        $data = [
+            'id'          => $comment->id,
+            'user_name'   => $user->name ?? 'User',
+            'user_avatar' => strtoupper(substr($user->name ?? 'U', 0, 1)),
+            'avatar_url'  => $avatarUrl,
+            'content'     => $comment->content,
+            'created_at'  => $comment->formatted_date,
+            'user_id'     => $comment->user_id,
+            'is_admin'    => $user && $user->role === 'admin', // 🔥 tambahan biar frontend bisa tandai admin
+            'replies'     => [], // default
+        ];
+
+        if ($withReplies) {
+            $data['replies'] = $comment->replies->isNotEmpty()
+                ? $this->formatRepliesRecursive($comment->replies)
+                : [];
+        } else {
+            // 🔥 FIX: dulu tertulis $reply->replies (typo), harusnya $comment->replies
+            $data['replies'] = $comment->replies->isNotEmpty()
+                ? $this->formatRepliesRecursive($comment->replies)
+                : [];
+        }
+
+        return $data;
     }
 
     /**
@@ -343,6 +375,13 @@ class CustomerArticleController extends Controller
             'content' => $request->content,
             'is_active' => true,
         ]);
+
+        if ($request->parent_id) {
+            $parent = ArticleComment::find($request->parent_id);
+            if ($parent) {
+                $parent->update(['replied_at' => null]);
+            }
+        }
 
         $comment->load('user');
 

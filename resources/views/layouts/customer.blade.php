@@ -34,7 +34,49 @@
     <link rel="stylesheet" href="{{ asset('css/product.css') }}">
     <link rel="stylesheet" href="{{ asset('css/variant-modal.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    @hasSection('meta')
+    @yield('meta')
+    @endif
 
+    {{-- Canonical --}}
+    @hasSection('canonical')
+        <link rel="canonical" href="@yield('canonical')">
+    @endif
+
+    {{-- Open Graph default --}}
+    <meta property="og:site_name" content="{{ $setting?->store_name ?? 'Barokah Sport' }}">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
+    <meta property="og:description" content="@yield('og_description', $setting?->meta_description ?? '')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    @hasSection('og_image')
+        <meta property="og:image" content="@yield('og_image')">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+    @endif
+
+    {{-- Twitter Card default --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
+    <meta name="twitter:description" content="@yield('og_description', $setting?->meta_description ?? '')">
+    @hasSection('og_image')
+        <meta name="twitter:image" content="@yield('og_image')">
+    @endif
+
+    {{-- JSON-LD Schema --}}
+    @hasSection('schema')
+        @yield('schema')
+    @endif
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCVZ28XK4Z"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-DCVZ28XK4Z');
+    </script>
     <style>
         /* ============================================
            VOUCHER POPUP (Right Side Slide)
@@ -599,32 +641,34 @@
         </div>
     </div>
 
-    <div class="whatsapp_fix">
-        <div class="wa-card" id="waCard">
-            <button class="wa-close" onclick="document.getElementById('waCard').classList.remove('show')">×</button>
-            <div class="wa-card-header">
-                <div class="wa-avatar">
-                    <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
+    @if(!request()->routeIs('customer.products.show'))
+        <div class="whatsapp_fix">
+            <div class="wa-card" id="waCard">
+                <button class="wa-close" onclick="document.getElementById('waCard').classList.remove('show')">×</button>
+                <div class="wa-card-header">
+                    <div class="wa-avatar">
+                        <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
+                    </div>
+                    <div>
+                        <div class="wa-card-title">Customer Service</div>
+                        <div class="wa-card-status">● Online</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="wa-card-title">Customer Service</div>
-                    <div class="wa-card-status">● Online</div>
+                <div class="wa-card-message">
+                    Halo! 👋 Ada yang bisa kami bantu? Chat kami sekarang.
                 </div>
+                <a href="https://api.whatsapp.com/send?phone={{ $setting?->whatsapp ?? '08123516518' }}" 
+                target="_blank" 
+                class="wa-card-button">
+                    Mulai Chat
+                </a>
             </div>
-            <div class="wa-card-message">
-                Halo! 👋 Ada yang bisa kami bantu? Chat kami sekarang.
-            </div>
-            <a href="https://api.whatsapp.com/send?phone={{ $setting?->whatsapp ?? '08123516518' }}" 
-            target="_blank" 
-            class="wa-card-button">
-                Mulai Chat
-            </a>
+            
+            <button class="wa-trigger" onclick="document.getElementById('waCard').classList.toggle('show')">
+                <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
+            </button>
         </div>
-        
-        <button class="wa-trigger" onclick="document.getElementById('waCard').classList.toggle('show')">
-            <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
-        </button>
-    </div>
+    @endif
 
     @include('customer.partials.login-popup')
 

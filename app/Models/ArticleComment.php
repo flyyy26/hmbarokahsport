@@ -15,10 +15,12 @@ class ArticleComment extends Model
         'parent_id',
         'content',
         'is_active',
+        'replied_at',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'replied_at' => 'datetime',
     ];
 
     public function article()
@@ -51,5 +53,18 @@ class ArticleComment extends Model
     public function getFormattedDateAttribute()
     {
         return $this->created_at->diffForHumans();
+    }
+
+    public function getIsRepliedAttribute(): bool
+    {
+        return !is_null($this->replied_at);
+    }
+
+    /**
+     * 🔥 Scope: komentar yang belum dibalas
+     */
+    public function scopeUnreplied($query)
+    {
+        return $query->whereNull('replied_at');
     }
 }

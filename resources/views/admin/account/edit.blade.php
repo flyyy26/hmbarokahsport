@@ -5,6 +5,22 @@
 
 @section('content')
 
+<style>
+    .avatar-uploading #avatar-preview {
+        position: relative;
+        opacity: 0.6;
+    }
+    .avatar-uploading #avatar-preview::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
 <div class="w-full max-w-4xl mx-auto space-y-6">
 
     {{-- ============================================ --}}
@@ -58,27 +74,51 @@
 
                 {{-- Avatar Besar --}}
                 <div class="relative flex-shrink-0">
-                    <div class="w-20 h-20 rounded-2xl flex items-center justify-center
+                    <div id="avatar-preview"
+                        class="w-20 h-20 rounded-2xl flex items-center justify-center
                                 bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
                                 shadow-xl shadow-amber-500/20 overflow-hidden">
-                        @if($user->avatar)
-                            <img src="{{ asset('storage/' . $user->avatar) }}"
-                                 alt="{{ $user->name }}"
-                                 class="w-full h-full object-cover">
+                        @if($user->avatar_url)
+                            <img id="avatar-img"
+                                src="{{ $user->avatar_url }}"
+                                alt="{{ $user->name }}"
+                                class="w-full h-full object-cover">
                         @else
-                            <span class="text-3xl font-bold text-slate-900">
+                            <span id="avatar-initial" class="text-3xl font-bold text-slate-900">
                                 {{ strtoupper(substr($user->name, 0, 1)) }}
                             </span>
                         @endif
                     </div>
-                    <span class="absolute -bottom-1 -right-1
-                                 w-6 h-6 rounded-full
-                                 bg-emerald-500
-                                 flex items-center justify-center
-                                 shadow-md shadow-emerald-500/50"
-                          style="box-shadow: 0 0 0 3px var(--bg-card);">
-                        <iconify-icon icon="mdi:check" class="text-white text-xs"></iconify-icon>
-                    </span>
+
+                    {{-- Tombol Edit Avatar --}}
+                    <button type="button"
+                            onclick="document.getElementById('avatar-input').click()"
+                            class="absolute -bottom-1 -right-1
+                                w-7 h-7 rounded-full
+                                bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]
+                                flex items-center justify-center
+                                cursor-pointer
+                                shadow-lg shadow-amber-500/40
+                                transition-all active:scale-95
+                                hover:shadow-xl hover:shadow-amber-500/60"
+                            style="box-shadow: 0 0 0 3px var(--bg-card), 0 4px 12px rgba(236,188,66,0.4);"
+                            title="Ganti Avatar">
+                        <iconify-icon icon="mdi:camera" class="text-slate-900 text-xs"></iconify-icon>
+                    </button>
+
+                    {{-- Hidden Form Upload Avatar --}}
+                    <form id="avatar-form"
+                        action="{{ route('admin.account.avatar.update') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="hidden">
+                        @csrf
+                        <input type="file"
+                            id="avatar-input"
+                            name="avatar"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onchange="document.getElementById('avatar-form').submit()">
+                    </form>
                 </div>
 
                 {{-- Info --}}
@@ -393,6 +433,60 @@ function togglePassword(inputId, button) {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    const avatarInput = document.getElementById('avatar-input');
+    const avatarForm = document.getElementById('avatar-form');
+    const preview = document.getElementById('avatar-preview');
+
+    if (!avatarInput) return;
+
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 🔥 Validasi tipe
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Format file harus JPG, PNG, atau WEBP.');
+            this.value = '';
+            return;
+        }
+
+        // 🔥 Validasi ukuran (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB.');
+            this.value = '';
+            return;
+        }
+
+        // 🔥 Preview & submit
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            // Update preview sebelum submit
+            const previewEl = document.getElementById('avatar-preview');
+            const existingImg = document.getElementById('avatar-img');
+            const initialEl = document.getElementById('avatar-initial');
+
+            if (existingImg) {
+                existingImg.src = ev.target.result;
+            } else {
+                if (initialEl) initialEl.style.display = 'none';
+                const img = document.createElement('img');
+                img.id = 'avatar-img';
+                img.src = ev.target.result;
+                img.className = 'w-full h-full object-cover';
+                previewEl.appendChild(img);
+            }
+
+            // Loading state
+            previewEl.style.opacity = '0.6';
+
+            // Submit form
+            avatarForm.submit();
+        };
+        reader.readAsDataURL(file);
+    });
+});
 // ============================================
 // PASSWORD STRENGTH METER
 // ============================================

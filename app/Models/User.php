@@ -91,4 +91,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(PasswordResetRequest::class);
     }
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        // Kalau avatar sudah URL lengkap (http/https)
+        if (str_starts_with($this->avatar, 'http')) {
+            return $this->avatar;
+        }
+
+        // Kalau file ada di storage
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->avatar)) {
+            return \Illuminate\Support\Facades\Storage::url($this->avatar);
+        }
+
+        return null;
+    }
 }

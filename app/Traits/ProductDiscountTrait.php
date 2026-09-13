@@ -5,7 +5,7 @@ namespace App\Traits;
 trait ProductDiscountTrait
 {
     /**
-     * 🔥 ATTACH DISCOUNT DATA TO PRODUCT
+     * 🔥 ATTACH DISCOUNT DATA (SINKRON DENGAN HOME CONTROLLER)
      */
     public function attachDiscountData($product)
     {
@@ -13,135 +13,155 @@ trait ProductDiscountTrait
             return $product;
         }
 
+        $variants = $product->variants;
+
+        if ($variants->isEmpty()) {
+            $product->has_discount = false;
+            $product->max_discount_percent = 0;
+            $product->min_effective_price = 0;
+            $product->max_price = 0;
+            $product->min_price = 0;
+            $product->has_flash_sale = false;
+            $product->badge_label = null;
+            $product->price_label = '-';
+            $product->original_price_label = null;
+            $product->is_flash_sale_active = false;
+            return $product;
+        }
+
         // ============================================
-        // 1. HITUNG DISKON PER VARIAN
+        // FLASH SALE STATE
         // ============================================
-        $hasProductDiscount = $product->isOnProductDiscount();
-        $productDiscountPercent = 0;
+        $isFlashSaleActive = false;
+        $flashSalePercent = 0;
+
+        if ($product->is_flash_sale && $product->flash_sale_value > 0) {
+            $now = now();
+            $isActive = true;
+            if ($product->flash_sale_start_date && $now->lt($product->flash_sale_start_date)) {
+                $isActive = false;
+            }
+            if ($product->flash_sale_end_date && $now->gt($product->flash_sale_end_date)) {
+                $isActive = false;
+            }
+            $isFlashSaleActive = $isActive;
+
+            if ($isActive && $product->flash_sale_type === 'percentage') {
+                $flashSalePercent = (float) $product->flash_sale_value;
+            }
+        }
+
+        // ============================================
+        // HITUNG DISKON & HARGA
+        // ============================================
         $maxDiscountPercent = 0;
-        $hasDiscount = false;
-        $bestDiscountVariant = null;
+        $minEffectivePrice = PHP_FLOAT_MAX;
+        $maxEffectivePrice = 0;
+        $minPrice = PHP_FLOAT_MAX;
+        $maxPrice = 0;
 
-        // Simpan harga ke array untuk memudahkan perhitungan
-        $allPrices = [];
-        $allEffectivePrices = [];
-
-        foreach ($product->variants as $variant) {
+        foreach ($variants as $variant) {
             $price = (float) $variant->price;
-            $effectivePrice = (float) ($variant->effective_price ?? $variant->price);
-            $discountPercent = (float) ($variant->discount_percent ?? 0);
+            $variantDiscount = 0;
 
-            // Simpan ke variant
-            $variant->effective_price = $effectivePrice;
-            $variant->discount_percent = $discountPercent;
-
-            $allPrices[] = $price;
-            $allEffectivePrices[] = $effectivePrice;
-
-            if ($discountPercent > 0) {
-                $hasDiscount = true;
-                if ($discountPercent > $maxDiscountPercent) {
-                    $maxDiscountPercent = $discountPercent;
-                    $bestDiscountVariant = $variant;
-                }
+            // Diskon varian
+            if ($variant->discount_price && $price > 0 && $variant->discount_price < $price) {
+                $variantDiscount = round((($price - $variant->discount_price) / $price) * 100);
             }
+
+            $effectivePrice = $variant->discount_price ?? $price;
+
+            // Flash sale override
+            if ($isFlashSaleActive) {
+                if ($product->flash_sale_type === 'percentage') {
+                    $flashPrice = $price * (1 - $product->flash_sale_value / 100);
+                    if ($flashPrice < $effectivePrice) {
+                        $effectivePrice = $flashPrice;
+                    }
+                    if ($product->flash_sale_value > $maxDiscountPercent) {
+                        $maxDiscountPercent = (float) $product->flash_sale_value;
+                    }
+                } elseif ($product->flash_sale_type === 'fixed') {
+                    $flashPrice = max(0, $price - (float) $product->flash_sale_value);
+                    if ($flashPrice < $effectivePrice) {
+                        $effectivePrice = $flashPrice;
+                    }
+                    $fixedPercent = $price > 0 ? round((($price - $flashPrice) / $price) * 100) : 0;
+                    if ($fixedPercent > $maxDiscountPercent) {
+                        $maxDiscountPercent = $fixedPercent;
+                    }
+                }
+            } elseif ($variantDiscount > $maxDiscountPercent) {
+                $maxDiscountPercent = $variantDiscount;
+            }
+
+            if ($effectivePrice < $minEffectivePrice) $minEffectivePrice = $effectivePrice;
+            if ($effectivePrice > $maxEffectivePrice) $maxEffectivePrice = $effectivePrice;
+            if ($price < $minPrice) $minPrice = $price;
+            if ($price > $maxPrice) $maxPrice = $price;
         }
 
-        // ============================================
-        // 2. FALLBACK KE DISKON PRODUK
-        // ============================================
-        if (!$hasDiscount && $hasProductDiscount) {
-            $minPrice = !empty($allPrices) ? min($allPrices) : 0;
-            $productDiscountPercent = $product->getProductDiscountPercent($minPrice);
-
-            if ($productDiscountPercent > 0) {
-                $hasDiscount = true;
-                $maxDiscountPercent = $productDiscountPercent;
-
-                // Rebuild effective prices dengan diskon produk
-                $allEffectivePrices = [];
-                foreach ($product->variants as $variant) {
-                    $variant->discount_percent = $productDiscountPercent;
-                    $variant->effective_price = $product->calculateProductDiscount($variant->price);
-                    $allEffectivePrices[] = (float) $variant->effective_price;
-                }
-            }
-        }
+        if ($minEffectivePrice === PHP_FLOAT_MAX) $minEffectivePrice = $minPrice;
 
         // ============================================
-        // 3. HITUNG RANGE HARGA
+        // SET PROPERTIES (SAMA DENGAN HOME CONTROLLER)
         // ============================================
-        $minOriginalPrice = !empty($allPrices) ? min($allPrices) : 0;
-        $maxOriginalPrice = !empty($allPrices) ? max($allPrices) : 0;
-        $minEffectivePrice = !empty($allEffectivePrices) ? min($allEffectivePrices) : 0;
-        $maxEffectivePrice = !empty($allEffectivePrices) ? max($allEffectivePrices) : 0;
-
-        // ============================================
-        // 4. SET PROPERTIES KE PRODUCT
-        // ============================================
-        $product->has_discount = $hasDiscount;
+        $product->has_discount = $maxDiscountPercent > 0;
         $product->max_discount_percent = $maxDiscountPercent;
-        $product->best_discount_variant = $bestDiscountVariant;
-        $product->has_product_discount = $hasProductDiscount;
-        $product->product_discount_percent = $productDiscountPercent;
-
-        $product->min_price = $minOriginalPrice;
-        $product->max_price = $maxOriginalPrice;
         $product->min_effective_price = $minEffectivePrice;
         $product->max_effective_price = $maxEffectivePrice;
+        $product->min_price = $minPrice === PHP_FLOAT_MAX ? 0 : $minPrice;
+        $product->max_price = $maxPrice;
+        $product->has_flash_sale = $isFlashSaleActive;
+        $product->is_flash_sale_active = $isFlashSaleActive;
 
         // ============================================
-        // 5. BUILD PRICE LABEL
+        // PRICE LABEL (untuk blade)
         // ============================================
-        if ($hasDiscount) {
-            // Range harga DISKON
+        if ($product->has_discount) {
             if ($minEffectivePrice == $maxEffectivePrice) {
                 $product->price_label = 'Rp ' . number_format($minEffectivePrice, 0, ',', '.');
             } else {
                 $product->price_label = 'Rp ' . number_format($minEffectivePrice, 0, ',', '.') .
                                         ' - Rp ' . number_format($maxEffectivePrice, 0, ',', '.');
             }
-            $product->discount_label = 'Diskon ' . round($maxDiscountPercent) . '%';
         } else {
-            // Range harga NORMAL
-            if ($minOriginalPrice == $maxOriginalPrice) {
-                $product->price_label = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.');
+            if ($minPrice == $maxPrice) {
+                $product->price_label = 'Rp ' . number_format($minPrice, 0, ',', '.');
             } else {
-                $product->price_label = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.') .
-                                        ' - Rp ' . number_format($maxOriginalPrice, 0, ',', '.');
+                $product->price_label = 'Rp ' . number_format($minPrice, 0, ',', '.') .
+                                        ' - Rp ' . number_format($maxPrice, 0, ',', '.');
             }
-            $product->discount_label = '';
         }
 
         // ============================================
-        // 6. ORIGINAL PRICE DISPLAY (untuk coret)
+        // ORIGINAL PRICE LABEL (untuk coret)
         // ============================================
-        if ($hasDiscount) {
-            if ($minOriginalPrice == $maxOriginalPrice) {
-                $product->original_price_display = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.');
+        if ($product->has_discount) {
+            if ($minPrice == $maxPrice) {
+                $product->original_price_label = 'Rp ' . number_format($minPrice, 0, ',', '.');
             } else {
-                $product->original_price_display = 'Rp ' . number_format($minOriginalPrice, 0, ',', '.') .
-                                                    ' - Rp ' . number_format($maxOriginalPrice, 0, ',', '.');
+                $product->original_price_label = 'Rp ' . number_format($minPrice, 0, ',', '.') .
+                                                 ' - Rp ' . number_format($maxPrice, 0, ',', '.');
             }
         } else {
-            $product->original_price_display = null;
+            $product->original_price_label = null;
         }
 
         // ============================================
-        // 7. BADGE
+        // BADGE
         // ============================================
-        if ($hasDiscount && $maxDiscountPercent > 0) {
+        if ($isFlashSaleActive) {
+            $product->badge_label = '⚡ Flash Sale';
+        } elseif ($product->has_discount && $maxDiscountPercent > 0) {
             $product->badge_label = 'Diskon ' . round($maxDiscountPercent) . '%';
-            $product->badge_color = 'red';
+        } elseif ($product->is_best_seller) {
+            $product->badge_label = 'Terlaris';
+        } elseif ($product->is_featured) {
+            $product->badge_label = 'Unggulan';
         } else {
             $product->badge_label = null;
-            $product->badge_color = null;
         }
-
-        // ============================================
-        // 8. DISPLAY PRICE (untuk blade)
-        // ============================================
-        $product->display_price = $product->price_label;
 
         return $product;
     }

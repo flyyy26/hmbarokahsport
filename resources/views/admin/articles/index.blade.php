@@ -179,7 +179,7 @@
 
                 {{-- Table Header --}}
                 <thead class="border-b"
-                       style="background: var(--bg-input); border-color: var(--border-2)">
+                    style="background: var(--bg-input); border-color: var(--border-2)">
                     <tr>
                         <th class="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-wider w-12" style="color: var(--text-5)">#</th>
                         <th class="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">
@@ -188,8 +188,8 @@
                         <th class="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">
                             Kategori
                         </th>
-                        <th class="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">
-                            Penulis
+                        <th class="px-4 py-4 text-center text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">
+                            Statistik
                         </th>
                         <th class="px-4 py-4 text-left text-[10px] font-bold uppercase tracking-wider" style="color: var(--text-5)">
                             Status
@@ -228,8 +228,11 @@
                                             {{ $article->title }}
                                         </p>
                                         <div class="flex items-center gap-1.5 text-[10px] mt-0.5" style="color: var(--text-5);">
+                                            <iconify-icon icon="mdi:account-outline"></iconify-icon>
+                                            {{ $article->author ?? 'Admin' }}
+                                            <span class="mx-0.5">·</span>
                                             <iconify-icon icon="mdi:calendar-clock-outline"></iconify-icon>
-                                            {{ $article->created_at->format('d M Y, H:i') }}
+                                            {{ $article->created_at->format('d M Y') }}
                                         </div>
                                     </div>
                                 </div>
@@ -239,7 +242,7 @@
                             <td class="px-4 py-4">
                                 @if($article->category)
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                          style="background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); color: #60a5fa;">
+                                        style="background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); color: #60a5fa;">
                                         <iconify-icon icon="mdi:folder-outline"></iconify-icon>
                                         {{ $article->category }}
                                     </span>
@@ -248,19 +251,39 @@
                                 @endif
                             </td>
 
-                            {{-- Penulis --}}
+                            {{-- 🔥 STATISTIK: Views / Likes / Comments --}}
                             <td class="px-4 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
-                                                bg-gradient-to-br from-[#FDDD57] to-[#ecbc42]">
-                                        <span class="text-slate-900 font-bold text-[10px]">
-                                            {{ strtoupper(substr($article->author ?? 'A', 0, 1)) }}
-                                        </span>
-                                    </div>
-                                    <span class="text-sm font-semibold truncate" style="color: var(--text-2);">
-                                        {{ $article->author ?? '-' }}
+                                <a href="{{ route('admin.articles.stats', $article) }}"
+                                class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg border transition-all"
+                                style="background: var(--bg-input); border-color: var(--border-2);"
+                                onmouseover="this.style.borderColor='#ecbc42'"
+                                onmouseout="this.style.borderColor='var(--border-2)'"
+                                title="Lihat detail statistik">
+
+                                    {{-- Views --}}
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold" style="color: #60a5fa;">
+                                        <iconify-icon icon="mdi:eye-outline"></iconify-icon>
+                                        {{ number_format($article->views ?? 0) }}
                                     </span>
-                                </div>
+
+                                    <span class="w-px h-3.5" style="background: var(--border-2);"></span>
+
+                                    {{-- Likes --}}
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold" style="color: #f87171;">
+                                        <iconify-icon icon="mdi:heart-outline"></iconify-icon>
+                                        {{ number_format($article->likes_count ?? 0) }}
+                                    </span>
+
+                                    <span class="w-px h-3.5" style="background: var(--border-2);"></span>
+
+                                    {{-- Comments --}}
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold" style="color: #34d399;">
+                                        <iconify-icon icon="mdi:comment-outline"></iconify-icon>
+                                        {{ number_format($article->comments_count ?? 0) }}
+                                    </span>
+
+                                    <iconify-icon icon="mdi:chevron-right" class="text-sm ml-1" style="color: var(--text-5);"></iconify-icon>
+                                </a>
                             </td>
 
                             {{-- Status --}}
@@ -268,13 +291,13 @@
                                 <div class="flex flex-wrap items-center gap-1.5">
                                     @if($article->is_active)
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                              style="background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399;">
+                                            style="background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399;">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                             Aktif
                                         </span>
                                     @else
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                              style="background: rgba(148,163,184,0.1); border-color: rgba(148,163,184,0.3); color: var(--text-4);">
+                                            style="background: rgba(148,163,184,0.1); border-color: rgba(148,163,184,0.3); color: var(--text-4);">
                                             <span class="w-1.5 h-1.5 rounded-full" style="background: var(--text-5);"></span>
                                             Nonaktif
                                         </span>
@@ -282,7 +305,7 @@
 
                                     @if($article->is_featured)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                              style="background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); color: #fbbf24;">
+                                            style="background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); color: #fbbf24;">
                                             <iconify-icon icon="mdi:star"></iconify-icon>
                                             Featured
                                         </span>
@@ -294,27 +317,40 @@
                             <td class="px-4 py-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
 
+                                    {{-- Stats --}}
+                                    <a href="{{ route('admin.articles.stats', $article) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                            text-xs font-semibold border transition-all active:scale-95"
+                                    style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
+                                    onmouseover="this.style.borderColor='#60a5fa'; this.style.color='#60a5fa'"
+                                    onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'"
+                                    title="Statistik">
+                                        <iconify-icon icon="mdi:chart-box-outline"></iconify-icon>
+                                    </a>
+
+                                    {{-- Edit --}}
                                     <a href="{{ route('admin.articles.edit', $article) }}"
-                                       class="inline-flex items-center justify-center w-8 h-8 rounded-lg
-                                              text-xs font-semibold border transition-all active:scale-95"
-                                       style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
-                                       onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
-                                       onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'"
-                                       title="Edit">
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                            text-xs font-semibold border transition-all active:scale-95"
+                                    style="background: var(--bg-input); border-color: var(--border-2); color: var(--text-3)"
+                                    onmouseover="this.style.borderColor='#ecbc42'; this.style.color='#FDDD57'"
+                                    onmouseout="this.style.borderColor='var(--border-2)'; this.style.color='var(--text-3)'"
+                                    title="Edit">
                                         <iconify-icon icon="mdi:pencil-outline"></iconify-icon>
                                     </a>
 
+                                    {{-- Hapus --}}
                                     <form action="{{ route('admin.articles.destroy', $article) }}"
-                                          method="POST"
-                                          class="inline"
-                                          onsubmit="return confirm('Hapus artikel ini?')">
+                                        method="POST"
+                                        class="inline"
+                                        onsubmit="return confirm('Hapus artikel ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
                                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg
-                                                       text-xs font-semibold border transition-all active:scale-95
-                                                       bg-red-500/5 border-red-500/20 text-red-400
-                                                       hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300"
+                                                    text-xs font-semibold border transition-all active:scale-95
+                                                    bg-red-500/5 border-red-500/20 text-red-400
+                                                    hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300"
                                                 title="Hapus">
                                             <iconify-icon icon="mdi:delete-outline"></iconify-icon>
                                         </button>

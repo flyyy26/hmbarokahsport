@@ -37,26 +37,33 @@
                     <span>Trending Search</span>
                 </div>
                 <div class="search-popup-trending-list">
-                    @php
-                        $trendingSearches = [
-                            'Celana Training',
-                            'Set Olahraga',
-                            'Oneset Kaos Celana',
-                            'Jaket olahraga',
-                            'Bordir Sablon',
-                            'Celana Cargo',
-                            'Parasut Vest',
-                            'Jaket Varsity'
-                        ];
-                    @endphp
-                    @foreach($trendingSearches as $trend)
-                        <a href="{{ route('customer.products.index', ['search' => $trend]) }}" 
+                    @forelse($trendingSearches as $trend)
+                        <a href="{{ route('customer.products.index', ['search' => $trend->keyword]) }}"
                            class="search-popup-trending-item"
                            onclick="closeSearchPopup()">
                             <iconify-icon icon="mdi:fire" class="trending-icon"></iconify-icon>
-                            {{ $trend }}
+                            {{ $trend->keyword }}
                         </a>
-                    @endforeach
+                    @empty
+                        <a href="{{ route('customer.products.index', ['search' => 'Sepatu Futsal']) }}"
+                           class="search-popup-trending-item"
+                           onclick="closeSearchPopup()">
+                            <iconify-icon icon="mdi:fire" class="trending-icon"></iconify-icon>
+                            Sepatu Futsal
+                        </a>
+                        <a href="{{ route('customer.products.index', ['search' => 'Jersey Bola']) }}"
+                           class="search-popup-trending-item"
+                           onclick="closeSearchPopup()">
+                            <iconify-icon icon="mdi:fire" class="trending-icon"></iconify-icon>
+                            Jersey Bola
+                        </a>
+                        <a href="{{ route('customer.products.index', ['search' => 'Kaos Olahraga']) }}"
+                           class="search-popup-trending-item"
+                           onclick="closeSearchPopup()">
+                            <iconify-icon icon="mdi:fire" class="trending-icon"></iconify-icon>
+                            Kaos Olahraga
+                        </a>
+                    @endforelse
                 </div>
             </div>
 

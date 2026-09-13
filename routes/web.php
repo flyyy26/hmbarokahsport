@@ -44,10 +44,14 @@ use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Customer\CustomerTestimonialController;
+use App\Http\Controllers\Customer\CustomerCareerController;
 use App\Http\Controllers\Admin\AccountAdminController;
 use App\Http\Controllers\Admin\DashboardExportController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\PasswordResetController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\TrafficController;
+use App\Http\Controllers\SitemapController;
 
 // ============================================
 // CUSTOMER FRONTEND
@@ -89,6 +93,9 @@ Route::post('/checkout/remove-voucher', [CheckoutController::class, 'removeVouch
     ->name('customer.checkout.remove-voucher');
 Route::get('/checkout/vouchers-ajax', [CheckoutController::class, 'getAvailableVouchers'])
     ->name('customer.checkout.vouchers-ajax');
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])
+    ->name('sitemap');
 
 // 🔥 ROUTE TEST TRACKING (GET - untuk testing di browser)
 Route::get('/test-refresh/{id}', function ($id) {
@@ -256,6 +263,11 @@ Route::get('/katalog', [CustomerProductController::class, 'index'])->name('custo
 Route::get('/produk/{product:slug}', [CustomerProductController::class, 'show'])->name('customer.products.show');
 Route::get('/katalog/terbaru', [CustomerProductController::class, 'latest'])->name('customer.products.latest');
 Route::get('/katalog/promo', [CustomerProductController::class, 'promo'])->name('customer.products.promo'); 
+
+Route::get('/karir', [CustomerCareerController::class, 'index'])->name('customer.careers.index');
+Route::get('/karir/{slug}', [CustomerCareerController::class, 'show'])->name('customer.careers.show');
+Route::post('/karir/{career}/apply', [CustomerCareerController::class, 'apply'])
+    ->name('customer.careers.apply');
 
 Route::get('/artikel', [CustomerArticleController::class, 'index'])
     ->name('customer.articles.index');
@@ -515,6 +527,32 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     )->name('admin.customers.password-reject');
     Route::delete('/password-requests/{passwordRequest}', [PasswordResetController::class, 'destroy'])
         ->name('admin.password-requests.destroy');
+
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+    Route::get('/analytics/realtime', [AnalyticsController::class, 'realtime'])->name('admin.analytics.realtime');
+
+    Route::get('/careers', [\App\Http\Controllers\Admin\CareerController::class, 'index'])
+        ->name('admin.careers.index');
+    Route::get('/careers/create', [\App\Http\Controllers\Admin\CareerController::class, 'create'])
+        ->name('admin.careers.create');
+    Route::post('/careers', [\App\Http\Controllers\Admin\CareerController::class, 'store'])
+        ->name('admin.careers.store');
+    Route::get('/careers/{career}/edit', [\App\Http\Controllers\Admin\CareerController::class, 'edit'])
+        ->name('admin.careers.edit');
+    Route::put('/careers/{career}', [\App\Http\Controllers\Admin\CareerController::class, 'update'])
+        ->name('admin.careers.update');
+    Route::delete('/careers/{career}', [\App\Http\Controllers\Admin\CareerController::class, 'destroy'])
+        ->name('admin.careers.destroy');
+
+    // Pelamar
+    Route::get('/careers/{career}/applications', [\App\Http\Controllers\Admin\CareerController::class, 'applications'])
+        ->name('admin.careers.applications');
+    Route::get('/careers/{career}/applications/{application}', [\App\Http\Controllers\Admin\CareerController::class, 'showApplication'])
+        ->name('admin.careers.applications.show');
+    Route::put('/careers/{career}/applications/{application}', [\App\Http\Controllers\Admin\CareerController::class, 'updateApplication'])
+        ->name('admin.careers.applications.update');
+    Route::delete('/careers/{career}/applications/{application}', [\App\Http\Controllers\Admin\CareerController::class, 'destroyApplication'])
+        ->name('admin.careers.applications.destroy');
     
 
     // MARKETPLACE
@@ -572,9 +610,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/articles', [ArticleController::class, 'index'])->name('admin.articles.index');
     Route::get('/articles/create', [ArticleController::class, 'create'])->name('admin.articles.create');
     Route::post('/articles', [ArticleController::class, 'store'])->name('admin.articles.store');
+    Route::get('/articles/{article}/stats', [ArticleController::class, 'stats'])->name('admin.articles.stats');
     Route::get('/articles/{article}/edit', [ArticleController::class, 'edit'])->name('admin.articles.edit');
     Route::put('/articles/{article}', [ArticleController::class, 'update'])->name('admin.articles.update');
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])->name('admin.articles.destroy');
+    Route::post('/comments/{comment}/reply',
+        [ArticleController::class, 'replyComment']
+    )->name('admin.articles.comments.reply');
 
     // 🔥 ARTICLE CATEGORIES AJAX
     Route::get('/article-categories/ajax', [ArticleCategoryAjaxController::class, 'index'])->name('admin.article-categories.ajax');
@@ -596,6 +638,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/vouchers/{voucher}/edit', [VoucherController::class, 'edit'])->name('admin.vouchers.edit');
     Route::put('/vouchers/{voucher}', [VoucherController::class, 'update'])->name('admin.vouchers.update');
     Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])->name('admin.vouchers.destroy');
+
+    Route::get('/analytics', [TrafficController::class, 'index'])->name('admin.analytics.index');
 
     // TESTIMONIAL
     Route::get('/testimonials', [TestimonialController::class, 'index'])->name('admin.testimonials.index');
@@ -634,4 +678,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/account', [AccountAdminController::class, 'edit'])->name('admin.account.edit');
     Route::put('/account', [AccountAdminController::class, 'update'])->name('admin.account.update');
     Route::put('/account/password', [AccountAdminController::class, 'updatePassword'])->name('admin.account.password');
+    Route::post('/account/avatar', [AccountAdminController::class, 'updateAvatar'])->name('admin.account.avatar.update');
+    Route::delete('/account/avatar', [AccountAdminController::class, 'deleteAvatar'])->name('admin.account.avatar.delete');
 });

@@ -345,6 +345,62 @@
     </div>
 @endif
 
+@if(($activeCareersCount ?? 0) > 0)
+<section class="home_career_cta">
+    <div class="home_career_cta_inner">
+
+        <div class="home_career_cta_deco deco_1"></div>
+        <div class="home_career_cta_deco deco_2"></div>
+
+        <div class="home_career_cta_content">
+            <div class="home_career_cta_badge">
+                <iconify-icon icon="mdi:briefcase-outline"></iconify-icon>
+                Karier di Barokah Sport
+            </div>
+
+            <h2 class="home_career_cta_title">
+                Bergabung Bersama <span>Tim Kami</span>
+            </h2>
+
+            <p class="home_career_cta_desc">
+                Kami sedang membuka <strong>{{ $activeCareersCount }} posisi</strong> yang
+                siap kamu isi. Temukan peran yang sesuai dengan passion dan keahlianmu,
+                lalu tumbuh bersama kami.
+            </p>
+
+            <div class="home_career_cta_actions">
+                <a href="{{ route('customer.careers.index') }}" class="home_career_cta_btn primary">
+                    <iconify-icon icon="mdi:briefcase-search-outline"></iconify-icon>
+                    Lihat {{ $activeCareersCount }} Lowongan
+                    <iconify-icon icon="mdi:arrow-right" class="arrow"></iconify-icon>
+                </a>
+
+                <a href="{{ route('customer.contact') }}" class="home_career_cta_btn outline">
+                    <iconify-icon icon="mdi:chat-outline"></iconify-icon>
+                    Tanya Dulu
+                </a>
+            </div>
+
+            <div class="home_career_cta_perks">
+                <span class="perk">
+                    <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                    Lingkungan kerja suportif
+                </span>
+                <span class="perk">
+                    <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                    Pengembangan karier
+                </span>
+                <span class="perk">
+                    <iconify-icon icon="mdi:check-circle"></iconify-icon>
+                    Benefit kompetitif
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+@endif
+
 <div class="keunggulan_layout keunggulan_layout_mobile">
     <div class="keunggulan_box_layout">
         <img src="{{ asset('images/gratis_ongkir.svg') }}" alt="">
@@ -595,7 +651,7 @@
                 if (data.success) {
                     const count = data.count || data.cart_count || 0;
                     console.log('✅ Cart add success, count:', count);
-                    
+
                     if (typeof window.updateNavbarCartCount === 'function') {
                         window.updateNavbarCartCount(count);
                     } else {

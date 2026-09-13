@@ -436,6 +436,7 @@
     font-size: .56vw;
     margin-bottom: .08vw;
     text-decoration: line-through;
+    display:block;
 }
 .product_layout_price p{
     font-size: .66vw;
@@ -841,6 +842,187 @@
     margin-bottom: 0;
 }
 
+.home_career_cta {
+    width: 100%;
+    padding: 0 7.54vw;
+}
+
+.home_career_cta_inner {
+    position: relative;
+    background: linear-gradient(135deg, #FDDD57 0%, #ecbc42 50%, #d4a72e 100%);
+    border-radius: 1.5vw;
+    padding: 3.5vw 4vw;
+    margin-bottom:3vw;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 1vw 2.5vw rgba(236, 188, 66, 0.25);
+}
+
+.home_career_cta_deco {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+}
+
+.home_career_cta_deco.deco_1 {
+    top: -4vw;
+    right: -4vw;
+    width: 14vw;
+    height: 14vw;
+}
+
+.home_career_cta_deco.deco_2 {
+    bottom: -5vw;
+    left: -5vw;
+    width: 12vw;
+    height: 12vw;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.home_career_cta_content {
+    position: relative;
+    z-index: 1;
+    max-width: 50vw;
+    margin: 0 auto;
+}
+
+.home_career_cta_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4vw;
+    padding: 0.4vw 1vw;
+    background: rgba(255, 255, 255, 0.5);
+    border: 0.1vw solid rgba(255, 255, 255, 0.7);
+    border-radius: 100vw;
+    font-size: 0.72vw;
+    font-weight: 700;
+    color: rgb(102, 72, 9);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    backdrop-filter: blur(0.3vw);
+}
+
+.home_career_cta_badge iconify-icon {
+    font-size: 0.95vw;
+}
+
+.home_career_cta_title {
+    font-size: 3vw;
+    font-weight: 800;
+    color: rgb(102, 72, 9);
+    line-height: 1.2;
+    margin-top: 1.2vw;
+    font-family: heading, sans-serif;
+    text-transform: uppercase;
+}
+
+.home_career_cta_title span {
+    color: #ffffff;
+    font-family: heading, sans-serif;
+    text-shadow: 0 0.15vw 0.4vw rgba(102, 72, 9, 0.3);
+}
+
+.home_career_cta_desc {
+    font-size: 0.9vw;
+    color: rgba(102, 72, 9, 0.85);
+    line-height: 1.6;
+    margin-top: 1vw;
+    max-width: 40vw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.home_career_cta_desc strong {
+    color: rgb(102, 72, 9);
+    font-weight: 700;
+}
+
+.home_career_cta_actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.8vw;
+    margin-top: 1.8vw;
+    flex-wrap: wrap;
+}
+
+.home_career_cta_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5vw;
+    padding: 0.9vw 1.5vw;
+    border-radius: 0.7vw;
+    font-size: 0.85vw;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border: 0.1vw solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.home_career_cta_btn iconify-icon {
+    font-size: 1.1vw;
+}
+
+.home_career_cta_btn .arrow {
+    transition: transform 0.25s ease;
+}
+
+.home_career_cta_btn.primary {
+    background: #ffffff;
+    color: rgb(102, 72, 9);
+    box-shadow: 0 0.3vw 0.8vw rgba(102, 72, 9, 0.2);
+}
+
+.home_career_cta_btn.primary:hover {
+    transform: translateY(-0.15vw);
+    box-shadow: 0 0.5vw 1.2vw rgba(102, 72, 9, 0.3);
+}
+
+.home_career_cta_btn.primary:hover .arrow {
+    transform: translateX(0.3vw);
+}
+
+.home_career_cta_btn.outline {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgb(102, 72, 9);
+    border-color: rgba(102, 72, 9, 0.4);
+    backdrop-filter: blur(0.3vw);
+}
+
+.home_career_cta_btn.outline:hover {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: rgb(102, 72, 9);
+    transform: translateY(-0.15vw);
+}
+
+.home_career_cta_perks {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.2vw;
+    margin-top: 1.8vw;
+    padding-top: 1.4vw;
+    border-top: 0.1vw dashed rgba(102, 72, 9, 0.25);
+}
+
+.home_career_cta_perks .perk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35vw;
+    font-size: 0.75vw;
+    font-weight: 600;
+    color: rgb(102, 72, 9);
+    opacity: 0.85;
+}
+
+.home_career_cta_perks .perk iconify-icon {
+    font-size: 0.9vw;
+    color: rgb(102, 72, 9);
+}
+
 
 
 @media (max-width:768px) {
@@ -960,7 +1142,7 @@
         text-decoration-color: #ecbc42;
         text-decoration-thickness: 0.6vw;
         display: block;
-        margin-top: 0.9vw;
+        margin-top: 1.2vw;
     }
     .heading_product_layout_flash a{
         display: block;
@@ -972,7 +1154,7 @@
     }
     .product_layout_grid {
         grid-template-columns: repeat(2, 1fr);
-        grid-gap: 4.3vw;
+        grid-gap: 2.3vw;
         row-gap: 7vw;
     }
     .product-layout-grid--show-5-desktop .product_layout_box:nth-child(6) {
@@ -995,7 +1177,7 @@
         margin-bottom: 3vw;
     }
     .product_layout_content h5 {
-        font-size: 3.5vw;
+        font-size: 3vw;
         font-weight: 400;
         margin-bottom: .7vw;
         display: -webkit-box;
@@ -1015,7 +1197,8 @@
         background-color:transparent;
     }
     .product_layout_price p {
-        font-size: 3vw;
+        font-size: 3.5vw;
+        font-weight:700;
     }
     .product_layout_box_flash .product_layout_price p{
         color:white;
@@ -1023,6 +1206,7 @@
     .product_layout_price_box span {
         font-size: 2.5vw;
         margin-bottom: .14vw;
+        display:none;
     }
     .product_layout_box_flash .product_layout_price_box span{
         color:white;
@@ -1031,7 +1215,7 @@
         gap: 1.5vw;
     }
     .buy_now_btn {
-        width: 75%;
+        width: 85%;
         font-size: 3.5vw;
         color: white;
         background-color: black;
@@ -1052,7 +1236,7 @@
         width: 9.5vw;
         height: 6.5vw;
         outline: none;
-        border: .1vw solid black;
+        border: .4vw solid black;
         font-size: 3.8vw;
         color: black;
         background-color: transparent;
@@ -1284,6 +1468,94 @@
         color:rgb(102, 72, 9);
         cursor: pointer;
         transition: .4s all;
+    }
+
+    .home_career_cta {
+        padding: 0 4vw;
+        margin-top: 8vw;
+    }
+
+    .home_career_cta_inner {
+        border-radius: 3vw;
+        padding: 7vw 5vw;
+        box-shadow: 0 2vw 6vw rgba(236, 188, 66, 0.3);
+        margin-bottom:14vw;
+    }
+
+    .home_career_cta_deco.deco_1 {
+        top: -10vw;
+        right: -10vw;
+        width: 35vw;
+        height: 35vw;
+    }
+
+    .home_career_cta_deco.deco_2 {
+        bottom: -12vw;
+        left: -12vw;
+        width: 30vw;
+        height: 30vw;
+    }
+
+    .home_career_cta_content {
+        max-width: 100%;
+    }
+
+    .home_career_cta_badge {
+        padding: 1.5vw 3vw;
+        font-size: 2.7vw;
+        gap: 1.2vw;
+    }
+
+    .home_career_cta_badge iconify-icon {
+        font-size: 3.5vw;
+    }
+
+    .home_career_cta_title {
+        font-size: 6.5vw;
+        margin-top: 3.5vw;
+        line-height: 1.25;
+    }
+
+    .home_career_cta_desc {
+        font-size: 3.4vw;
+        margin-top: 2.5vw;
+        max-width: 100%;
+        line-height: 1.7;
+    }
+
+    .home_career_cta_actions {
+        flex-direction: column;
+        gap: 2.5vw;
+        margin-top: 5vw;
+    }
+
+    .home_career_cta_btn {
+        width: 100%;
+        padding: 3.5vw 4vw;
+        border-radius: 2.5vw;
+        font-size: 3.4vw;
+        gap: 1.8vw;
+    }
+
+    .home_career_cta_btn iconify-icon {
+        font-size: 4.2vw;
+    }
+
+    .home_career_cta_perks {
+        flex-direction: column;
+        gap: 2vw;
+        margin-top: 5vw;
+        padding-top: 4vw;
+        align-items: center;
+    }
+
+    .home_career_cta_perks .perk {
+        font-size: 3vw;
+        gap: 1.2vw;
+    }
+
+    .home_career_cta_perks .perk iconify-icon {
+        font-size: 3.6vw;
     }
 
 

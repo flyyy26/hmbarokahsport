@@ -31,6 +31,11 @@ class CustomerHomeController extends Controller
             return $this->loadHomeData();
         });
 
+        $data['activeCareersCount'] = \App\Models\Career::active()
+        ->published()
+        ->notExpired()
+        ->count();
+
         return view('customer.home', $data);
     }
 
