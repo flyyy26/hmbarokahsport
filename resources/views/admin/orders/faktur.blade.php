@@ -190,7 +190,7 @@
             @if($setting)
                 <div class="store-info">
                     {{ $setting->address ?? '' }}<br>
-                    Telp: {{ $setting->phone ?? '-' }} | WhatsApp: {{ $setting->whatsapp ?? '-' }}<br>
+                    WhatsApp: {{ $setting->whatsapp ?? '-' }}<br>
                     Email: {{ $setting->email ?? '-' }}
                 </div>
             @endif
@@ -324,7 +324,7 @@
 
     <div class="footer-note">
         Faktur ini adalah bukti pembayaran yang sah.<br>
-        Dicetak pada {{ now()->format('d/m/Y H:i') }} | {{ $setting->store_name ?? 'Toko' }}
+        Dicetak pada {{ now()->format('d/m/Y H:i') }} | barokahsport.com
     </div>
 
 </div>

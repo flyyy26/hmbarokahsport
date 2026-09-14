@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Nota - {{ $order->order_number ?? '' }}</title>
-    <style>
+    <!-- <style>
         @page {
             size: 105mm 148mm;
             margin: 6mm;
@@ -447,6 +447,31 @@
             color: #cbd5e1;
             margin: 0 1.5mm;
         }
+    </style> -->
+    <style>
+        @page {
+            size: 100mm 150mm;
+            margin: 0;
+        }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 3mm 4mm;
+            color: #000000;
+            background: #ffffff;
+            font-size: 8pt;
+            line-height: 1.2;
+            border:1px solid black;
+        }
+
+        .page {
+            width: 100%;
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -456,221 +481,113 @@
     {{-- ============================================ --}}
     {{-- HEADER --}}
     {{-- ============================================ --}}
-    <div class="receipt-header">
-        @php
-            $logoBase64 = null;
-            if ($setting && $setting->logo) {
-                $logoPath = public_path('storage/' . $setting->logo);
-                if (file_exists($logoPath)) {
-                    $logoData = file_get_contents($logoPath);
-                    if ($logoData !== false) {
-                        $logoMime = mime_content_type($logoPath) ?: 'image/png';
-                        $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+    <table style="border-collapse: collapse; width:100%;">
+        <tr>
+            <td style="text-align:left;" colspan="2">
+                @php
+                    $logoBase64 = null;
+                    if ($setting && $setting->logo) {
+                        $logoPath = public_path('storage/' . $setting->logo);
+                        if (file_exists($logoPath)) {
+                            $logoData = file_get_contents($logoPath);
+                            if ($logoData !== false) {
+                                $logoMime = mime_content_type($logoPath) ?: 'image/png';
+                                $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+                            }
+                        }
                     }
-                }
-            }
-        @endphp
-
-        @if($logoBase64)
-            <img src="{{ $logoBase64 }}" class="store-logo" alt="{{ $setting->store_name ?? 'Toko' }}">
-        @else
-            <div class="store-name">{{ $setting->store_name ?? 'Toko' }}</div>
-            <span class="store-name-sub">Sport Store</span>
-        @endif
-
-        @if($setting)
-            <div class="store-info">
-                {{ $setting->address ?? '' }}
-                @if($setting->phone || $setting->whatsapp)
-                    <br>
-                    @if($setting->phone)Telp: {{ $setting->phone }}@endif
-                    @if($setting->phone && $setting->whatsapp) <span class="divider">•</span> @endif
-                    @if($setting->whatsapp)WA: {{ $setting->whatsapp }}@endif
-                @endif
-                @if($setting->email)
-                    <br>Email: {{ $setting->email }}
-                @endif
-            </div>
-        @endif
-    </div>
-
-    {{-- ============================================ --}}
-    {{-- ORDER INFO --}}
-    {{-- ============================================ --}}
-    <div class="order-info">
-        <div class="order-info-grid">
-            <div class="order-info-cell">
-                <span class="order-info-label">No. Nota</span>
-                <span class="order-info-value">{{ $order->order_number ?? '-' }}</span>
-            </div>
-            <div class="order-info-cell">
-                <span class="order-info-label">Tanggal</span>
-                <span class="order-info-value">
-                    {{ $order->created_at ? $order->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i') }}
-                </span>
-            </div>
-            <div class="order-info-cell">
-                <span class="order-info-label">Kasir</span>
-                <span class="order-info-value">{{ auth()->user()->name ?? '-' }}</span>
-            </div>
-            <div class="order-info-cell">
-                <span class="order-info-label">Status</span>
-                <span class="order-info-value">{{ $order->payment_status_label ?? '-' }}</span>
-            </div>
-        </div>
-    </div>
-
-    {{-- ============================================ --}}
-    {{-- CUSTOMER INFO --}}
-    {{-- ============================================ --}}
-    <div class="customer-info">
-        <div class="customer-info-title">Pelanggan / Penerima</div>
-
-        <div class="customer-info-row">
-            <span class="label">Nama</span>
-            <span class="value">{{ $order->shipping_name ?? 'Walk-in Customer' }}</span>
-        </div>
-        <div class="customer-info-row">
-            <span class="label">No. HP</span>
-            <span class="value">{{ $order->shipping_phone ?? '-' }}</span>
-        </div>
-        @if($order->shipping_address && $order->shipping_address !== '-')
-            <div class="customer-info-row">
-                <span class="label">Alamat</span>
-                <span class="value">{{ $order->shipping_address }}</span>
-            </div>
-        @endif
-        @if($order->courier)
-            <div class="customer-info-row">
-                <span class="label">Kurir</span>
-                <span class="value">{{ strtoupper($order->courier) }} {{ $order->service ? '- ' . $order->service : '' }}</span>
-            </div>
-        @endif
-    </div>
-
-    {{-- ============================================ --}}
-    {{-- ITEMS TABLE --}}
-    {{-- ============================================ --}}
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th class="center th-qty">Qty</th>
-                <th class="th-product">Produk</th>
-                <th class="right th-price">Harga</th>
-                <th class="right th-subtotal">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($order->items as $item)
-                <tr>
-                    <td class="center">
-                        <span class="qty-badge">{{ $item->quantity }}x</span>
-                    </td>
-                    <td>
-                        <div class="product-name">{{ $item->product_name }}</div>
-                        @if($item->variant_name)
-                            <span class="product-variant">{{ $item->variant_name }}</span>
+                @endphp
+                <img src="{{ $logoBase64 }}" class="store-logo" alt="{{ $setting->store_name ?? 'Toko' }}" style="width:70pt; margin-left:auto; text-align:right;">
+            </td>
+            <td colspan="2" style="text-align:right; padding-top:6pt; font-size:15pt; text-transform:uppercase; font-weight:bold;">NOTA</td>
+        </tr>
+        <tr>
+            <td style="text-align:center; padding-top:4pt; font-size:8pt;" colspan="4">{{ $setting->address ?? '' }}</td>
+        </tr>
+        <tr style="border-bottom:1px solid black;">
+            <td style="width:25%; text-align:center; font-size:7pt; padding-bottom:4pt;">
+                <img src="images/tiktok.png" alt="" style="width:7pt; margin-top:7pt;">
+                barokah.sport
+            </td>
+            <td style="width:25%; text-align:center; font-size:7pt; padding-bottom:4pt;">
+                <img src="images/shopee.png" alt="" style="width:7pt; margin-top:7pt;">
+                hmbarokah
+            </td>
+            <td style="width:25%; text-align:center; font-size:7pt; padding-bottom:4pt;">
+                <img src="images/lazada.png" alt="" style="width:7pt; margin-top:7pt;">
+                Barokah Sport
+            </td>
+            <td style="width:25%; text-align:center; font-size:7pt; padding-bottom:4pt;"><img src="images/whatsapp.png" alt="" style="width:7pt; margin-top:7pt;"> @if($setting->whatsapp){{ $setting->whatsapp }}@endif</td>
+        </tr>
+        <tr>
+            <td colspan="4" style="padding-top:7pt; padding-bottom:4pt;">
+                <table style="width:100%;">
+                    <tr>
+                        <td style="text-align:left;">Nama : {{ $order->shipping_name ?? 'Walk-in Customer' }}</td>
+                        <td style="text-align:right;">Tanggal dibayar : {{ $order->created_at ? $order->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" style="padding-top:2pt;">
+                <table style="width:100%; border-collapse: collapse; border:1px solid black; font-size:7pt;">
+                    <tr>
+                        <td style="border:1px solid black; padding:3pt; background-color:rgb(235, 229, 229);">Nama Barang</td>
+                        <td style="border:1px solid black; padding:3pt; background-color:rgb(235, 229, 229);">Varian</td>
+                        <td style="border:1px solid black; padding:3pt; background-color:rgb(235, 229, 229);">Qty</td>
+                        <td style="border:1px solid black; padding:3pt; background-color:rgb(235, 229, 229);">Harga</td>
+                        <td style="border:1px solid black; padding:3pt; background-color:rgb(235, 229, 229);">Jumlah</td>
+                    </tr>
+                    @foreach($order->items as $item)
+                    <tr>
+                        <td style="border:1px solid black; padding:3pt;">{{ $item->product_name }}</td>
+                        <td style="border:1px solid black; padding:3pt; font-size:7pt;">{{ $item->variant_name }}</td>
+                        <td style="border:1px solid black; padding:3pt; text-align:center;">{{ $item->quantity }}</td>
+                        <td style="border:1px solid black; padding:3pt; text-align:right;">{{ number_format($item->price, 0, ',', '.') }}</td>
+                        <td style="border:1px solid black; padding:3pt; text-align:right;">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                    @endforeach
+                    <tr>
+                        <td style="border:1px solid black; padding:3pt; text-align:center;" colspan="1">Jumlah</td>
+                        @if($order->transaction_discount > 0)
+                            <td colspan="3" style="border:1px solid black; padding:3pt; text-align:center;">Diskon {{ number_format($order->transaction_discount, 0, ',', '.') }} {{ $order->transaction_discount_type === 'percentage' ? '(%)' : '(Nominal)' }}</td>
                         @endif
-                        @if($item->sku)
-                            <span class="product-sku">SKU: {{ $item->sku }}</span>
-                        @endif
-                    </td>
-                    <td class="right">
-                        <span class="price-text">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
-                    </td>
-                    <td class="right">
-                        <span class="subtotal-text">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
+                        <td style="border:1px solid black; padding:3pt; text-align:right;">{{ number_format($order->total, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" style="text-align:center; padding-top:20pt;">
+                <table style="width:100%; padding-right:15pt; padding-left:15pt;">
+                    <tr>
+                        <td style="width:40%; text-align:center;">
+                            Penerima
+                        </td>
+                        <td style="width:20%;"></td>
+                        <td style="width:40%; text-align:center;">Checker Gudang</td>
+                    </tr>
+                    <tr>
+                        <td style="width:40%; text-align:center; height:20pt; border-bottom:1px solid black;">
+                            
+                        </td>
+                        <td style="width:20%;">    </td>
+                        <td style="width:40%; text-align:center; height:20pt; border-bottom:1px solid black;">
+
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" style="text-align:center; padding-top:10pt; font-size:7pt;">
+                Dicetak pada {{ now()->format('d/m/Y H:i') }}
+                <span class="divider">|</span>
+                barokahsport.com
+            </td>
+        </tr>
     </table>
-
-    {{-- ============================================ --}}
-    {{-- TOTALS --}}
-    {{-- ============================================ --}}
-    <div class="totals-wrapper">
-        <table class="totals-table">
-            <tr>
-                <td class="totals-label">Subtotal</td>
-                <td class="totals-value">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td>
-            </tr>
-
-            @if($order->discount > 0)
-                <tr class="totals-discount">
-                    <td class="totals-label">Diskon Produk</td>
-                    <td class="totals-value">- Rp {{ number_format($order->discount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
-            @if($order->transaction_discount > 0)
-                <tr class="totals-discount">
-                    <td class="totals-label">
-                        Diskon {{ $order->transaction_discount_type === 'percentage' ? '(%)' : '(Nominal)' }}
-                    </td>
-                    <td class="totals-value">- Rp {{ number_format($order->transaction_discount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
-            @if($order->shipping_cost > 0)
-                <tr class="totals-shipping">
-                    <td class="totals-label">Ongkir</td>
-                    <td class="totals-value">Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-
-            <tr class="totals-total">
-                <td class="totals-label">Total</td>
-                <td class="totals-value">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
-            </tr>
-        </table>
-    </div>
-
-    {{-- ============================================ --}}
-    {{-- PAYMENT METHOD --}}
-    {{-- ============================================ --}}
-    <div class="payment-wrapper">
-        <span class="payment-badge">
-            <span class="dot"></span>
-            {{ match($order->payment_method) {
-                'cash' => 'Tunai',
-                'transfer' => 'Transfer',
-                'qris' => 'QRIS',
-                'midtrans' => 'Midtrans',
-                default => strtoupper($order->payment_method ?? '-'),
-            } }}
-        </span>
-
-        @if($order->payment_status === 'paid')
-            <span class="paid-stamp">✓ LUNAS</span>
-        @endif
-    </div>
-
-    {{-- ============================================ --}}
-    {{-- NOTES --}}
-    {{-- ============================================ --}}
-    @if($order->notes)
-        <div class="notes-box">
-            <div class="notes-title">📝 Catatan</div>
-            <div class="notes-content">{{ $order->notes }}</div>
-        </div>
-    @endif
-
-    {{-- ============================================ --}}
-    {{-- FOOTER --}}
-    {{-- ============================================ --}}
-    <div class="receipt-footer">
-        <div class="thankyou">Terima Kasih! 🙏</div>
-        <div>
-            Barang yang sudah dibeli tidak dapat ditukar / dikembalikan.<br>
-            Simpan nota ini sebagai bukti pembayaran yang sah.
-        </div>
-        <div style="margin-top: 1.5mm; color: #cbd5e1;">
-            Dicetak pada {{ now()->format('d/m/Y H:i') }}
-            <span class="divider">•</span>
-            {{ $setting->store_name ?? 'Toko' }}
-        </div>
-    </div>
 
 </div>
 
