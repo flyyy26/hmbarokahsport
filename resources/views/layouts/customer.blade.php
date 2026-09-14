@@ -26,13 +26,13 @@
     <link rel="shortcut icon" href="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/x-icon">
 
     {{-- CSS --}}
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/popup.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/product_show.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/cart-page.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/product.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/variant-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/popup.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/product_show.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/cart-page.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/product.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/variant-modal.css') }}?v=2">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
     @hasSection('meta')
@@ -43,26 +43,29 @@
     @hasSection('canonical')
         <link rel="canonical" href="@yield('canonical')">
     @endif
+    
+    @php
+        // 🔥 FALLBACK OG IMAGE DARI SETTING
+        $defaultOgImage = $setting?->favicon 
+            ? asset('storage/' . $setting->favicon) 
+            : asset('images/default-og.jpg');
+    @endphp
 
-    {{-- Open Graph default --}}
     <meta property="og:site_name" content="{{ $setting?->store_name ?? 'Barokah Sport' }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
     <meta property="og:description" content="@yield('og_description', $setting?->store_description ?? '')">
     <meta property="og:url" content="{{ url()->current() }}">
-    @hasSection('og_image')
-        <meta property="og:image" content="@yield('og_image')">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
-    @endif
-
+    <meta property="og:image" content="@yield('og_image', $defaultOgImage)">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $setting?->store_name ?? 'Barokah Sport' }}">
+    
     {{-- Twitter Card default --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
     <meta name="twitter:description" content="@yield('og_description', $setting?->store_description ?? '')">
-    @hasSection('og_image')
-        <meta name="twitter:image" content="@yield('og_image')">
-    @endif
+    <meta name="twitter:image" content="@yield('og_image', $defaultOgImage)">
 
     {{-- JSON-LD Schema --}}
     @hasSection('schema')
@@ -493,9 +496,6 @@
             }
         }
     </style>
-
-    {{-- Meta Description --}}
-    @yield('meta_description')
 </head>
 
 <body>
@@ -644,7 +644,7 @@
     @if(!request()->routeIs('customer.products.show'))
         <div class="whatsapp_fix">
             <div class="wa-card" id="waCard">
-                <button class="wa-close" onclick="document.getElementById('waCard').classList.remove('show')">×</button>
+                <button class="wa-close" aria-label="Hubungi via WhatsApp" onclick="document.getElementById('waCard').classList.remove('show')">×</button>
                 <div class="wa-card-header">
                     <div class="wa-avatar">
                         <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
@@ -664,7 +664,7 @@
                 </a>
             </div>
             
-            <button class="wa-trigger" onclick="document.getElementById('waCard').classList.toggle('show')">
+            <button class="wa-trigger" onclick="document.getElementById('waCard').classList.toggle('show')" aria-label="Hubungi via WhatsApp">
                 <iconify-icon icon="akar-icons:whatsapp-fill"></iconify-icon>
             </button>
         </div>

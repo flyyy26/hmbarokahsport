@@ -14,7 +14,211 @@
 
 @extends('layouts.customer')
 
-@section('title', $article->title . ' - Barokah Sport')
+@section('title', $article->title . ' - ' . ($setting?->store_name ?? 'Barokah Sport'))
+
+@php
+    // ============================================
+    // 🔥 SEO DATA
+    // ============================================
+    
+    // 1. Meta Description
+    $metaDescription = $article->meta_description ?? null;
+    
+    if (empty($metaDescription)) {
+        // Ambil dari konten artikel, bersihkan HTML
+        $cleanContent = trim(preg_replace('/\s+/', ' ', strip_tags($article->content ?? '')));
+        $metaDescription = Str::limit($cleanContent, 155, '');
+    }
+    
+    if (empty($metaDescription)) {
+        // Fallback: susun dari judul + kategori
+        $categoryName = $article->articleCategory->name ?? 'Artikel';
+        $metaDescription = "{$article->title}. Baca selengkapnya di {$categoryName} " 
+            . ($setting?->store_name ?? 'Barokah Sport') . ". Info olahraga terbaru & terpercaya.";
+    }
+    
+    // Pastikan maksimal 160 karakter
+    $metaDescription = Str::limit($metaDescription, 160, '...');
+    
+    // 2. OG Image (WAJIB URL ABSOLUT)
+    $ogImage = null;
+    if ($article->image) {
+        $ogImage = asset('storage/' . $article->image);
+    } else {
+        // Fallback ke logo setting
+        $ogImage = $setting?->logo 
+            ? (Str::startsWith($setting->logo, ['http://', 'https://']) 
+                ? $setting->logo 
+                : asset('storage/' . $setting->logo))
+            : asset('images/default-og.jpg');
+    }
+    
+    // 3. Canonical URL
+    $canonicalUrl = route('customer.articles.show', $article->slug);
+    
+    // 4. Tanggal
+    $publishedAt = $article->published_at 
+        ? \Carbon\Carbon::parse($article->published_at)->toIso8601String() 
+        : \Carbon\Carbon::parse($article->created_at)->toIso8601String();
+    
+    $updatedAt = $article->updated_at 
+        ? \Carbon\Carbon::parse($article->updated_at)->toIso8601String() 
+        : $publishedAt;
+    
+    // 5. Author
+    $authorName = $article->author ?? ($setting?->store_name ?? 'Admin');
+    
+    // 6. Word count (untuk Article schema)
+    $wordCount = str_word_count(strip_tags($article->content ?? ''));
+@endphp
+
+{{-- ============================================ --}}
+{{-- 🔥 META TAGS --}}
+{{-- ============================================ --}}
+@section('meta_description', $metaDescription)
+@section('og_type', 'article')
+@section('og_title', $article->title . ' - ' . ($setting?->store_name ?? 'Barokah Sport'))
+@section('og_description', $metaDescription)
+@section('og_image', $ogImage)
+
+@section('meta')
+    <meta name="description" content="{{ $metaDescription }}">
+    
+    {{-- Keywords --}}
+    @php
+        $keywords = [$article->title];
+        if ($article->articleCategory) $keywords[] = $article->articleCategory->name;
+        if ($article->tags && is_array($article->tags)) {
+            $keywords = array_merge($keywords, $article->tags);
+        }
+        $keywords[] = $setting?->store_name ?? 'Barokah Sport';
+    @endphp
+    <meta name="keywords" content="{{ implode(', ', $keywords) }}">
+    
+    {{-- Canonical --}}
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    
+    {{-- Robots --}}
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    
+    {{-- Article-specific meta --}}
+    <meta property="article:published_time" content="{{ $publishedAt }}">
+    <meta property="article:modified_time" content="{{ $updatedAt }}">
+    <meta property="article:author" content="{{ $authorName }}">
+    @if($article->articleCategory)
+        <meta property="article:section" content="{{ $article->articleCategory->name }}">
+    @endif
+    @if($article->tags && is_array($article->tags))
+        @foreach($article->tags as $tag)
+            <meta property="article:tag" content="{{ $tag }}">
+        @endforeach
+    @endif
+@endsection
+
+@section('schema')
+@php
+    // ============================================
+    // 🔥 ARTICLE SCHEMA (BlogPosting)
+    // ============================================
+    $articleSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BlogPosting',
+        'headline' => Str::limit($article->title, 110, ''),
+        'description' => $metaDescription,
+        'image' => [
+            '@type' => 'ImageObject',
+            'url' => $ogImage,
+            'width' => 1200,
+            'height' => 630,
+        ],
+        'datePublished' => $publishedAt,
+        'dateModified' => $updatedAt,
+        'author' => [
+            '@type' => 'Person',
+            'name' => $authorName,
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => $setting?->store_name ?? 'Barokah Sport',
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => $setting?->logo 
+                    ? asset('storage/' . $setting->logo) 
+                    : asset('images/logo.png'),
+            ],
+        ],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => $canonicalUrl,
+        ],
+        'url' => $canonicalUrl,
+        'wordCount' => $wordCount,
+        'inLanguage' => 'id-ID',
+    ];
+    
+    if ($article->articleCategory) {
+        $articleSchema['articleSection'] = $article->articleCategory->name;
+    }
+    
+    if ($article->tags && is_array($article->tags)) {
+        $articleSchema['keywords'] = implode(', ', $article->tags);
+    }
+    
+    // ============================================
+    // 🔥 BREADCRUMB SCHEMA
+    // ============================================
+    $breadcrumbItems = [
+        [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Beranda',
+            'item' => route('customer.home'),
+        ],
+        [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Artikel',
+            'item' => route('customer.articles.index'),
+        ],
+    ];
+    
+    if ($article->articleCategory) {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $article->articleCategory->name,
+            'item' => route('customer.articles.index', ['category' => $article->articleCategory->id]),
+        ];
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 4,
+            'name' => $article->title,
+            'item' => $canonicalUrl,
+        ];
+    } else {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $article->title,
+            'item' => $canonicalUrl,
+        ];
+    }
+    
+    $breadcrumbSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $breadcrumbItems,
+    ];
+@endphp
+
+<script type="application/ld+json">
+{!! json_encode($articleSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+</script>
+
+<script type="application/ld+json">
+{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+</script>
+@endsection
 
 @section('content')
 
@@ -1887,6 +2091,61 @@
             animation: replySlideIn 0.3s ease forwards;
         }
     }
+
+    .article-breadcrumb {
+        font-size: 0.75vw;
+        color: #94a3b8;
+        margin-bottom: 0.8vw;
+    }
+    .article-breadcrumb ol {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4vw;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .article-breadcrumb li {
+        display: flex;
+        align-items: center;
+        gap: 0.4vw;
+    }
+    .article-breadcrumb li:not(:last-child)::after {
+        content: '/';
+        color: #cbd5e1;
+        margin-left: 0.4vw;
+    }
+    .article-breadcrumb a {
+        color: #076694;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .article-breadcrumb a:hover {
+        color: #ecbc42;
+        text-decoration: underline;
+    }
+    .article-breadcrumb li[aria-current="page"] {
+        color: #475569;
+        font-weight: 500;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+        .article-breadcrumb {
+            font-size: 3vw;
+            margin-bottom: 2vw;
+        }
+        .article-breadcrumb ol {
+            gap: 1.5vw;
+        }
+        .article-breadcrumb li {
+            gap: 1.5vw;
+        }
+        .article-breadcrumb li:not(:last-child)::after {
+            margin-left: 1.5vw;
+        }
+    }
 </style>
 
 {{-- ============================================ --}}
@@ -1899,10 +2158,23 @@
     <div class="article-main">
         {{-- HEADER --}}
         <div class="article-detail-header">
-            <a href="{{ route('customer.articles.index') }}" class="article-back">
-                <iconify-icon icon="mdi:arrow-left"></iconify-icon>
-                Kembali ke Artikel
-            </a>
+            <div class="article-detail-header-breadcrumb">
+                {{-- 🔥 BREADCRUMB VISUAL --}}
+                <nav class="article-breadcrumb" aria-label="Breadcrumb">
+                    <ol>
+                        <li><a href="{{ route('customer.home') }}">Beranda</a></li>
+                        <li><a href="{{ route('customer.articles.index') }}">Artikel</a></li>
+                        @if($article->articleCategory)
+                            <li>
+                                <a href="{{ route('customer.articles.index', ['category' => $article->articleCategory->id]) }}">
+                                    {{ $article->articleCategory->name }}
+                                </a>
+                            </li>
+                        @endif
+                        <li aria-current="page">{{ Str::limit($article->title, 50) }}</li>
+                    </ol>
+                </nav>
+            </div>
 
             <h1>{{ $article->title }}</h1>
 
@@ -2062,7 +2334,7 @@
             </div>
             <form action="{{ route('customer.articles.index') }}" method="GET" class="widget-search-form">
                 <input type="text" name="search" placeholder="Cari artikel..." value="{{ request('search') }}">
-                <button type="submit">
+                <button type="submit" aria-label="Cari">
                     <iconify-icon icon="mdi:search"></iconify-icon>
                 </button>
             </form>
@@ -2187,7 +2459,7 @@
 
 <div id="share-modal" class="share-modal">
     <div class="share-modal-content">
-        <button class="share-modal-close" onclick="closeShareModal()">✕</button>
+        <button class="share-modal-close" aria-label="Tutup" onclick="closeShareModal()">✕</button>
         <h3>Bagikan Artikel</h3>
         <div class="share-modal-buttons">
             <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 

@@ -131,19 +131,19 @@
     </div>
 
     <div class="product_layout_button">
-        <button class="buy_now_btn {{ $isOutOfStock ? 'disabled' : '' }}"
+        <button aria-label="Produk Habis" class="buy_now_btn {{ $isOutOfStock ? 'disabled' : '' }}"
                 onclick="{{ $isOutOfStock ? '' : 'buyNow(' . $product->id . ')' }}"
                 {{ $isOutOfStock ? 'disabled' : '' }}>
             {{ $isOutOfStock ? 'HABIS' : 'BELI SEKARANG' }}
         </button>
 
-        <button class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}"
+        <button aria-label="Tambah ke Keranjang" class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}"
                 onclick="{{ $isOutOfStock ? '' : 'addToCart(' . $product->id . ')' }}"
                 {{ $isOutOfStock ? 'disabled' : '' }}>
             <iconify-icon icon="solar:cart-linear"></iconify-icon>
         </button>
 
-        <button class="add_to_wishlist_btn"
+        <button aria-label="Tambah ke Wishlist" class="add_to_wishlist_btn"
                 data-product-id="{{ $product->id }}"
                 data-in-wishlist="{{ $inWishlist ? 'true' : 'false' }}"
                 onclick="addToWishlist({{ $product->id }})">

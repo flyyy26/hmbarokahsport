@@ -466,7 +466,7 @@
         {{-- Header --}}
         <div class="filter-popup-header">
             <h3>Filter Artikel</h3>
-            <button type="button" class="filter-popup-close" onclick="closeFilterPopup()">✕</button>
+            <button type="button" aria-label="Tutup" class="filter-popup-close" onclick="closeFilterPopup()">✕</button>
         </div>
 
         {{-- Filter Body --}}

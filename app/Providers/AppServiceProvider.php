@@ -10,6 +10,7 @@ use App\Models\SearchAnalytics;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Schedule;
 
 class AppServiceProvider extends ServiceProvider
@@ -41,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
             'customer.products.show',
             'admin.*',                   
         ], MarketplaceComposer::class);
+
+        View::composer('*', function ($view) {
+            $view->with('setting', Setting::first());
+        });
 
 
         // ============================================

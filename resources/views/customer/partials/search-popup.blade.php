@@ -1,7 +1,7 @@
 <!-- Search Popup Overlay -->
 <div id="search-popup-overlay" class="search-popup-overlay" style="display: none;">
     <div class="search-popup-container">
-        <button type="button" class="search-popup-close" onclick="closeSearchPopup()">
+        <button type="button" aria-label="Tutup" class="search-popup-close" onclick="closeSearchPopup()">
             <iconify-icon icon="mdi:close"></iconify-icon>
         </button>
 

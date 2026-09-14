@@ -14,7 +14,7 @@
 
     $ogImage = null;
     if ($product->images->isNotEmpty()) {
-        $ogImage = Storage::url($product->images->first()->image);
+        $ogImage = url(Storage::url($product->images->first()->image));
     } elseif ($product->display_image ?? null) {
         $ogImage = $product->display_image;
     } else {
@@ -251,6 +251,7 @@
 
                             @foreach ($allThumbnails as $thumbnail)
                                 <button type="button"
+                                        aria-label="Foto Produk"
                                         class="image-thumb {{ $loop->first ? 'active' : '' }}"
                                         data-image="{{ $thumbnail['url'] }}"
                                         data-type="{{ $thumbnail['type'] }}"
@@ -506,7 +507,7 @@
                 <div class="share-section-box-mobile">
                     @foreach($marketplaces as $marketplace)
                         <a href="{{ $marketplace->url }}" target="_blank">
-                            <button class="share-btn">
+                            <button class="share-btn" aria-label="Share Produk">
                                 <iconify-icon icon="{{ $marketplace->icon }}"></iconify-icon>
                             </button>
                         </a>
@@ -816,11 +817,11 @@
 
                         <div class="action-row">
                             <div class="quantity-wrapper">
-                                <button type="button" class="qty-btn" data-action="decrease">−</button>
+                                <button type="button" class="qty-btn" data-action="decrease" aria-label="Kurangi Produk">−</button>
                                 <input type="number" name="quantity" id="qty-input" value="1" min="1"
                                     max="{{ $totalStock > 0 ? $totalStock : 1 }}"
                                     class="qty-input">
-                                <button type="button" class="qty-btn" data-action="increase">+</button>
+                                <button type="button" class="qty-btn" data-action="increase" aria-label="Tambah Produk">+</button>
                             </div>
 
                             <button type="submit"
@@ -832,6 +833,7 @@
 
                             {{-- 🔥 WISHLIST BUTTON - DENGAN STATUS ACTIVE --}}
                             <button type="button"
+                                    aria-label="Tambah Ke Wishlist"
                                     id="wishlist-toggle-product"
                                     class="btn-wishlist {{ $inWishlist ? 'active' : '' }}"
                                     data-product-id="{{ $product->id }}"
@@ -868,6 +870,7 @@
                         Beli Sekarang
                     </button>
                     <button type="button"
+                            aria-label="Pilih Varian"
                             class="mobile-btn-add-to-cart"
                             id="mobile-add-to-cart-btn"
                             onclick="openVariantPopup('add_to_cart')">
@@ -875,6 +878,7 @@
                     </button>
 
                     <button type="button"
+                            aria-label="Tambah ke Wishlist"
                             class="mobile-btn-wishlist {{ $inWishlist ? 'active' : '' }}"
                             id="mobile-wishlist-btn"
                             data-product-id="{{ $product->id }}">
@@ -894,7 +898,7 @@
                 <div class="share-section-layout">
                     <div class="share-section">
                         <span>Bagikan:</span>
-                        <button onclick="shareProduct()" class="share-btn">
+                        <button onclick="shareProduct()" class="share-btn" aria-label="Share Produk">
                             <iconify-icon icon="codicon:live-share"></iconify-icon>
                         </button>
                     </div>
@@ -903,7 +907,7 @@
                         <div class="share-section-box">
                             @foreach($marketplaces as $marketplace)
                                 <a href="{{ $marketplace->url }}" target="_blank">
-                                    <button class="share-btn">
+                                    <button class="share-btn" aria-label="Share Produk">
                                         <iconify-icon icon="{{ $marketplace->icon }}"></iconify-icon>
                                     </button>
                                 </a>
@@ -921,7 +925,7 @@
         <div class="size-guide-modal" onclick="event.stopPropagation()">
             <div class="size-guide-header">
                 <h3>Panduan Ukuran</h3>
-                <button type="button" class="size-guide-close" onclick="closeSizeGuide()">✕</button>
+                <button type="button" aria-label="Tutup popup" class="size-guide-close" onclick="closeSizeGuide()">✕</button>
             </div>
 
             <div class="size-guide-body">
@@ -1051,11 +1055,11 @@
         <div class="variant-popup-quantity">
             <span class="qty-label">Jumlah</span>
             <div class="qty-wrapper">
-                <button type="button" class="qty-btn" data-action="decrease" id="popup-qty-decrease">−</button>
+                <button type="button" class="qty-btn" data-action="decrease" id="popup-qty-decrease" aria-label="Kurangi Produk">−</button>
                 <input type="number" name="popup_qty" id="popup-qty-input" value="1" min="1"
                     max="{{ $product->variants->sum('stock') > 0 ? $product->variants->sum('stock') : 1 }}"
                     class="qty-input">
-                <button type="button" class="qty-btn" data-action="increase" id="popup-qty-increase">+</button>
+                <button type="button" class="qty-btn" data-action="increase" id="popup-qty-increase" aria-label="Tambah Produk">+</button>
             </div>
         </div>
 
@@ -1175,12 +1179,12 @@
                             {{ $isOutOfStock ? 'disabled' : '' }}>
                         {{ $isOutOfStock ? 'HABIS' : 'BELI SEKARANG' }}
                     </button>
-                    <button class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}" 
+                    <button aria-label="Tambah ke Keranjang" class="add_to_cart_btn {{ $isOutOfStock ? 'disabled' : '' }}" 
                             onclick="{{ $isOutOfStock ? '' : 'addToCart(' . $related->id . ')' }}"
                             {{ $isOutOfStock ? 'disabled' : '' }}>
                         <iconify-icon icon="solar:cart-linear"></iconify-icon>
                     </button>
-                    <button class="add_to_wishlist_btn" 
+                    <button aria-label="Tambah ke Wishlist" class="add_to_wishlist_btn" 
                             data-product-id="{{ $related->id }}"
                             data-in-wishlist="{{ in_array($related->id, array_keys(session()->get('wishlist', []))) ? 'true' : 'false' }}"
                             onclick="addToWishlist({{ $related->id }})">

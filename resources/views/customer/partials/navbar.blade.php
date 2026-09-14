@@ -227,7 +227,7 @@
 
         {{-- Right Icons --}}
         <div class="btn_header_bottom">
-            <button onclick="openSearchPopup()" class="icon-btn" aria-label="Search">
+            <button onclick="openSearchPopup()" class="icon-btn" aria-label="Cari Produk">
                 <iconify-icon icon="mingcute:search-line"></iconify-icon>
             </button>
 
@@ -236,17 +236,17 @@
                 $profileUrl = $isLoggedIn ? route('customer.account') : route('customer.login');
             @endphp
             <a href="{{ $profileUrl }}" class="icon-btn-link icon-btn-profile" aria-label="Profile">
-                <button class="icon-btn">
-                    <iconify-icon icon="iconamoon:profile-light"></iconify-icon>
+                <button class="icon-btn" aria-label="Keranjang Belanja">
+                    <iconify-icon icon="solar:cart-linear" aria-hidden="true"></iconify-icon>
                 </button>
             </a>
 
-            <button id="wishlist-toggle" class="icon-btn" style="position:relative;" aria-label="Wishlist">
+            <button id="wishlist-toggle" class="icon-btn" aria-label="Wishlist Saya" style="position:relative;" aria-label="Wishlist">
                 <iconify-icon icon="mynaui:heart"></iconify-icon>
                 <span id="wishlist-count" style="display:none;">0</span>
             </button>
 
-            <button id="cart-toggle" class="icon-btn" style="position:relative;" aria-label="Cart">
+            <button id="cart-toggle" class="icon-btn" aria-label="Keranjang Belanja" style="position:relative;" aria-label="Cart">
                 <iconify-icon icon="solar:cart-linear"></iconify-icon>
                 <span id="cart-count" style="display:none;">0</span>
             </button>
