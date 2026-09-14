@@ -48,7 +48,7 @@
     <meta property="og:site_name" content="{{ $setting?->store_name ?? 'Barokah Sport' }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
-    <meta property="og:description" content="@yield('og_description', $setting?->meta_description ?? '')">
+    <meta property="og:description" content="@yield('og_description', $setting?->store_description ?? '')">
     <meta property="og:url" content="{{ url()->current() }}">
     @hasSection('og_image')
         <meta property="og:image" content="@yield('og_image')">
@@ -59,7 +59,7 @@
     {{-- Twitter Card default --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', $setting?->store_name ?? 'Barokah Sport')">
-    <meta name="twitter:description" content="@yield('og_description', $setting?->meta_description ?? '')">
+    <meta name="twitter:description" content="@yield('og_description', $setting?->store_description ?? '')">
     @hasSection('og_image')
         <meta name="twitter:image" content="@yield('og_image')">
     @endif
