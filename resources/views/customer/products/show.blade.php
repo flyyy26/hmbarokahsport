@@ -13,12 +13,29 @@
     $priceFormatted = 'Rp ' . number_format($minPrice, 0, ',', '.');
 
     $ogImage = null;
+
+    // 1. Gambar utama produk
     if ($product->images->isNotEmpty()) {
-        $ogImage = url(Storage::url($product->images->first()->image));
-    } elseif ($product->display_image ?? null) {
+        $ogImage = $product->images->first()->image_url;
+    }
+    // 2. Fallback ke gambar option value (warna)
+    elseif ($product->options->isNotEmpty()) {
+        foreach ($product->options as $option) {
+            foreach ($option->values as $value) {
+                if (!empty($value->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($value->image)) {
+                    $ogImage = $value->image_url;
+                    break 2;
+                }
+            }
+        }
+    }
+    // 3. Fallback ke display_image
+    elseif ($product->display_image ?? null) {
         $ogImage = $product->display_image;
-    } else {
-        $ogImage = asset('images/default-product.jpg');
+    }
+    // 4. Placeholder
+    if (!$ogImage) {
+        $ogImage = asset('images/default-product.webp');
     }
 
     $avgRating = $product->testimonials->avg('rating') ?? 0;
@@ -67,7 +84,8 @@
     }
     if ($product->images->count() > 1) {
         foreach ($product->images->skip(1)->take(3) as $img) {
-            $schemaImages[] = Storage::url($img->image);
+            // 🔥 PAKAI ACCESSOR
+            $schemaImages[] = $img->image_url;
         }
     }
 
@@ -174,6 +192,53 @@
 
 @section('content')
 
+<style>
+.main-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;   /* 🔥 WAJIB — biar gambar di luar tidak kelihatan */
+    background: #f8fafc;
+}
+
+/* 🔥 TRACK — berisi 2 gambar side-by-side */
+.main-image-track {
+    display: flex;
+    width: 200%;         /* 2x lebar container */
+    height: 100%;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.main-image-item {
+    flex: 0 0 50%;       /* Masing-masing gambar = 50% dari track = 100% container */
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    user-select: none;
+    pointer-events: none; /* Klik lewat ke container */
+}
+
+/* 🔥 Kalau pakai magnifier, enable pointer events di gambar aktif */
+#main-image {
+    pointer-events: auto;
+}
+
+/* 🔥 Saat slide ke kanan (next image) */
+.main-image-track.slide-next {
+    transform: translateX(-50%);
+}
+
+/* 🔥 Saat slide ke kiri (prev image) */
+.main-image-track.slide-prev {
+    transform: translateX(0);
+}
+</style>
+
 <div class="product_show_layout">
 
     {{-- Breadcrumb --}}
@@ -210,7 +275,7 @@
 
                                 // 1. Product images
                                 foreach ($product->images as $image) {
-                                    $url = Storage::url($image->image);
+                                    $url = $image->image_url;
                                     if (!in_array($url, $usedImages)) {
                                         $usedImages[] = $url;
                                         $allThumbnails[] = [
@@ -228,7 +293,7 @@
                                 foreach ($product->options as $option) {
                                     foreach ($option->values as $value) {
                                         if ($value->image) {
-                                            $url = Storage::url($value->image);
+                                            $url = $value->image_url;
                                             if (!in_array($url, $usedImages)) {
                                                 $usedImages[] = $url;
                                                 $allThumbnails[] = [
@@ -276,15 +341,54 @@
 
                 <div class="main-image-container" id="main-image-container">
                     @php
+                        // ============================================
+                        // 🔥 MAIN IMAGE DENGAN MULTI-FALLBACK
+                        // ============================================
+                        $mainImageUrl = null;
+
+                        // 1. Gambar utama produk
                         $mainImage = $product->images->first();
-                        $mainImageUrl = $mainImage ? Storage::url($mainImage->image) : null;
+                        if ($mainImage) {
+                            $mainImageUrl = $mainImage->image_url;
+                        }
+
+                        // 2. Fallback ke gambar option value (warna)
+                        if (!$mainImageUrl && $product->options->isNotEmpty()) {
+                            foreach ($product->options as $option) {
+                                foreach ($option->values as $value) {
+                                    if (!empty($value->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($value->image)) {
+                                        $mainImageUrl = $value->image_url;
+                                        break 2;
+                                    }
+                                }
+                            }
+                        }
                     @endphp
 
                     @if ($mainImageUrl)
-                        <img src="{{ $mainImageUrl }}"
-                            alt="{{ $product->name }}"
-                            id="main-image"
-                            class="fade-in">
+                        {{-- 🔥 WRAPPER UNTUK 2 GAMBAR SIDE-BY-SIDE --}}
+                        <div class="main-image-track" id="main-image-track">
+                            {{-- Gambar aktif --}}
+                            <img src="{{ $mainImageUrl }}"
+                                alt="{{ $product->name }}"
+                                id="main-image"
+                                width="800"
+                                height="800"
+                                class="main-image-item active"
+                                fetchpriority="high"
+                                decoding="async">
+                            
+                            {{-- Gambar cadangan (untuk slide berikutnya) --}}
+                            <img src=""
+                                alt="{{ $product->name }}"
+                                id="main-image-next"
+                                width="800"
+                                height="800"
+                                class="main-image-item"
+                                aria-hidden="true"
+                                loading="lazy"
+                                decoding="async">
+                        </div>
                         
                         <div class="magnifier-glass" id="magnifier-glass"></div>
 
@@ -602,7 +706,7 @@
                                                 data-option-name="{{ $option->name }}"
                                                 data-value-id="{{ $value->id }}"
                                                 data-value-name="{{ $value->value }}"
-                                                data-image="{{ $value->image ? Storage::url($value->image) : '' }}"
+                                                data-image="{{ $value->image_url ?? '' }}"
                                                 {{ !$hasStock ? 'disabled' : '' }}>
                                             {{ $value->value }}
                                         </button>
@@ -994,7 +1098,30 @@
         {{-- Product Info --}}
         <div class="variant-popup-product">
             <div class="variant-popup-product-image">
-                <img id="popup-product-image" src="{{ $product->images->first() ? Storage::url($product->images->first()->image) : '' }}" alt="{{ $product->name }}">
+                @php
+                    // 🔥 Popup image dengan fallback
+                    $popupImageUrl = null;
+                    if ($product->images->isNotEmpty()) {
+                        $popupImageUrl = $product->images->first()->image_url;
+                    } elseif ($product->options->isNotEmpty()) {
+                        foreach ($product->options as $option) {
+                            foreach ($option->values as $value) {
+                                if (!empty($value->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($value->image)) {
+                                    $popupImageUrl = $value->image_url;
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                    $popupImageUrl = $popupImageUrl ?? asset('images/placeholder.webp');
+                @endphp
+
+                <img id="popup-product-image"
+                    src="{{ $popupImageUrl }}"
+                    alt="{{ $product->name }}"
+                    width="120"
+                    height="120"
+                    loading="lazy">
             </div>
             <div class="variant-popup-product-info">
                 <div class="product-name">{{ $product->name }}</div>
@@ -1094,13 +1221,33 @@
                 <div class="product_layout_img">
                     <a href="{{ route('customer.products.show', $related->slug) }}">
                         @php
-                            // Cek gambar dari product images
-                            $imageUrl = asset('images/product_dummy.png');
-                            if ($related->images->first() && Storage::disk('public')->exists($related->images->first()->image)) {
-                                $imageUrl = Storage::url($related->images->first()->image);
+                            // 🔥 Recommended image dengan multi-fallback
+                            $imageUrl = null;
+
+                            // 1. Gambar utama
+                            if ($related->images->isNotEmpty()) {
+                                $imageUrl = $related->images->first()->image_url;
                             }
+                            // 2. Fallback ke option value (warna)
+                            elseif ($related->options->isNotEmpty()) {
+                                foreach ($related->options as $option) {
+                                    foreach ($option->values as $value) {
+                                        if (!empty($value->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($value->image)) {
+                                            $imageUrl = $value->image_url;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+
+                            $imageUrl = $imageUrl ?? asset('images/placeholder.webp');
                         @endphp
-                        <img src="{{ $imageUrl }}" alt="{{ $related->name }}">
+                        <img src="{{ $imageUrl }}"
+                        alt="{{ $related->name }}"
+                        width="300"
+                        height="300"
+                        loading="lazy"
+                        decoding="async">
                     </a>
                     @php
                         // 🔥 CEK STOK (TERMASUK YANG HABIS)
@@ -2437,27 +2584,88 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // CHANGE MAIN IMAGE
     // ============================================
-    window.changeMainImage = function(imageUrl, element, isOptionImage = false) {
+    window.changeMainImage = function(imageUrl, element, isOptionImage = false, slideDirection = null) {
         if (!imageUrl || !mainImage) return;
+        
+        const track = document.getElementById('main-image-track');
+        const nextImage = document.getElementById('main-image-next');
+        
+        if (!track || !nextImage) {
+            // Fallback kalau track tidak ada
+            mainImage.src = imageUrl;
+            return;
+        }
 
-        console.log('🖼️ changeMainImage called:', { imageUrl, isOptionImage });
+        // Cek apakah gambar sama → skip
+        const currentSrc = mainImage.getAttribute('src') || '';
+        if (currentSrc === imageUrl) {
+            return;
+        }
 
-        mainImage.src = imageUrl;
-        mainImage.classList.remove('fade-in');
-        void mainImage.offsetWidth;
-        mainImage.classList.add('fade-in');
-
-        // 🔥 RESET ZOOM SAAT GANTI GAMBAR
+        // Reset zoom
         const container = document.getElementById('main-image-container');
         const magnifier = document.getElementById('magnifier-glass');
-        if (container) {
-            container.classList.remove('zoomed');
-        }
+        if (container) container.classList.remove('zoomed');
         if (magnifier) {
             magnifier.classList.remove('active');
             magnifier.style.backgroundImage = '';
         }
 
+        // Tentukan arah
+        if (!slideDirection) slideDirection = 'right';
+
+        // Durasi (match dengan CSS transition)
+        const duration = 800;
+
+        // ============================================
+        // 🔥 PRELOAD gambar berikutnya dulu, baru slide
+        // ============================================
+        const preload = new Image();
+        preload.src = imageUrl;
+        
+        preload.onload = function() {
+            // Set gambar cadangan
+            nextImage.src = imageUrl;
+
+            // 🔥 Set posisi track ke 0 (tampil gambar lama)
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
+            void track.offsetWidth; // force reflow
+
+            // 🔥 Aktifkan transition & slide ke gambar baru
+            track.style.transition = `transform ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+            track.style.transform = 'translateX(-50%)';
+
+            // ============================================
+            // 🔥 SETELAH SLIDE SELESAI, SWAP GAMBAR
+            // ============================================
+            setTimeout(function() {
+                // Pindahkan gambar baru ke #main-image
+                mainImage.src = imageUrl;
+                
+                // Reset track ke posisi 0 (sekarang #main-image berisi gambar baru)
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(0)';
+                
+                // Kosongkan gambar cadangan
+                nextImage.src = '';
+                
+                // Force reflow lalu bersihkan inline style
+                void track.offsetWidth;
+                track.style.transition = '';
+                
+            }, duration);
+        };
+
+        preload.onerror = function() {
+            console.warn('⚠️ Gambar gagal di-load:', imageUrl);
+            // Fallback: ganti langsung
+            mainImage.src = imageUrl;
+        };
+
+        // ============================================
+        // UPDATE ACTIVE THUMBNAIL
+        // ============================================
         document.querySelectorAll('.image-thumb').forEach(function(thumb) {
             thumb.classList.remove('active');
         });
@@ -2472,25 +2680,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // 🔥 LOGIKA UTAMA:
-        // - Jika gambar dari option values (isOptionImage = true) -> PILIH VARIAN
-        // - Jika gambar dari product images (isOptionImage = false) -> JANGAN RESET, PERTAHANKAN STATE
+        // ============================================
+        // LOGIKA OPTION IMAGE
+        // ============================================
         if (isOptionImage) {
-            // Gambar dari option value - pilih varian yang sesuai
             const optionValueId = element ? element.dataset.optionValueId : null;
-            console.log('🔄 Option image clicked, optionValueId:', optionValueId);
             if (optionValueId) {
-                // Hapus semua active class terlebih dahulu
                 document.querySelectorAll('.variant-option').forEach(function(btn) {
                     btn.classList.remove('active');
                 });
                 selectVariantByOptionValueId(parseInt(optionValueId));
             }
-        } else {
-            // 🔥 GAMBAR DARI PRODUCT IMAGES - JANGAN RESET, PERTAHANKAN STATE
-            console.log('🔄 Product image clicked - KEEPING current selection');
-            // Tidak melakukan reset, tetap pertahankan pilihan varian saat ini
-            // Hanya update gambar thumbnail aktif
         }
     };
 
@@ -2567,7 +2767,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (isColorOption) {
-                updateVariantImage(foundVariant);
+                // 🔥 DETEKSI ARAH BERDASARKAN URUTAN THUMBNAIL
+                var slideDirection = 'right';
+                var allThumbs = Array.from(document.querySelectorAll('.image-thumb'));
+                var clickedThumb = document.querySelector(`.image-thumb[data-option-value-id="${optionValueId}"]`);
+                var activeThumb = document.querySelector('.image-thumb.active');
+                
+                if (clickedThumb && activeThumb && clickedThumb !== activeThumb) {
+                    var clickedIdx = allThumbs.indexOf(clickedThumb);
+                    var activeIdx = allThumbs.indexOf(activeThumb);
+                    slideDirection = clickedIdx > activeIdx ? 'right' : 'left';
+                }
+
+                updateVariantImage(foundVariant, slideDirection);
             }
             
             updateAvailableVariants();
@@ -2848,7 +3060,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    function updateVariantImage(variant) {
+    function updateVariantImage(variant, slideDirection = null) {
         if (!variant) return;
 
         const variantValueIds = variant.values.map(Number);
@@ -2873,19 +3085,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (colorImage) {
-            changeMainImage(colorImage, null, true);
+            // 🔥 PASS slideDirection
+            changeMainImage(colorImage, null, true, slideDirection);
             return;
         }
 
         if (variant.image) {
-            changeMainImage(variant.image, null, true);
+            changeMainImage(variant.image, null, true, slideDirection);
             return;
         }
 
         const firstImage = productImages.length > 0 ? 
             '{{ $product->images->first() ? Storage::url($product->images->first()->image) : '' }}' : null;
         if (firstImage) {
-            changeMainImage(firstImage, null, false);
+            changeMainImage(firstImage, null, false, slideDirection);
         }
     }
 
@@ -3220,7 +3433,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             var group = this.closest('[data-option-id]');
             
-            // HAPUS ACTIVE CLASS DARI SEMUA TOMBOL DI GRUP YANG SAMA
+            // ============================================
+            // 🔥 DETEKSI ARAH SLIDE BERDASARKAN POSISI TOMBOL
+            // ============================================
+            var slideDirection = 'right'; // default
+            var prevActive = group.querySelector('.variant-option.active');
+            
+            if (prevActive && prevActive !== this) {
+                var allBtns = Array.from(group.querySelectorAll('.variant-option'));
+                var prevIdx = allBtns.indexOf(prevActive);
+                var newIdx = allBtns.indexOf(this);
+
+                // Klik ke kanan → slide dari kanan
+                // Klik ke kiri → slide dari kiri
+                slideDirection = newIdx > prevIdx ? 'right' : 'left';
+            }
+
+            console.log('🎯 Variant click:', { optionName, valueId, slideDirection });
+
+            // Hapus active dari semua tombol di grup yang sama
             group.querySelectorAll('.variant-option').forEach(function(btn) {
                 btn.classList.remove('active');
             });
@@ -3233,7 +3464,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var totalOptions = document.querySelectorAll('.variant-options').length;
             var selectedCount = Object.keys(selectedValues).length;
             
-            // CARI VARIAN YANG COCOK
+            // Cari varian yang cocok
             var variant = null;
             if (selectedCount === totalOptions) {
                 variant = findVariantByValues(selectedValues, false);
@@ -3246,7 +3477,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentVariantId = variant.id;
                 isVariantSelected = true;
                 
-                // 🔥 GUNAKAN EFFECTIVE_PRICE DAN DISCOUNT_PERCENT
                 var price = variant.effective_price ?? variant.price;
                 var originalPrice = variant.price;
                 var hasDiscount = variant.discount_percent > 0;
@@ -3257,7 +3487,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (hasDiscount) {
                         var discountBadge = Math.round(discountPercent) + '%';
                         
-                        // 🔥 TAMBAHKAN INFO DISKON PRODUK
                         var productDiscountInfo = '';
                         if ({{ $hasProductDiscount ? 'true' : 'false' }} && {{ $productDiscountPercent ?? 0 }} > 0) {
                             productDiscountInfo = '<span class="product-discount-info" style="font-size:0.6vw;color:#16a34a;display:block;margin-top:0.2vw;">' + Math.round({{ $productDiscountPercent ?? 0 }}) + '%</span>';
@@ -3286,11 +3515,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // 🔥 UPDATE STOK
                 stockDisplay.textContent = variant.stock > 0 ? 'Stok: ' + variant.stock : 'Stok Habis';
                 stockDisplay.className = 'product_stock_status ' + (variant.stock > 0 ? 'in-stock' : 'out-of-stock');
                 
-                // 🔥 TOMBOL HANYA AKTIF JIKA STOK > 0 DAN SEMUA OPSI DIPILIH
                 if (variant.stock > 0 && selectedCount === totalOptions) {
                     addToCartBtn.disabled = false;
                     addToCartBtn.textContent = 'Tambah ke Keranjang';
@@ -3308,8 +3535,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     buyNowBtn.textContent = 'Pilih Varian';
                 }
                 
-                // 🔥 UPDATE GAMBAR - HANYA JIKA YANG DIPILIH ADALAH WARNA
-                // Cek apakah option yang diklik adalah Warna
+                // ============================================
+                // 🔥 UPDATE GAMBAR DENGAN ARAH SLIDE
+                // ============================================
                 var isColorOption = false;
                 var colorKeywords = ['warna', 'color', 'colour'];
                 var optionNameLower = (optionName || '').toLowerCase().trim();
@@ -3321,17 +3549,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // 🔥 JIKA WARNA, UPDATE GAMBAR
                 if (isColorOption) {
-                    updateVariantImage(variant);
+                    // 🔥 PASS slideDirection KE updateVariantImage
+                    updateVariantImage(variant, slideDirection);
                 }
-                // 🔥 JIKA UKURAN, JANGAN UPDATE GAMBAR
                 
-                // 🔥 UPDATE ACTIVE STATE
                 updateVariantActiveState(variant);
                 
             } else {
-                // 🔥 TIDAK ADA VARIAN - RESET KE DEFAULT
                 resetToDefaultPrice();
             }
 

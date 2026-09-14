@@ -101,12 +101,35 @@
             <div class="wishlist-item" data-product-id="{{ $product->id }}">
                 {{-- Image --}}
                 <div class="wishlist-item-image">
-                    @if ($product->images->first())
-                        <img src="{{ Storage::url($product->images->first()->image) }}" 
-                             alt="{{ $product->name }}">
-                    @else
-                        <span class="placeholder">📦</span>
-                    @endif
+                    @php
+                        // 🔥 AMBIL GAMBAR DENGAN MULTI-FALLBACK
+                        $wishlistImage = null;
+
+                        // 1. Gambar utama produk
+                        if ($product->images->isNotEmpty()) {
+                            $wishlistImage = $product->images->first()->image_url;
+                        }
+                        // 2. Fallback ke gambar option value (warna)
+                        elseif ($product->options->isNotEmpty()) {
+                            foreach ($product->options as $option) {
+                                foreach ($option->values as $value) {
+                                    if (!empty($value->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($value->image)) {
+                                        $wishlistImage = $value->image_url;
+                                        break 2;
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3. Placeholder
+                        $wishlistImage = $wishlistImage ?? asset('images/placeholder.webp');
+                    @endphp
+
+                    <img src="{{ $wishlistImage }}"
+                        alt="{{ $product->name }}"
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.onerror=null; this.src='{{ asset('images/placeholder.webp') }}';">
                     
                     {{-- 🔥 BADGE DISKON --}}
                     @if($hasAnyDiscount && $maxDiscount > 0)

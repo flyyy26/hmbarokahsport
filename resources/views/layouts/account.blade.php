@@ -8,13 +8,13 @@
     <title>@yield('title', 'Akun Saya - Barokah Sport')</title>
 
     {{-- CSS Assets --}}
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/popup.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/product_show.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/cart-page.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/product.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/variant-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('css/popup.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/product_show.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/cart-page.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/product.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/variant-modal.css') }}?v=2">
 
     <link rel="icon" src="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ $setting?->favicon ? Storage::url($setting->favicon) : asset('images/favicon.png') }}" type="image/x-icon">

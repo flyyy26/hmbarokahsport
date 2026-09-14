@@ -11,9 +11,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use App\Services\ImageOptimizer;
 
 class TestimonialController extends Controller
 {
+    protected ImageOptimizer $imageOptimizer;
+
+    public function __construct(ImageOptimizer $imageOptimizer)
+    {
+        $this->imageOptimizer = $imageOptimizer;
+    }
     public function index(Request $request)
     {
         $query = Testimonial::with(['product', 'variant', 'user', 'images']);
@@ -97,8 +104,16 @@ class TestimonialController extends Controller
 
                 if ($request->hasFile('images')) {
                     foreach ($request->file('images') as $index => $image) {
-                        $path = $image->store('testimonials', 'public');
+                        if (!$image->isValid()) continue;
+
+                        $path = $this->imageOptimizer->convertToWebp(
+                            file: $image,
+                            folder: 'testimonials',
+                            maxWidth: 800,
+                            quality: 82
+                        );
                         $uploadedFiles[] = $path;
+
                         $testimonial->images()->create([
                             'image' => $path,
                             'sort_order' => $index,
@@ -200,16 +215,22 @@ class TestimonialController extends Controller
                     ->get();
 
                 foreach ($oldImages as $oldImage) {
-                    if ($oldImage->image && Storage::disk('public')->exists($oldImage->image)) {
-                        Storage::disk('public')->delete($oldImage->image);
-                    }
+                    $this->imageOptimizer->delete($oldImage->image);
                     $oldImage->delete();
                 }
 
                 if ($request->hasFile('images')) {
                     foreach ($request->file('images') as $index => $image) {
-                        $path = $image->store('testimonials', 'public');
+                        if (!$image->isValid()) continue;
+
+                        $path = $this->imageOptimizer->convertToWebp(
+                            file: $image,
+                            folder: 'testimonials',
+                            maxWidth: 800,
+                            quality: 82
+                        );
                         $uploadedFiles[] = $path;
+
                         $testimonial->images()->create([
                             'image' => $path,
                             'sort_order' => $index,
@@ -241,9 +262,7 @@ class TestimonialController extends Controller
             DB::transaction(function () use ($testimonial) {
                 if ($testimonial->images) {
                     foreach ($testimonial->images as $image) {
-                        if ($image->image && Storage::disk('public')->exists($image->image)) {
-                            Storage::disk('public')->delete($image->image);
-                        }
+                        $this->imageOptimizer->delete($image->image);
                     }
                 }
 
@@ -264,14 +283,13 @@ class TestimonialController extends Controller
     {
         $testimonialImage = $testimonial->images()->findOrFail($image);
 
-        if ($testimonialImage->image && Storage::disk('public')->exists($testimonialImage->image)) {
-            Storage::disk('public')->delete($testimonialImage->image);
-        }
+        $this->imageOptimizer->delete($testimonialImage->image);
 
         $testimonialImage->delete();
 
         return back()->with('success', 'Gambar testimonial berhasil dihapus.');
     }
+
 
     public function toggle(Testimonial $testimonial)
     {

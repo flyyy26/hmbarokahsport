@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -21,5 +22,13 @@ class ProductImage extends Model
         return $this->belongsTo(
             Product::class
         );
+    }
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image && Storage::disk('public')->exists($this->image)) {
+            return asset('storage/' . $this->image);
+        }
+        
+        return asset('images/placeholder.webp');
     }
 }

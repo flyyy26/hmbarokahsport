@@ -67,6 +67,27 @@ document.addEventListener('DOMContentLoaded', function() {
             allOptions = data.options || [];
             productData = data.product || {};
 
+            // 🔥 FALLBACK GAMBAR: kalau productData.image kosong, cari dari varian / option value
+            let fallbackImage = productData.image || null;
+
+            if (!fallbackImage && allOptions && allOptions.length > 0) {
+                // Cari gambar dari option value (warna)
+                for (let opt of allOptions) {
+                    if (opt.values && opt.values.length > 0) {
+                        for (let val of opt.values) {
+                            if (val.image) {
+                                fallbackImage = val.image;
+                                break;
+                            }
+                        }
+                    }
+                    if (fallbackImage) break;
+                }
+            }
+
+            // Simpan ke productData biar bisa dipakai di tempat lain
+            productData.image = fallbackImage;
+
             modalProductId.value = productId;
             modalProductName.textContent = productData.name || '';
             

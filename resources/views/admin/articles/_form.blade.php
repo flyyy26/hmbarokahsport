@@ -3,6 +3,32 @@
     $article = $article ?? null;
 @endphp
 
+<style>
+    .char-counter {
+        font-size: 0.65rem;
+        font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        color: var(--text-5);
+        transition: color 0.2s ease;
+        user-select: none;
+    }
+
+    .char-counter.warning {
+        color: #f59e0b;
+        font-weight: 600;
+    }
+
+    .char-counter.danger {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .char-counter.full {
+        color: #10b981;
+        font-weight: 700;
+    }
+
+</style>
+
 {{-- ============================================ --}}
 {{-- ERROR VALIDATION --}}
 {{-- ============================================ --}}
@@ -43,15 +69,27 @@
                 Judul Artikel <span class="text-red-400">*</span>
             </label>
             <input type="text"
-                   name="title"
-                   id="title"
-                   value="{{ old('title', $article->title ?? '') }}"
-                   required
-                   class="form-input"
-                   placeholder="Contoh: Tips Memilih Sepatu Running untuk Pemula">
-            @error('title')
-                <p class="text-[10px] mt-1 text-red-400">{{ $message }}</p>
-            @enderror
+                name="title"
+                id="title"
+                value="{{ old('title', $article->title ?? '') }}"
+                required
+                maxlength="60"
+                data-counter-target="title-counter"
+                data-max-length="60"
+                class="form-input"
+                placeholder="Contoh: Tips Memilih Sepatu Running untuk Pemula">
+            <div class="flex items-center justify-between mt-1">
+                @error('title')
+                    <p class="text-[10px] text-red-400">{{ $message }}</p>
+                @else
+                    <p class="text-[10px]" style="color: var(--text-5);">
+                        Judul singkat & jelas, maks 60 karakter.
+                    </p>
+                @enderror
+                <p class="text-[10px] font-mono" id="title-counter" style="color: var(--text-5);">
+                    <span class="counter-current">0</span>/<span class="counter-max">60</span>
+                </p>
+            </div>
         </div>
 
         {{-- Kategori + Action Buttons --}}
@@ -140,14 +178,22 @@
                 Deskripsi Pendek (Excerpt)
             </label>
             <textarea name="excerpt"
-                      id="excerpt"
-                      rows="3"
-                      class="form-input"
-                      placeholder="Ringkasan singkat artikel...">{{ old('excerpt', $article->excerpt ?? '') }}</textarea>
-            <p class="text-[10px] mt-1 flex items-center gap-1" style="color: var(--text-5);">
-                <iconify-icon icon="mdi:information-outline"></iconify-icon>
-                Jika kosong, akan diambil dari konten secara otomatis (max 150 karakter).
-            </p>
+                    id="excerpt"
+                    rows="3"
+                    maxlength="160"
+                    data-counter-target="excerpt-counter"
+                    data-max-length="160"
+                    class="form-input"
+                    placeholder="Ringkasan singkat artikel, maks 160 karakter...">{{ old('excerpt', $article->excerpt ?? '') }}</textarea>
+            <div class="flex items-center justify-between mt-1">
+                <p class="text-[10px] flex items-center gap-1" style="color: var(--text-5);">
+                    <iconify-icon icon="mdi:information-outline"></iconify-icon>
+                    Dipakai untuk meta description SEO (ideal 120–160 karakter).
+                </p>
+                <p class="text-[10px] font-mono" id="excerpt-counter" style="color: var(--text-5);">
+                    <span class="counter-current">0</span>/<span class="counter-max">160</span>
+                </p>
+            </div>
         </div>
     </div>
 </div>
@@ -234,7 +280,7 @@
             @if(isset($article) && $article->image)
                 <div class="mt-4 flex items-start gap-4 p-3 rounded-lg border"
                      style="background: var(--bg-input); border-color: var(--border-2);">
-                    <img src="{{ Storage::url($article->image) }}"
+                    <img src="{{ $article->image_url }}"
                          alt="{{ $article->title }}"
                          class="w-24 h-24 rounded-lg object-cover border flex-shrink-0"
                          style="border-color: var(--border-2);">
@@ -762,13 +808,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Validation
-            const title = document.getElementById('title').value.trim();
+            const titleInput = document.getElementById('title');
+            const excerptInput = document.getElementById('excerpt');
             const category = document.getElementById('article_category_id').value;
             const content = hiddenInput.value.trim();
 
+            const title = titleInput.value.trim();
+            const excerpt = excerptInput.value.trim();
+
+            // 🔥 VALIDASI JUDUL
             if (!title) {
                 alert('Judul artikel wajib diisi!');
-                document.getElementById('title').focus();
+                titleInput.focus();
+                return;
+            }
+
+            if (title.length > 60) {
+                alert('Judul artikel maksimal 60 karakter! Saat ini: ' + title.length + ' karakter.');
+                titleInput.focus();
+                return;
+            }
+
+            // 🔥 VALIDASI EXCERPT
+            if (excerpt.length > 160) {
+                alert('Deskripsi pendek (excerpt) maksimal 160 karakter! Saat ini: ' + excerpt.length + ' karakter.');
+                excerptInput.focus();
                 return;
             }
 
@@ -787,6 +851,71 @@ document.addEventListener('DOMContentLoaded', function() {
             articleForm.submit();
         });
     }
+
+    function initCharCounter(inputId, counterId, maxLength) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+
+        if (!input || !counter) return;
+
+        const currentEl = counter.querySelector('.counter-current');
+        const maxEl = counter.querySelector('.counter-max');
+
+        if (maxEl) maxEl.textContent = maxLength;
+
+        function updateCounter() {
+            const length = input.value.length;
+            if (currentEl) currentEl.textContent = length;
+
+            // Reset class
+            counter.classList.remove('warning', 'danger', 'full');
+
+            if (length >= maxLength) {
+                counter.classList.add('full');
+            } else if (length >= maxLength * 0.9) {
+                counter.classList.add('warning');
+            } else if (length >= maxLength * 0.75) {
+                counter.classList.add('warning');
+            }
+
+            // Optional: warn kalau terlalu pendek untuk SEO
+            if (length > 0 && length < maxLength * 0.5) {
+                counter.classList.add('warning');
+            }
+        }
+
+        // Update saat user mengetik
+        input.addEventListener('input', updateCounter);
+
+        // Handle paste yang melebihi max
+        input.addEventListener('paste', function(e) {
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const currentLength = input.value.length;
+            const selectionLength = (input.selectionEnd || 0) - (input.selectionStart || 0);
+            const newLength = currentLength - selectionLength + pasted.length;
+
+            if (newLength > maxLength) {
+                e.preventDefault();
+                // Potong paste agar pas
+                const allowedLength = maxLength - (currentLength - selectionLength);
+                const truncated = pasted.substring(0, allowedLength);
+                
+                // Insert manual
+                const start = input.selectionStart || 0;
+                const end = input.selectionEnd || 0;
+                input.value = input.value.substring(0, start) + truncated + input.value.substring(end);
+                
+                // Trigger event supaya counter update
+                input.dispatchEvent(new Event('input'));
+            }
+        });
+
+        // Initial update
+        updateCounter();
+    }
+
+    initCharCounter('title', 'title-counter', 60);
+    initCharCounter('excerpt', 'excerpt-counter', 160);
 });
 </script>
 @endpush

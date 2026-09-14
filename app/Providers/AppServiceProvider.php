@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schedule;
+use App\Observers\ArticleObserver;
+use App\Models\Article;
+use App\Models\Product;
+use App\Observers\ProductObserver;
+use App\Observers\CategoryObserver;
+use App\Models\Category;
+use App\Models\ProductVariant;
+use App\Observers\ProductVariantObserver;
+use App\Models\Testimonial;
+use App\Observers\TestimonialObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +38,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Article::observe(ArticleObserver::class);
+        Product::observe(ProductObserver::class);
+        ProductVariant::observe(ProductVariantObserver::class);
+        Category::observe(CategoryObserver::class);
+        Testimonial::observe(TestimonialObserver::class);
         // ============================================
         // 🔥 MARKETPLACE COMPOSER (EXISTING)
         // ============================================

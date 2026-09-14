@@ -19,9 +19,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Services\ImageOptimizer;
+use App\Http\Controllers\Customer\CustomerHomeController;
 
 class ProductController extends Controller
 {
+    protected ImageOptimizer $imageOptimizer;
+
+    public function __construct(ImageOptimizer $imageOptimizer)
+    {
+        $this->imageOptimizer = $imageOptimizer;
+    }
     /*
     |--------------------------------------------------------------------------
     | INDEX
@@ -143,8 +151,17 @@ class ProductController extends Controller
                 // 2. UPLOAD IMAGES
                 if ($request->hasFile('images')) {
                     foreach ($request->file('images') as $index => $image) {
-                        $path = $image->store('products', 'public');
+                        if (!$image->isValid()) continue;
+
+                        // 🔥 CONVERT KE WEBP
+                        $path = $this->imageOptimizer->convertToWebp(
+                            file: $image,
+                            folder: 'products',
+                            maxWidth: 1000,   // product image max 1000px
+                            quality: 82
+                        );
                         $uploadedFiles[] = $path;
+
                         $product->images()->create([
                             'image' => $path,
                             'sort_order' => $index,
@@ -174,6 +191,8 @@ class ProductController extends Controller
                     $product->features()->sync($validated['features']);
                 }
             });
+
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.products.index')
@@ -388,9 +407,8 @@ class ProductController extends Controller
                     ->get();
 
                 foreach ($oldImages as $oldImage) {
-                    if (Storage::disk('public')->exists($oldImage->image)) {
-                        Storage::disk('public')->delete($oldImage->image);
-                    }
+                    // 🔥 HAPUS VIA HELPER
+                    $this->imageOptimizer->delete($oldImage->image);
                     $oldImage->delete();
                 }
 
@@ -402,8 +420,17 @@ class ProductController extends Controller
                     $lastSortOrder = $product->images()->max('sort_order') ?? -1;
 
                     foreach ($request->file('images') as $index => $image) {
-                        $path = $image->store('products', 'public');
+                        if (!$image->isValid()) continue;
+
+                        // 🔥 CONVERT KE WEBP
+                        $path = $this->imageOptimizer->convertToWebp(
+                            file: $image,
+                            folder: 'products',
+                            maxWidth: 1000,
+                            quality: 82
+                        );
                         $uploadedFiles[] = $path;
+
                         $product->images()->create([
                             'image' => $path,
                             'sort_order' => $lastSortOrder + $index + 1,
@@ -454,6 +481,8 @@ class ProductController extends Controller
                     $product->features()->detach();
                 }
             });
+
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.products.index')
@@ -1092,13 +1121,21 @@ class ProductController extends Controller
 
                 // 1. Prioritas: upload baru dari input file
                 if ($newImage instanceof \Illuminate\Http\UploadedFile) {
+                    // Hapus gambar lama
                     if ($oldOptionId && $oldValueId && isset($oldOptionValuesMap[$oldOptionId][$oldValueId])) {
                         $oldImagePath = $oldOptionValuesMap[$oldOptionId][$oldValueId];
-                        if ($oldImagePath && Storage::disk('public')->exists($oldImagePath)) {
-                            Storage::disk('public')->delete($oldImagePath);
-                        }
+                        $this->imageOptimizer->delete($oldImagePath);
                     }
-                    $imagePath = $newImage->store('products/option-values', 'public');
+
+                    // 🔥 CONVERT KE WEBP
+                    if ($newImage->isValid()) {
+                        $imagePath = $this->imageOptimizer->convertToWebp(
+                            file: $newImage,
+                            folder: 'products/option-values',
+                            maxWidth: 400,
+                            quality: 85
+                        );
+                    }
                 }
                 // 2. Jika tidak ada upload baru, pertahankan gambar lama
                 elseif (!empty($selectedExistingImage)) {
@@ -1171,7 +1208,7 @@ class ProductController extends Controller
     {
         $product->load([
             'images',
-            'options',
+            'options.values',
             'variants',
             'orderItems',
         ]);
@@ -1231,11 +1268,18 @@ class ProductController extends Controller
             });
 
             // HAPUS FILE GAMBAR DARI STORAGE
-            foreach ($imagePaths as $imagePath) {
-                if (Storage::disk('public')->exists($imagePath)) {
-                    Storage::disk('public')->delete($imagePath);
+           foreach ($imagePaths as $imagePath) {
+                $this->imageOptimizer->delete($imagePath);
+            }
+
+            // 🔥 HAPUS FILE GAMBAR OPSI (WARNA)
+            foreach ($product->options as $option) {
+                foreach ($option->values as $value) {
+                    $this->imageOptimizer->delete($value->image);
                 }
             }
+
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.products.index')
@@ -1272,7 +1316,7 @@ class ProductController extends Controller
         try {
             DB::transaction(function () use ($productIds, &$deletedCount, &$failedIds, &$failedNames) {
                 
-                $products = Product::with(['images', 'orderItems'])
+                $products = Product::with(['images', 'orderItems', 'options.values'])
                     ->whereIn('id', $productIds)
                     ->get();
 
@@ -1282,6 +1326,8 @@ class ProductController extends Controller
                         $failedNames[] = $product->name;
                         continue;
                     }
+
+                    $product->load('options.values');
 
                     $imagePaths = $product->images->pluck('image')->filter()->toArray();
 
@@ -1302,8 +1348,12 @@ class ProductController extends Controller
                     $product->delete();
 
                     foreach ($imagePaths as $imagePath) {
-                        if (Storage::disk('public')->exists($imagePath)) {
-                            Storage::disk('public')->delete($imagePath);
+                        $this->imageOptimizer->delete($imagePath);
+                    }
+
+                    foreach ($product->options as $option) {
+                        foreach ($option->values as $value) {
+                            $this->imageOptimizer->delete($value->image);
                         }
                     }
 
@@ -1317,6 +1367,8 @@ class ProductController extends Controller
                 $message .= " Gagal menghapus " . count($failedIds) . " produk: " . implode(', ', $failedNames) . " (sudah digunakan di pesanan).";
             }
 
+            CustomerHomeController::clearCache();
+            
             return response()->json([
                 'success' => true,
                 'message' => $message,
@@ -1350,13 +1402,12 @@ class ProductController extends Controller
         $productImage = $product->images()->findOrFail($image);
         $path = $productImage->image;
 
-        DB::transaction(function () use ($productImage, $path) {
+        DB::transaction(function () use ($productImage) {
             $productImage->delete();
-
-            if (Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
         });
+
+        // 🔥 HAPUS VIA HELPER
+        $this->imageOptimizer->delete($path);
 
         return back()
             ->with('success', 'Gambar produk berhasil dihapus.');
@@ -1552,7 +1603,7 @@ class ProductController extends Controller
     private function createProductOptions(Product $product, array $options, array $optionFiles = []): array
     {
         $optionValueMap = [];
-        $options = array_values($options); // Pastikan index 0, 1, 2... berurutan
+        $options = array_values($options);
 
         foreach ($options as $optionIndex => $optionData) {
             $option = $product->options()->create([
@@ -1570,8 +1621,19 @@ class ProductController extends Controller
                 if ($trimmed === '') continue;
 
                 $imagePath = null;
+                
+                // 🔥 CONVERT OPSI IMAGE KE WEBP
                 if (isset($images[$valueIndex]) && $images[$valueIndex] instanceof \Illuminate\Http\UploadedFile) {
-                    $imagePath = $images[$valueIndex]->store('products/option-values', 'public');
+                    $uploadedFile = $images[$valueIndex];
+                    
+                    if ($uploadedFile->isValid()) {
+                        $imagePath = $this->imageOptimizer->convertToWebp(
+                            file: $uploadedFile,
+                            folder: 'products/option-values',
+                            maxWidth: 400,   // option value image (warna) max 400px
+                            quality: 85
+                        );
+                    }
                 }
 
                 $optionValue = $option->values()->create([

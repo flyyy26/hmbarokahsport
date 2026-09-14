@@ -51,6 +51,10 @@
                     <iconify-icon icon="mdi:database-outline"></iconify-icon>
                     Max: 5MB
                 </span>
+                <span class="inline-flex items-center gap-1.5 text-emerald-400">
+                    <iconify-icon icon="mdi:check-decagram"></iconify-icon>
+                    Otomatis dikonversi ke <strong>WebP</strong>
+                </span>
             </div>
         </div>
     </div>

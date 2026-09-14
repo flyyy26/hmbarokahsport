@@ -48,7 +48,7 @@ class Banner extends Model
      */
     public function getImageUrlAttribute(): string
     {
-        return $this->image ? asset('storage/' . $this->image) : asset('images/default-banner.jpg');
+        return $this->image ? asset('storage/' . $this->image) : asset('images/default-banner.webp');
     }
 
     /**

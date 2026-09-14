@@ -747,9 +747,15 @@
                     @foreach ($order->items->take(3) as $item)
                         <div class="order-item">
                             <div class="order-item-img">
-                                @if ($item->product && $item->product->images->first())
-                                    <img src="{{ Storage::url($item->product->images->first()->image) }}" 
-                                         alt="{{ $item->product_name }}">
+                                @php
+                                    $itemImage = $item->variant ? $item->variant->image_url : null;
+                                    if (!$itemImage && $item->product && $item->product->images->first()) {
+                                        $itemImage = \Illuminate\Support\Facades\Storage::url($item->product->images->first()->image);
+                                    }
+                                @endphp
+
+                                @if ($itemImage)
+                                    <img src="{{ $itemImage }}" alt="{{ $item->product_name }}">
                                 @else
                                     <iconify-icon icon="mdi:image-off-outline"></iconify-icon>
                                 @endif

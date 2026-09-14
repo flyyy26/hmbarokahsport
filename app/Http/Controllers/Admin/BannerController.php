@@ -5,14 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\PromoBar;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use App\Http\Controllers\Customer\CustomerHomeController;
 
 class BannerController extends Controller
 {
+    protected ImageOptimizer $imageOptimizer;
+
+    public function __construct(ImageOptimizer $imageOptimizer)
+    {
+        $this->imageOptimizer = $imageOptimizer;
+    }
     /*
     |--------------------------------------------------------------------------
     | INDEX
@@ -78,9 +86,7 @@ class BannerController extends Controller
 
     public function store(Request $request)
     {
-        // 🔥 LOG untuk debug
         Log::info('=== STORE BANNER ===');
-        Log::info('Request data:', $request->all());
 
         try {
             $validated = $request->validate([
@@ -96,24 +102,31 @@ class BannerController extends Controller
                 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             ]);
 
-            Log::info('Validated data:', $validated);
-
             $uploadedFiles = [];
 
-            // Upload gambar desktop
-            $imagePath = $request->file('image')->store('banners', 'public');
+            // 🔥 CONVERT DESKTOP IMAGE KE WEBP
+            $imagePath = $this->imageOptimizer->convertToWebp(
+                file: $request->file('image'),
+                folder: 'banners',
+                maxWidth: 1920,  // cukup untuk banner desktop
+                quality: 82
+            );
             $uploadedFiles[] = $imagePath;
-            Log::info('Desktop image uploaded: ' . $imagePath);
+            Log::info('Desktop WebP uploaded: ' . $imagePath);
 
-            // Upload gambar mobile (opsional)
+            // 🔥 CONVERT MOBILE IMAGE KE WEBP (kalau ada)
             $imageMobilePath = null;
             if ($request->hasFile('image_mobile') && $request->file('image_mobile')->isValid()) {
-                $imageMobilePath = $request->file('image_mobile')->store('banners/mobile', 'public');
+                $imageMobilePath = $this->imageOptimizer->convertToWebp(
+                    file: $request->file('image_mobile'),
+                    folder: 'banners/mobile',
+                    maxWidth: 800,  // cukup untuk mobile
+                    quality: 82
+                );
                 $uploadedFiles[] = $imageMobilePath;
-                Log::info('Mobile image uploaded: ' . $imageMobilePath);
+                Log::info('Mobile WebP uploaded: ' . $imageMobilePath);
             }
 
-            // 🔥 PERBAIKI: Simpan data dengan benar
             $banner = Banner::create([
                 'title' => $validated['title'] ?? null,
                 'subtitle' => $validated['subtitle'] ?? null,
@@ -127,39 +140,25 @@ class BannerController extends Controller
                 'ends_at' => $validated['ends_at'] ?? null,
             ]);
 
-            Log::info('Banner created successfully, ID: ' . $banner->id);
+            Log::info('Banner created, ID: ' . $banner->id);
+
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.banners.index')
-                ->with('success', 'Banner berhasil ditambahkan.');
+                ->with('success', 'Banner berhasil ditambahkan (otomatis dikonversi ke WebP).');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', $e->errors());
-            
-            return back()
-                ->withInput()
-                ->withErrors($e->errors())
-                ->with('error', 'Validasi gagal: ' . $e->getMessage());
-
+            return back()->withInput()->withErrors($e->errors());
         } catch (Throwable $e) {
-            Log::error('Store banner error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Store banner error: ' . $e->getMessage());
 
-            // Hapus file yang sudah terupload
-            if (isset($uploadedFiles)) {
-                foreach ($uploadedFiles as $path) {
-                    if (Storage::disk('public')->exists($path)) {
-                        Storage::disk('public')->delete($path);
-                        Log::info('Deleted uploaded file: ' . $path);
-                    }
-                }
+            // Cleanup file yang sudah terupload
+            foreach ($uploadedFiles ?? [] as $path) {
+                $this->imageOptimizer->delete($path);
             }
 
-            return back()
-                ->withInput()
-                ->with('error', 'Banner gagal ditambahkan: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Banner gagal ditambahkan: ' . $e->getMessage());
         }
     }
 
@@ -182,8 +181,7 @@ class BannerController extends Controller
 
     public function update(Request $request, Banner $banner)
     {
-        Log::info('=== UPDATE BANNER ===');
-        Log::info('Banner ID: ' . $banner->id);
+        Log::info('=== UPDATE BANNER === ID: ' . $banner->id);
 
         try {
             $validated = $request->validate([
@@ -199,26 +197,33 @@ class BannerController extends Controller
                 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             ]);
 
-            Log::info('Validated data:', $validated);
-
             $oldImage = $banner->image;
             $oldImageMobile = $banner->image_mobile;
             $newImagePath = null;
             $newImageMobilePath = null;
 
-            // Upload gambar desktop baru
+            // 🔥 CONVERT DESKTOP IMAGE KE WEBP
             if ($request->hasFile('image') && $request->file('image')->isValid()) {
-                $newImagePath = $request->file('image')->store('banners', 'public');
-                Log::info('New desktop image: ' . $newImagePath);
+                $newImagePath = $this->imageOptimizer->convertToWebp(
+                    file: $request->file('image'),
+                    folder: 'banners',
+                    maxWidth: 1920,
+                    quality: 82
+                );
+                Log::info('New desktop WebP: ' . $newImagePath);
             }
 
-            // Upload gambar mobile baru
+            // 🔥 CONVERT MOBILE IMAGE KE WEBP
             if ($request->hasFile('image_mobile') && $request->file('image_mobile')->isValid()) {
-                $newImageMobilePath = $request->file('image_mobile')->store('banners/mobile', 'public');
-                Log::info('New mobile image: ' . $newImageMobilePath);
+                $newImageMobilePath = $this->imageOptimizer->convertToWebp(
+                    file: $request->file('image_mobile'),
+                    folder: 'banners/mobile',
+                    maxWidth: 800,
+                    quality: 82
+                );
+                Log::info('New mobile WebP: ' . $newImageMobilePath);
             }
 
-            // 🔥 PERBAIKI: Update data
             $updateData = [
                 'title' => $validated['title'] ?? null,
                 'subtitle' => $validated['subtitle'] ?? null,
@@ -233,55 +238,36 @@ class BannerController extends Controller
             if ($newImagePath) {
                 $updateData['image'] = $newImagePath;
             }
-
             if ($newImageMobilePath !== null) {
                 $updateData['image_mobile'] = $newImageMobilePath;
             }
 
             $banner->update($updateData);
 
-            Log::info('Banner updated successfully');
-
-            // Hapus gambar lama
-            if ($newImagePath && $oldImage && Storage::disk('public')->exists($oldImage)) {
-                Storage::disk('public')->delete($oldImage);
-                Log::info('Deleted old desktop image: ' . $oldImage);
+            // Hapus gambar lama setelah update sukses
+            if ($newImagePath && $oldImage) {
+                $this->imageOptimizer->delete($oldImage);
+            }
+            if ($newImageMobilePath && $oldImageMobile) {
+                $this->imageOptimizer->delete($oldImageMobile);
             }
 
-            if ($newImageMobilePath && $oldImageMobile && Storage::disk('public')->exists($oldImageMobile)) {
-                Storage::disk('public')->delete($oldImageMobile);
-                Log::info('Deleted old mobile image: ' . $oldImageMobile);
-            }
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.banners.index')
                 ->with('success', 'Banner berhasil diperbarui.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', $e->errors());
-            
-            return back()
-                ->withInput()
-                ->withErrors($e->errors())
-                ->with('error', 'Validasi gagal: ' . $e->getMessage());
-
+            return back()->withInput()->withErrors($e->errors());
         } catch (Throwable $e) {
-            Log::error('Update banner error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Update banner error: ' . $e->getMessage());
 
-            // Hapus gambar baru jika gagal
-            if (isset($newImagePath) && Storage::disk('public')->exists($newImagePath)) {
-                Storage::disk('public')->delete($newImagePath);
-            }
-            if (isset($newImageMobilePath) && Storage::disk('public')->exists($newImageMobilePath)) {
-                Storage::disk('public')->delete($newImageMobilePath);
-            }
+            // Hapus gambar baru kalau update gagal
+            if (isset($newImagePath)) $this->imageOptimizer->delete($newImagePath);
+            if (isset($newImageMobilePath)) $this->imageOptimizer->delete($newImageMobilePath);
 
-            return back()
-                ->withInput()
-                ->with('error', 'Banner gagal diperbarui: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Banner gagal diperbarui: ' . $e->getMessage());
         }
     }
 
@@ -299,27 +285,19 @@ class BannerController extends Controller
 
             $banner->delete();
 
-            // Hapus file gambar
-            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
-                Storage::disk('public')->delete($imagePath);
-            }
+            // Hapus via helper
+            $this->imageOptimizer->delete($imagePath);
+            $this->imageOptimizer->delete($imageMobilePath);
 
-            if ($imageMobilePath && Storage::disk('public')->exists($imageMobilePath)) {
-                Storage::disk('public')->delete($imageMobilePath);
-            }
+            CustomerHomeController::clearCache();
 
             return redirect()
                 ->route('admin.banners.index')
                 ->with('success', 'Banner berhasil dihapus.');
 
         } catch (Throwable $e) {
-            Log::error('Delete banner error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return back()
-                ->with('error', 'Banner gagal dihapus: ' . $e->getMessage());
+            Log::error('Delete banner error: ' . $e->getMessage());
+            return back()->with('error', 'Banner gagal dihapus: ' . $e->getMessage());
         }
     }
 }

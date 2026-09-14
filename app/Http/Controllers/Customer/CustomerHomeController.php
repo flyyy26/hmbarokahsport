@@ -20,7 +20,7 @@ class CustomerHomeController extends Controller
     use ProductDiscountTrait;
 
     private const CACHE_TTL = 300; // 5 menit
-    private const CACHE_KEY = 'home_page_data_v3';
+    private const CACHE_KEY = 'home_page_data_v4';
 
     // ============================================
     // INDEX
@@ -89,10 +89,20 @@ class CustomerHomeController extends Controller
         $productRelations = [
             'images' => function ($q) {
                 $q->select('id', 'product_id', 'image', 'sort_order')
-                  ->orderBy('sort_order');
+                ->orderBy('sort_order');
             },
             'variants' => function ($q) {
                 $q->select('id', 'product_id', 'price', 'discount_price', 'stock', 'weight', 'is_active');
+            },
+            'variants.values' => function ($q) {
+                // 🔥 PAKAI PREFIX TABEL untuk hindari ambiguous
+                $q->select(
+                    'product_option_values.id',
+                    'product_option_values.product_option_id',
+                    'product_option_values.value',
+                    'product_option_values.image',
+                    'product_option_values.sort_order'
+                );
             },
             'category:id,name',
         ];
@@ -291,33 +301,61 @@ class CustomerHomeController extends Controller
     {
         $thumbnail = null;
 
+        // ============================================
+        // PRIORITAS 1: Gambar utama produk
+        // ============================================
         if ($product->relationLoaded('images') && $product->images->isNotEmpty()) {
-            $imagePath = $product->images->first()->image;
+            $thumbnail = $this->resolveImageUrl($product->images->first()->image);
+        }
 
-            // 🔥 FIX: Normalize path
-            $imagePath = ltrim($imagePath, '/');
-
-            // Hapus prefix "storage/" jika ada
-            if (str_starts_with($imagePath, 'storage/')) {
-                $imagePath = substr($imagePath, strlen('storage/'));
-            }
-
-            // Hapus URL lengkap jika ada
-            if (preg_match('#^https?://#i', $imagePath)) {
-                $parsed = parse_url($imagePath, PHP_URL_PATH);
-                $imagePath = ltrim($parsed ?? '', '/');
-                if (str_starts_with($imagePath, 'storage/')) {
-                    $imagePath = substr($imagePath, strlen('storage/'));
+        // ============================================
+        // PRIORITAS 2: Gambar dari option value (warna)
+        // ============================================
+        if (!$thumbnail && $product->relationLoaded('variants') && $product->variants->isNotEmpty()) {
+            foreach ($product->variants as $variant) {
+                if ($variant->relationLoaded('values')) {
+                    foreach ($variant->values as $value) {
+                        if (!empty($value->image)) {
+                            $thumbnail = $this->resolveImageUrl($value->image);
+                            if ($thumbnail) break 2;
+                        }
+                    }
                 }
-            }
-
-            // Cek file exists
-            if (Storage::disk('public')->exists($imagePath)) {
-                $thumbnail = Storage::url($imagePath);
             }
         }
 
         $product->thumbnail = $thumbnail;
+    }
+
+    protected function resolveImageUrl(?string $imagePath): ?string
+    {
+        if (empty($imagePath)) {
+            return null;
+        }
+
+        // Normalisasi path
+        $path = ltrim($imagePath, '/');
+
+        // Hapus prefix "storage/"
+        if (str_starts_with($path, 'storage/')) {
+            $path = substr($path, strlen('storage/'));
+        }
+
+        // Handle URL lengkap (https://...)
+        if (preg_match('#^https?://#i', $path)) {
+            $parsed = parse_url($path, PHP_URL_PATH);
+            $path = ltrim($parsed ?? '', '/');
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, strlen('storage/'));
+            }
+        }
+
+        // Cek file exists
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::url($path);
+        }
+
+        return null;
     }
 
     // ============================================

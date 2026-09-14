@@ -11,9 +11,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use App\Services\ImageOptimizer;
 
 class CustomerTestimonialController extends Controller
 {
+    protected ImageOptimizer $imageOptimizer;
+
+    public function __construct(ImageOptimizer $imageOptimizer)
+    {
+        $this->imageOptimizer = $imageOptimizer;
+    }
     public function index(Request $request)
     {
         $customer = Auth::guard('customer')->user();
@@ -28,7 +35,7 @@ class CustomerTestimonialController extends Controller
                 ->where(function ($q) {
                     $q->where('shipping_status', 'delivered')->orWhereNotNull('delivered_at');
                 })
-                ->with(['items.product', 'items.variant', 'items.product.images'])
+                ->with(['items.product', 'items.variant', 'items.variant.values', 'items.product.images'])
                 ->orderBy('delivered_at', 'desc')
                 ->get();
         } else {
@@ -39,7 +46,7 @@ class CustomerTestimonialController extends Controller
                 ->where(function ($q) {
                     $q->where('shipping_status', 'delivered')->orWhereNotNull('delivered_at');
                 })
-                ->with(['items.product', 'items.variant', 'items.product.images'])
+                ->with(['items.product', 'items.variant', 'items.variant.values', 'items.product.images'])
                 ->orderBy('delivered_at', 'desc')
                 ->get();
         }
@@ -62,7 +69,7 @@ class CustomerTestimonialController extends Controller
             return redirect()->route('customer.orders', ['tab' => 'completed'])->with('error', 'Testimonial hanya bisa diberikan untuk pesanan yang sudah selesai.');
         }
 
-        $order->load(['items.product', 'items.variant', 'items.product.images']);
+        $order->load(['items.product', 'items.variant', 'items.variant.values', 'items.product.images']);
 
         return response()->json([
             'html' => view('customer.testimonial._modal', compact('order', 'customer'))->render(),
@@ -120,8 +127,17 @@ class CustomerTestimonialController extends Controller
 
                 if ($request->hasFile('images')) {
                     foreach ($request->file('images') as $index => $image) {
-                        $path = $image->store('testimonials', 'public');
+                        if (!$image->isValid()) continue;
+
+                        // 🔥 CONVERT KE WEBP
+                        $path = $this->imageOptimizer->convertToWebp(
+                            file: $image,
+                            folder: 'testimonials',
+                            maxWidth: 800,
+                            quality: 82
+                        );
                         $uploadedFiles[] = $path;
+
                         $testimonial->images()->create([
                             'image' => $path,
                             'sort_order' => $index,

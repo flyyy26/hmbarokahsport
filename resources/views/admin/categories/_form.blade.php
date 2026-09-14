@@ -65,6 +65,10 @@
                 <iconify-icon icon="mdi:information-outline"></iconify-icon>
                 Maksimal 2MB. Format JPG, PNG, atau WebP.
             </p>
+            <p class="flex items-center gap-1 text-xs mt-1" style="color: #34d399;">
+                <iconify-icon icon="mdi:check-decagram"></iconify-icon>
+                Gambar akan otomatis dikonversi ke WebP untuk performa lebih baik.
+            </p>
             @error('image')
                 <p class="flex items-center gap-1 text-sm text-red-400 mt-2">
                     <iconify-icon icon="mdi:alert-circle-outline"></iconify-icon>

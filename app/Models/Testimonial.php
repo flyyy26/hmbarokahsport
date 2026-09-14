@@ -93,7 +93,7 @@ class Testimonial extends Model
     public function getFirstImageUrlAttribute(): ?string
     {
         $image = $this->images->first();
-        return $image ? asset('storage/' . $image->image) : null;
+        return $image ? $image->image_url : null;
     }
 
     public function getVariantLabelAttribute(): string

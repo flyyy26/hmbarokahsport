@@ -253,7 +253,7 @@ class AccountController extends Controller
 
         $this->autoCancelUnpaidOrders($customer);
 
-        $query = Order::with(['items.product.images', 'items.variant'])
+        $query = Order::with(['items.product.images', 'items.variant', 'items.variant.values'])
             ->where('user_id', $customer->id);
 
         switch ($tab) {
@@ -447,7 +447,7 @@ class AccountController extends Controller
             abort(403);
         }
 
-        $order->load(['items.product', 'items.variant']);
+        $order->load(['items.product.images', 'items.variant', 'items.variant.values']);
 
         return view('customer.account.order-detail', compact('order'));
     }

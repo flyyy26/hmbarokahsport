@@ -1,6 +1,226 @@
 @extends('layouts.customer')
 
-@section('title', 'Artikel - Barokah Sport')
+@php
+    // ============================================
+    // 🔥 SEO DATA
+    // ============================================
+    
+    // 1. Tentukan apakah ada filter aktif
+    $hasFilter = request()->anyFilled(['category', 'sort', 'search']);
+    $hasSearch = request()->filled('search');
+    $hasCategory = request()->filled('category');
+    $currentPage = request()->get('page', 1);
+    
+    // 2. Title halaman
+    $pageTitle = 'Artikel & Tips Olahraga';
+    
+    if ($hasSearch) {
+        $pageTitle = 'Pencarian: ' . request('search');
+    } elseif ($hasCategory) {
+        $activeCategory = $categories->firstWhere('id', request('category'));
+        if ($activeCategory) {
+            $pageTitle = 'Artikel ' . $activeCategory->name;
+        }
+    }
+    
+    // Tambahkan halaman pagination ke title (untuk SEO)
+    if ($currentPage > 1) {
+        $pageTitle .= ' - Halaman ' . $currentPage;
+    }
+    
+    $storeName = $setting?->store_name ?? 'Barokah Sport';
+    $fullTitle = $pageTitle . ' - ' . $storeName;
+    
+    // 3. Meta Description
+    if ($hasSearch) {
+        $metaDescription = 'Hasil pencarian artikel "' . request('search') . '" di ' . $storeName 
+            . '. Temukan tips, panduan, dan info olahraga terbaru.';
+    } elseif ($hasCategory && $activeCategory ?? false) {
+        $metaDescription = 'Kumpulan artikel ' . $activeCategory->name . ' terbaru di ' . $storeName 
+            . '. Tips, panduan, dan informasi seputar ' . strtolower($activeCategory->name) 
+            . ' untuk Anda.';
+    } else {
+        $metaDescription = 'Baca artikel & tips olahraga terbaru di ' . $storeName 
+            . '. Informasi seputar sepatu, jersey, futsal, bulu tangkis, dan perlengkapan olahraga lainnya.';
+    }
+    
+    // Batasi 160 karakter
+    $metaDescription = Str::limit($metaDescription, 160, '...');
+    
+    // 4. OG Image — pakai logo setting
+    $ogImage = $setting?->logo 
+        ? (Str::startsWith($setting->logo, ['http://', 'https://']) 
+            ? $setting->logo 
+            : asset('storage/' . $setting->logo))
+        : asset('images/default-og.jpg');
+    
+    // 5. Canonical URL
+    // ⚠️ Halaman filter/search/pagination → canonical ke versi bersih
+    // supaya Google tidak index duplicate content
+    if ($hasFilter) {
+        // Kalau ada filter/search → canonical ke halaman index murni
+        $canonicalUrl = route('customer.articles.index');
+    } elseif ($currentPage > 1) {
+        // Pagination → canonical ke halaman itu sendiri (self-referencing)
+        $canonicalUrl = route('customer.articles.index', ['page' => $currentPage]);
+    } else {
+        // Halaman 1 tanpa filter → canonical ke dirinya sendiri
+        $canonicalUrl = route('customer.articles.index');
+    }
+    
+    // 6. Robots meta
+    // Search & filter → noindex, follow (jangan index, tapi ikuti link)
+    // Halaman normal → index, follow
+    if ($hasSearch) {
+        $robotsContent = 'noindex, follow';
+    } elseif ($hasFilter) {
+        $robotsContent = 'noindex, follow';
+    } else {
+        $robotsContent = 'index, follow, max-image-preview:large, max-snippet:-1';
+    }
+@endphp
+
+@section('title', $fullTitle)
+
+{{-- ============================================ --}}
+{{-- 🔥 META TAGS --}}
+{{-- ============================================ --}}
+@section('meta_description', $metaDescription)
+@section('og_type', 'website')
+@section('og_title', $fullTitle)
+@section('og_description', $metaDescription)
+@section('og_image', $ogImage)
+
+@section('meta')
+    <meta name="description" content="{{ $metaDescription }}">
+    
+    {{-- Keywords --}}
+    @php
+        $keywords = ['artikel olahraga', 'tips olahraga', 'blog olahraga'];
+        if ($hasCategory && $activeCategory ?? false) {
+            $keywords[] = 'artikel ' . strtolower($activeCategory->name);
+            $keywords[] = strtolower($activeCategory->name);
+        }
+        $keywords[] = $storeName;
+    @endphp
+    <meta name="keywords" content="{{ implode(', ', $keywords) }}">
+    
+    {{-- Canonical --}}
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    
+    {{-- Robots --}}
+    <meta name="robots" content="{{ $robotsContent }}">
+    
+    {{-- Pagination hints (prev/next) --}}
+    @if ($articles->onFirstPage() === false)
+        <link rel="prev" href="{{ $articles->previousPageUrl() }}">
+    @endif
+    @if ($articles->hasMorePages())
+        <link rel="next" href="{{ $articles->nextPageUrl() }}">
+    @endif
+@endsection
+
+@section('schema')
+@php
+    // ============================================
+    // 🔥 COLLECTION PAGE SCHEMA
+    // ============================================
+    $indexSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'CollectionPage',
+        'name' => $pageTitle,
+        'description' => $metaDescription,
+        'url' => $canonicalUrl,
+        'inLanguage' => 'id-ID',
+        'isPartOf' => [
+            '@type' => 'WebSite',
+            'name' => $storeName,
+            'url' => route('customer.home'),
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => $storeName,
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => $ogImage,
+            ],
+        ],
+    ];
+    
+    // 🔥 ItemList: daftar artikel di halaman ini
+    if ($articles->count() > 0) {
+        $itemListElements = [];
+        $position = 1;
+        
+        foreach ($articles as $article) {
+            $itemListElements[] = [
+                '@type' => 'ListItem',
+                'position' => $position,
+                'url' => route('customer.articles.show', $article->slug),
+                'name' => $article->title,
+                'image' => $article->image 
+                    ? asset('storage/' . $article->image) 
+                    : $ogImage,
+            ];
+            $position++;
+        }
+        
+        $indexSchema['mainEntity'] = [
+            '@type' => 'ItemList',
+            'numberOfItems' => $articles->count(),
+            'itemListElement' => $itemListElements,
+        ];
+    }
+    
+    // ============================================
+    // 🔥 BREADCRUMB SCHEMA
+    // ============================================
+    $breadcrumbItems = [
+        [
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Beranda',
+            'item' => route('customer.home'),
+        ],
+    ];
+    
+    if ($hasCategory && $activeCategory ?? false) {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Artikel',
+            'item' => route('customer.articles.index'),
+        ];
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 3,
+            'name' => $activeCategory->name,
+            'item' => $canonicalUrl,
+        ];
+    } else {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => 2,
+            'name' => 'Artikel',
+            'item' => $canonicalUrl,
+        ];
+    }
+    
+    $breadcrumbSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $breadcrumbItems,
+    ];
+@endphp
+
+<script type="application/ld+json">
+{!! json_encode($indexSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+</script>
+
+<script type="application/ld+json">
+{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+</script>
+@endsection
 
 @section('content')
 
@@ -406,11 +626,12 @@
             <div class="artikel_section_box">
                 <div class="artikel_section_box_img">
                     <a href="{{ route('customer.articles.show', $article->slug) }}">
-                        @if($article->image)
-                            <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title }}" loading="lazy">
-                        @else
-                            <img src="{{ asset('images/default-article.jpg') }}" alt="{{ $article->title }}" loading="lazy">
-                        @endif
+                        <img src="{{ $article->image_url }}"
+                            alt="{{ $article->title }}"
+                            width="400"
+                            height="280"
+                            loading="lazy"
+                            decoding="async">
                     </a>
                 </div>
                 <div class="artikel_section_content">

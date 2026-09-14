@@ -21,31 +21,37 @@
     // 🔥 SEO DATA
     // ============================================
     
-    // 1. Meta Description
-    $metaDescription = $article->meta_description ?? null;
+    // 1. Meta Description — PRIORITAS: excerpt
+    $metaDescription = null;
     
-    if (empty($metaDescription)) {
-        // Ambil dari konten artikel, bersihkan HTML
-        $cleanContent = trim(preg_replace('/\s+/', ' ', strip_tags($article->content ?? '')));
+    // Prioritas 1: excerpt dari admin
+    if (!empty($article->excerpt)) {
+        $metaDescription = trim(preg_replace('/\s+/', ' ', strip_tags($article->excerpt)));
+    }
+    
+    // Prioritas 2: dari konten artikel (kalau excerpt kosong)
+    if (empty($metaDescription) && !empty($article->content)) {
+        $cleanContent = trim(preg_replace('/\s+/', ' ', strip_tags($article->content)));
         $metaDescription = Str::limit($cleanContent, 155, '');
     }
     
+    // Prioritas 3: fallback dari judul + kategori
     if (empty($metaDescription)) {
-        // Fallback: susun dari judul + kategori
         $categoryName = $article->articleCategory->name ?? 'Artikel';
         $metaDescription = "{$article->title}. Baca selengkapnya di {$categoryName} " 
             . ($setting?->store_name ?? 'Barokah Sport') . ". Info olahraga terbaru & terpercaya.";
     }
     
-    // Pastikan maksimal 160 karakter
-    $metaDescription = Str::limit($metaDescription, 160, '...');
+    // Pastikan maksimal 160 karakter (potong di akhir kata)
+    if (strlen($metaDescription) > 160) {
+        $metaDescription = Str::limit($metaDescription, 157, '...');
+    }
     
     // 2. OG Image (WAJIB URL ABSOLUT)
     $ogImage = null;
     if ($article->image) {
         $ogImage = asset('storage/' . $article->image);
     } else {
-        // Fallback ke logo setting
         $ogImage = $setting?->logo 
             ? (Str::startsWith($setting->logo, ['http://', 'https://']) 
                 ? $setting->logo 
@@ -302,7 +308,7 @@
 
     .article-detail-image {
         width: 100%;
-        aspect-ratio: 16/8;
+        aspect-ratio: inherit;
         border-radius: 0.8vw;
         overflow: hidden;
         margin: 1.2vw 0;
@@ -2204,17 +2210,20 @@
         </div>
 
         {{-- GAMBAR --}}
-        @if($article->image)
-            <div class="article-detail-image">
-                <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title }}">
-            </div>
-        @else
-            <div class="article-detail-image">
+        <div class="article-detail-image">
+            @if($article->image)
+                <img src="{{ $article->image_url }}"
+                    alt="{{ $article->title }}"
+                    width="1200"
+                    height="600"
+                    fetchpriority="high"
+                    decoding="async">
+            @else
                 <div class="image-placeholder">
                     <iconify-icon icon="mdi:newspaper-variant-outline"></iconify-icon>
                 </div>
-            </div>
-        @endif
+            @endif
+        </div>
 
         {{-- ============================================ --}}
         {{-- LIKE & SHARE - DI BAWAH GAMBAR --}}
@@ -2400,13 +2409,12 @@
                         @foreach($tagRelatedArticles as $related)
                             <li>
                                 <div class="widget-article-image">
-                                    @if($related->image)
-                                        <img src="{{ Storage::url($related->image) }}" alt="{{ $related->title }}">
-                                    @else
-                                        <div class="no-image">
-                                            <iconify-icon icon="mdi:newspaper-variant-outline"></iconify-icon>
-                                        </div>
-                                    @endif
+                                    <img src="{{ $related->image_url }}"
+                                        alt="{{ $related->title }}"
+                                        width="80"
+                                        height="80"
+                                        loading="lazy"
+                                        decoding="async">
                                 </div>
                                 <div class="widget-article-info">
                                     <h4>

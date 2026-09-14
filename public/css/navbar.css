@@ -102,6 +102,8 @@
 
 .bottom_section ul a {
     text-decoration: none;
+    color: black;
+    font-size: 0.85vw;
 }
 
 .bottom_section ul li {
@@ -116,6 +118,10 @@
 }
 
 .bottom_section ul a.active li {
+    color: #ECB62F;
+}
+.bottom_section ul a.active {
+    text-decoration: none;
     color: #ECB62F;
 }
 
@@ -426,9 +432,18 @@
     }
 
     .nav-menu ul a {
-        text-decoration: none;
-        display: block;
-        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width:100%;
+        gap: 4vw;
+        font-size: 4.2vw;
+        font-weight: 400;
+        color: #1a1a2e;
+        text-transform: none;
+        padding: 3.8vw 0;
+        border-bottom: 0.2vw solid #0000001c;
+        transition: all 0.25s ease;
     }
 
     .nav-menu ul a li {
@@ -455,13 +470,18 @@
         display: flex;
     }
 
-    .nav-menu ul a.active li {
+    .nav-menu ul a.active{
         color: #ecbc42;
         font-weight: 600;
     }
 
     .nav-menu ul a:not(.active):active li {
         color: #ecbc42;
+    }
+    .bottom_section ul li a iconify-icon{
+        display: block;
+        font-size: 5.5vw;
+        color: #303030;
     }
 
     /* --------------------------------------------

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class TestimonialImage extends Model
 {
@@ -22,8 +23,14 @@ class TestimonialImage extends Model
         return $this->belongsTo(Testimonial::class);
     }
 
+    /**
+     * 🔥 Image URL dengan fallback.
+     */
     public function getImageUrlAttribute(): string
     {
-        return asset('storage/' . $this->image);
+        if ($this->image && Storage::disk('public')->exists($this->image)) {
+            return asset('storage/' . $this->image);
+        }
+        return asset('images/placeholder.webp');
     }
 }

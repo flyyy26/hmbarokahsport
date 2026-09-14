@@ -97,42 +97,42 @@
                 </button>
             </div>
             <ul>
-                <a href="/" class="{{ request()->is('/') ? 'active' : '' }}">
-                    <li>
+                <li>
+                    <a href="/" class="{{ request()->is('/') ? 'active' : '' }}">
                         Beranda
                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                    </li>
-                </a>
-                <a href="/katalog" class="{{ request()->is('katalog') ? 'active' : '' }}">
-                    <li>
+                    </a>
+                </li>
+                <li>
+                    <a href="/katalog" class="{{ request()->is('katalog') ? 'active' : '' }}">
                         Katalog
                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                    </li>
-                </a>
-                <a href="{{ route('customer.products.latest') }}" class="{{ request()->is('katalog/terbaru') ? 'active' : '' }}">
-                    <li>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('customer.products.latest') }}" class="{{ request()->is('katalog/terbaru') ? 'active' : '' }}">
                         Produk Terbaru
                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                    </li>
-                </a>
-                <a href="{{ route('customer.products.promo') }}" class="{{ request()->is('katalog/promo') ? 'active' : '' }}">
-                    <li>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('customer.products.promo') }}" class="{{ request()->is('katalog/promo') ? 'active' : '' }}">
                         Promo
                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                    </li>
-                </a>
-                <a href="{{ route('customer.articles.index') }}" class="{{ request()->is('artikel') ? 'active' : '' }}">
-                    <li>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('customer.articles.index') }}" class="{{ request()->is('artikel') ? 'active' : '' }}">
                         Artikel
                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                    </li>
-                </a>
-                 <a href="{{ route('customer.cara-pesan') }}" class="{{ request()->is('cara-pesan') ? 'active' : '' }}">
-                     <li>
-                         Cara Pesan
-                         <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
-                     </li>
-                 </a>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('customer.cara-pesan') }}" class="{{ request()->is('cara-pesan') ? 'active' : '' }}">
+                        Cara Pesan
+                        <iconify-icon icon="eva:chevron-right-outline"></iconify-icon>
+                    </a>
+                </li>
              </ul>
 
              {{-- 🔥 Mobile Account Submenu (Customer only) --}}
@@ -162,42 +162,54 @@
                     </div>
                 </div>
                 <ul class="account-submenu">
-                    <a href="{{ route('customer.account') }}" class="{{ request()->routeIs('customer.account') ? 'active' : '' }}">
+                    
                         <li>
-                            <iconify-icon icon="mdi:account-outline"></iconify-icon>
-                            <span>Profil Saya</span>
+                            <a href="{{ route('customer.account') }}" class="{{ request()->routeIs('customer.account') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:account-outline"></iconify-icon>
+                                <span>Profil Saya</span>
+                            </a>
                         </li>
-                    </a>
-                    <a href="{{ route('customer.orders') }}" class="{{ request()->routeIs('customer.orders*') ? 'active' : '' }}">
+                    
+                    
                         <li>
-                            <iconify-icon icon="mdi:package-variant"></iconify-icon>
-                            <span>Pesanan Saya</span>
+                            <a href="{{ route('customer.orders') }}" class="{{ request()->routeIs('customer.orders*') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:package-variant"></iconify-icon>
+                                <span>Pesanan Saya</span>
+                            </a>
                         </li>
-                    </a>
-                    <a href="{{ route('customer.addresses.index') }}" class="{{ request()->routeIs('customer.addresses*') ? 'active' : '' }}">
+                    
+                    
                         <li>
-                            <iconify-icon icon="mdi:map-marker"></iconify-icon>
-                            <span>Alamat Pengiriman</span>
+                            <a href="{{ route('customer.addresses.index') }}" class="{{ request()->routeIs('customer.addresses*') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:map-marker"></iconify-icon>
+                                <span>Alamat Pengiriman</span>
+                            </a>
                         </li>
-                    </a>
-                    <a href="{{ route('customer.vouchers.index') }}" class="{{ request()->routeIs('customer.vouchers*') ? 'active' : '' }}">
+                    
+                    
                         <li>
-                            <iconify-icon icon="mdi:ticket-percent"></iconify-icon>
-                            <span>Voucher Saya</span>
+                            <a href="{{ route('customer.vouchers.index') }}" class="{{ request()->routeIs('customer.vouchers*') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:ticket-percent"></iconify-icon>
+                                <span>Voucher Saya</span>
+                            </a>
                         </li>
-                    </a>
-                    <a href="{{ route('customer.password.change') }}" class="{{ request()->routeIs('customer.password*') ? 'active' : '' }}">
+                    
+                    
                         <li>
-                            <iconify-icon icon="mdi:lock-outline"></iconify-icon>
-                            <span>Ganti Kata Sandi</span>
+                            <a href="{{ route('customer.password.change') }}" class="{{ request()->routeIs('customer.password*') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:lock-outline"></iconify-icon>
+                                <span>Ganti Kata Sandi</span>
+                            </a>
                         </li>
-                    </a>
-                    <a href="{{ route('customer.testimonials.index') }}" class="{{ request()->routeIs('customer.testimonials*') ? 'active' : '' }}">
+                    
+                    
                         <li>
-                            <iconify-icon icon="mdi:star-outline"></iconify-icon>
-                            <span>Testimoni</span>
+                            <a href="{{ route('customer.testimonials.index') }}" class="{{ request()->routeIs('customer.testimonials*') ? 'active' : '' }}">
+                                <iconify-icon icon="mdi:star-outline"></iconify-icon>
+                                <span>Testimoni</span>
+                            </a>
                         </li>
-                    </a>
+                    
                 </ul>
             </div>
             @endauth
@@ -237,7 +249,7 @@
             @endphp
             <a href="{{ $profileUrl }}" class="icon-btn-link icon-btn-profile" aria-label="Profile">
                 <button class="icon-btn" aria-label="Keranjang Belanja">
-                    <iconify-icon icon="solar:cart-linear" aria-hidden="true"></iconify-icon>
+                    <iconify-icon icon="iconamoon:profile-light"></iconify-icon>
                 </button>
             </a>
 

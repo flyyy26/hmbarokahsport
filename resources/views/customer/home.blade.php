@@ -122,7 +122,7 @@
             @foreach($categories as $category)
             <div class="swiper-slide">
                 <div class="kategori_box_layout" 
-                    style="background-image:url('{{ $category->image ? Storage::url($category->image) : asset('images/default_category.png') }}'); 
+                    style="background-image: url('{{ $category->image_url }}');; 
                             background-size:100% 100%; 
                             background-position:center; cursor:pointer;"
                     onclick="window.location.href='{{ route('customer.products.index', ['category' => $category->id]) }}'">
@@ -208,7 +208,7 @@
 {{-- ============================================ --}}
 {{-- PROMO SECTION --}}
 {{-- ============================================ --}}
-<div class="promo_section" style="background-image:url({{ asset('images/promo_section_bg.png') }}); background-size:cover; background-position:center; background-repeat:no-repeat;">
+<div class="promo_section" style="background-image:url({{ asset('images/promo_section_bg.webp') }}); background-size:cover; background-position:center; background-repeat:no-repeat;">
     <div class="promo_section_content">
         <button><iconify-icon icon="mdi:fire"></iconify-icon> PROMO TERBATAS</button>
     </div>
@@ -309,13 +309,15 @@
                 <div class="artikel_section_box">
                     <div class="artikel_section_box_img">
                         <a href="{{ route('customer.articles.show', $article->slug) }}">
-                            @if($article->image)
-                                <img src="{{ Storage::url($article->image) }}" alt="{{ $article->title }}">
-                            @else
-                                <img src="{{ asset('images/default-article.jpg') }}" alt="{{ $article->title }}">
-                            @endif
+                            <img src="{{ $article->image_url }}"
+                                alt="{{ $article->title }}"
+                                width="400"
+                                height="280"
+                                loading="lazy"
+                                decoding="async">
                         </a>
                     </div>
+
                     <div class="artikel_section_content">
                         <div class="artikel_section_meta">
                             <div class="artikel_section_meta_box">

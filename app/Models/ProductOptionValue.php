@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductOptionValue extends Model
@@ -41,5 +42,14 @@ class ProductOptionValue extends Model
             'product_option_value_id',
             'product_variant_id'
         );
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->image && Storage::disk('public')->exists($this->image)) {
+            return asset('storage/' . $this->image);
+        }
+        
+        return null;
     }
 }

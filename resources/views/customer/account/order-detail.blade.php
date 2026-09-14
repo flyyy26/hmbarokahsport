@@ -996,11 +996,24 @@
             <div class="od-items">
                 @foreach ($order->items as $item)
                     <div class="od-item">
-                        <div class="od-item-left">
+<div class="od-item-left">
                             <div class="od-item-img">
-                                @if ($item->product && $item->product->images->first())
-                                    <img src="{{ Storage::url($item->product->images->first()->image) }}" 
-                                         alt="{{ $item->product_name }}">
+                                @php
+                                    $itemImage = $item->variant ? $item->variant->image_url : null;
+                                    if (!$itemImage && $item->product && $item->product->images->isNotEmpty()) {
+                                        $firstImage = $item->product->images->first();
+                                        $imagePath = ltrim($firstImage->image, '/');
+                                        if (str_starts_with($imagePath, 'storage/')) {
+                                            $imagePath = substr($imagePath, strlen('storage/'));
+                                        }
+                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+                                            $itemImage = \Illuminate\Support\Facades\Storage::url($imagePath);
+                                        }
+                                    }
+                                @endphp
+
+                                @if ($itemImage)
+                                    <img src="{{ $itemImage }}" alt="{{ $item->product_name }}">
                                 @else
                                     <iconify-icon icon="mdi:image-off-outline"></iconify-icon>
                                 @endif

@@ -48,12 +48,12 @@ class Article extends Model
     // ACCESSORS
     // ============================================
 
-    public function getImageUrlAttribute()
+    public function getImageUrlAttribute(): string
     {
         if ($this->image && Storage::disk('public')->exists($this->image)) {
-            return Storage::url($this->image);
+            return asset('storage/' . $this->image);
         }
-        return asset('images/default-article.jpg');
+        return asset('images/default-article.webp');
     }
 
     public function getExcerptAttribute($value)

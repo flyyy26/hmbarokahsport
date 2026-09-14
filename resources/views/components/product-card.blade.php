@@ -51,14 +51,74 @@
         $originalPriceLabel = 'Rp ' . number_format($maxOrig, 0, ',', '.');
     }
 
-    // Thumbnail
-    $thumbnail = $product->display_image ?? $product->thumbnail ?? null;
+    // ============================================
+    // 🔥 THUMBNAIL DENGAN MULTI-FALLBACK
+    // ============================================
+    $thumbnail = null;
+
+    // PRIORITAS 1: display_image (dari controller — sudah handle variant image by color)
+    if (!empty($product->display_image)) {
+        $thumbnail = $product->display_image;
+    }
+
+    // PRIORITAS 2: thumbnail (dari attachThumbnailFast)
+    if (!$thumbnail && !empty($product->thumbnail)) {
+        $thumbnail = $product->thumbnail;
+    }
+
+    // PRIORITAS 3: gambar utama produk (images pertama)
     if (!$thumbnail && $product->relationLoaded('images') && $product->images->isNotEmpty()) {
-        $imagePath = ltrim($product->images->first()->image, '/');
+        $firstImage = $product->images->first();
+        $imagePath = ltrim($firstImage->image, '/');
+
+        // Normalisasi path
         if (str_starts_with($imagePath, 'storage/')) {
             $imagePath = substr($imagePath, strlen('storage/'));
         }
-        $thumbnail = \Illuminate\Support\Facades\Storage::url($imagePath);
+
+        // Cek file exists
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+            $thumbnail = \Illuminate\Support\Facades\Storage::url($imagePath);
+        }
+    }
+
+    // 🔥 PRIORITAS 4: FALLBACK KE GAMBAR VARIAN
+    if (!$thumbnail && $product->relationLoaded('variants') && $product->variants->isNotEmpty()) {
+        // Cari varian dengan gambar
+        foreach ($product->variants as $variant) {
+            // 4a. Cek gambar varian langsung
+            if (!empty($variant->image)) {
+                $imagePath = ltrim($variant->image, '/');
+                if (str_starts_with($imagePath, 'storage/')) {
+                    $imagePath = substr($imagePath, strlen('storage/'));
+                }
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+                    $thumbnail = \Illuminate\Support\Facades\Storage::url($imagePath);
+                    break;
+                }
+            }
+
+            // 4b. Cek gambar dari option value (warna)
+            if ($variant->relationLoaded('values')) {
+                foreach ($variant->values as $value) {
+                    if (!empty($value->image)) {
+                        $imagePath = ltrim($value->image, '/');
+                        if (str_starts_with($imagePath, 'storage/')) {
+                            $imagePath = substr($imagePath, strlen('storage/'));
+                        }
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
+                            $thumbnail = \Illuminate\Support\Facades\Storage::url($imagePath);
+                            break 2; // break dari kedua loop
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 🔥 PRIORITAS 5: Fallback terakhir ke placeholder
+    if (!$thumbnail) {
+        $thumbnail = asset('images/placeholder.webp');
     }
 
     $skeletonId = "skeleton-{$skeletonPrefix}-{$product->id}";
@@ -77,22 +137,15 @@
         </div>
 
         <a href="{{ route('customer.products.show', $product->slug) }}">
-            @if($thumbnail)
-                <img src="{{ $thumbnail }}"
-                     alt="{{ $product->name }}"
-                     loading="lazy"
-                     width="300"
-                     height="300"
-                     decoding="async"
-                     class="loading"
-                     onload="this.classList.remove('loading'); this.classList.add('loaded'); document.getElementById('{{ $skeletonId }}').classList.add('hidden');"
-                     onerror="this.onerror=null; this.src='{{ asset('images/placeholder.png') }}'; this.classList.remove('loading'); this.classList.add('loaded'); document.getElementById('{{ $skeletonId }}').classList.add('hidden');">
-            @else
-                <div class="placeholder">
-                    <iconify-icon icon="mdi:image-off-outline"></iconify-icon>
-                </div>
-                <script>document.getElementById('{{ $skeletonId }}')?.classList.add('hidden');</script>
-            @endif
+            <img src="{{ $thumbnail }}"
+                 alt="{{ $product->name }}"
+                 loading="lazy"
+                 width="300"
+                 height="300"
+                 decoding="async"
+                 class="loading"
+                 onload="this.classList.remove('loading'); this.classList.add('loaded'); document.getElementById('{{ $skeletonId }}').classList.add('hidden');"
+                 onerror="this.onerror=null; this.src='{{ asset('images/placeholder.webp') }}'; this.classList.remove('loading'); this.classList.add('loaded'); document.getElementById('{{ $skeletonId }}').classList.add('hidden');">
 
             {{-- Badge HABIS --}}
             @if($isOutOfStock)

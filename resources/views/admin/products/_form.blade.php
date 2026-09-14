@@ -734,6 +734,52 @@ try {
 isEditMode = {{ $isEdit ? 'true' : 'false' }};
 productId = {{ isset($product) && $product ? $product->id : 0 }};
 
+const existingImagesContainer = document.getElementById('existing-images-container');
+
+if (existingImagesContainer) {
+    existingImagesContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.remove-existing-image');
+        if (!btn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const imageWrapper = btn.closest('.existing-image');
+        if (!imageWrapper) return;
+
+        // 🔥 KONFIRMASI
+        if (!confirm('Hapus gambar ini? Gambar akan dihapus permanen saat Anda simpan perubahan.')) {
+            return;
+        }
+
+        // 🔥 ANIMASI FADE OUT
+        imageWrapper.style.transition = 'all 0.3s ease';
+        imageWrapper.style.opacity = '0';
+        imageWrapper.style.transform = 'scale(0.8)';
+
+        setTimeout(function() {
+            // Hapus elemen dari DOM
+            imageWrapper.remove();
+
+            // Cek kalau sudah tidak ada gambar lagi
+            const remaining = existingImagesContainer.querySelectorAll('.existing-image');
+            if (remaining.length === 0) {
+                // Sembunyikan container + label "Gambar Saat Ini"
+                const section = existingImagesContainer.closest('div');
+                if (section) {
+                    section.style.display = 'none';
+                }
+            }
+
+            // 🔥 TAMPILKAN TOAST NOTIFIKASI
+            if (typeof showToast === 'function') {
+                showToast('Gambar akan dihapus saat klik simpan', 'warning');
+            }
+        }, 300);
+    });
+}
+
+
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     var div = document.createElement('div');

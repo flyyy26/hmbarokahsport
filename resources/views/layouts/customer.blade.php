@@ -27,7 +27,7 @@
 
     {{-- CSS --}}
     <link rel="stylesheet" href="{{ asset('css/style.css') }}?v=2">
-    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/navbar.css') }}?v=3">
     <link rel="stylesheet" href="{{ asset('css/popup.css') }}?v=2">
     <link rel="stylesheet" href="{{ asset('css/product_show.css') }}?v=2">
     <link rel="stylesheet" href="{{ asset('css/cart-page.css') }}?v=2">

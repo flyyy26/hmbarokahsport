@@ -9,167 +9,220 @@ use App\Models\ArticleLike;
 use App\Models\ArticleComment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class CustomerArticleController extends Controller
 {
+    // 🔥 CACHE CONFIG
+    private const CACHE_TTL = 1800; // 30 menit
+    private const CACHE_PREFIX = 'articles';
+    private const CACHE_VERSION_KEY = 'articles_cache_version';
+
+    // ============================================
+    // 🔥 CACHE HELPERS
+    // ============================================
+
+    /**
+     * Ambil versi cache saat ini.
+     * Setiap kali ada perubahan artikel, versi di-bump → cache lama otomatis tidak dipakai.
+     */
+    private static function getCacheVersion(): string
+    {
+        return Cache::rememberForever(self::CACHE_VERSION_KEY, function () {
+            return 'v1';
+        });
+    }
+
+    /**
+     * Clear SEMUA cache artikel dengan cara bump versi.
+     * Tidak perlu iterasi key satu-satu.
+     */
+    public static function clearCache(): void
+    {
+        Cache::forever(self::CACHE_VERSION_KEY, 'v_' . time());
+    }
+
+    // ============================================
+    // INDEX
+    // ============================================
+
     public function index(Request $request)
     {
-        // 🔥 AMBIL KATEGORI UNTUK FILTER
-        $categories = ArticleCategory::active()->sorted()->get();
+        // 🔥 BUILD CACHE KEY berdasarkan filter + versi
+        $cacheKey = self::CACHE_PREFIX . '_index_' . self::getCacheVersion() . '_' . md5(json_encode([
+            'category' => $request->category,
+            'sort'     => $request->sort,
+            'search'   => $request->search,
+            'tag'      => $request->tag,
+            'page'     => $request->page,
+        ]));
 
-        // 🔥 QUERY ARTIKEL
-        $query = Article::with('articleCategory')
-            ->active()
-            ->published();
+        // 🔥 CACHE
+        $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($request) {
+            // Kategori untuk filter
+            $categories = ArticleCategory::active()->sorted()->get();
 
-        // 🔥 FILTER KATEGORI
-        if ($request->filled('category')) {
-            $query->where('article_category_id', $request->category);
-        }
+            // Query artikel
+            $query = Article::with('articleCategory')
+                ->active()
+                ->published();
 
-        // 🔥 FILTER TAGS
-        if ($request->filled('tag')) {
-            $query->where('tags', 'like', '%' . $request->tag . '%');
-        }
+            // Filter kategori
+            if ($request->filled('category')) {
+                $query->where('article_category_id', $request->category);
+            }
 
-        // 🔥 SEARCH
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'like', '%' . $search . '%')
-                  ->orWhere('content', 'like', '%' . $search . '%')
-                  ->orWhere('author', 'like', '%' . $search . '%');
-            });
-        }
+            // Filter tags
+            if ($request->filled('tag')) {
+                $query->where('tags', 'like', '%' . $request->tag . '%');
+            }
 
-        // 🔥 SORT
-        switch ($request->sort) {
-            case 'oldest':
-                $query->orderBy('published_at', 'asc')
-                      ->orderBy('created_at', 'asc');
-                break;
-            case 'title_asc':
-                $query->orderBy('title', 'asc');
-                break;
-            case 'title_desc':
-                $query->orderBy('title', 'desc');
-                break;
-            case 'newest':
-            default:
-                $query->orderBy('published_at', 'desc')
-                      ->orderBy('created_at', 'desc');
-                break;
-        }
+            // Search
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                      ->orWhere('content', 'like', '%' . $search . '%')
+                      ->orWhere('author', 'like', '%' . $search . '%');
+                });
+            }
 
-        // 🔥 PAGINATION
-        $articles = $query->paginate(12);
+            // Sort
+            switch ($request->sort) {
+                case 'oldest':
+                    $query->orderBy('published_at', 'asc')->orderBy('created_at', 'asc');
+                    break;
+                case 'title_asc':
+                    $query->orderBy('title', 'asc');
+                    break;
+                case 'title_desc':
+                    $query->orderBy('title', 'desc');
+                    break;
+                case 'newest':
+                default:
+                    $query->orderBy('published_at', 'desc')->orderBy('created_at', 'desc');
+                    break;
+            }
 
-        // 🔥 AMBIL SEMUA TAGS UNIK UNTUK FILTER
-        $allTags = Article::active()
-            ->published()
-            ->whereNotNull('tags')
-            ->get()
-            ->pluck('tags')
-            ->flatten()
-            ->unique()
-            ->values()
-            ->toArray();
+            $articles = $query->paginate(12);
 
-        return view('customer.articles.index', compact(
-            'articles',
-            'categories',
-            'allTags'
-        ));
+            // Semua tags unik
+            $allTags = Article::active()
+                ->published()
+                ->whereNotNull('tags')
+                ->get()
+                ->pluck('tags')
+                ->flatten()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            return compact('articles', 'categories', 'allTags');
+        });
+
+        return view('customer.articles.index', $data);
     }
+
+    // ============================================
+    // SHOW
+    // ============================================
 
     public function show($slug)
     {
-        // 🔥 AMBIL ARTIKEL UTAMA
+        // 🔥 Query artikel di LUAR cache (biar updated_at-nya fresh)
         $article = Article::with('articleCategory')
             ->where('slug', $slug)
             ->active()
             ->published()
             ->firstOrFail();
 
-        // 🔥 INCREMENT VIEWS - HANYA JIKA BELUM DIBACA
-        // Views akan diincrement melalui AJAX setelah halaman dimuat
-        // dan dicek via LocalStorage
+        // 🔥 CACHE KEY pakai updated_at → otomatis invalidate saat artikel di-update
+        $cacheKey = self::CACHE_PREFIX . '_show_' . self::getCacheVersion() . '_'
+                  . $article->id . '_' . $article->updated_at->timestamp;
 
-        // 🔥 1. ARTIKEL TERKAIT (same category)
-        $relatedArticles = Article::with('articleCategory')
-            ->where('article_category_id', $article->article_category_id)
-            ->where('id', '!=', $article->id)
-            ->active()
-            ->published()
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        // 🔥 2. ARTIKEL TERBARU
-        $latestArticles = Article::with('articleCategory')
-            ->where('id', '!=', $article->id)
-            ->active()
-            ->published()
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        // 🔥 3. ARTIKEL POPULER (berdasarkan views) - TAMPILKAN SEMUA
-        $popularArticles = Article::with('articleCategory')
-            ->where('id', '!=', $article->id)
-            ->active()
-            ->published()
-            ->orderBy('views', 'desc')
-            ->limit(5)
-            ->get();
-
-        // 🔥 4. ARTIKEL REKOMENDASI (mix dari berbagai kategori, random)
-        $recommendedArticles = Article::with('articleCategory')
-            ->where('id', '!=', $article->id)
-            ->where('article_category_id', '!=', $article->article_category_id)
-            ->active()
-            ->published()
-            ->inRandomOrder()
-            ->limit(4)
-            ->get();
-
-        // 🔥 5. ARTIKEL DENGAN TAGS SAMA (jika ada tags)
-        $tagRelatedArticles = collect();
-        if ($article->tags && count($article->tags) > 0) {
-            $tagRelatedArticles = Article::with('articleCategory')
+        // 🔥 CACHE relasi (yang berat di-query)
+        $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($article) {
+            // 1. Artikel terkait (same category)
+            $relatedArticles = Article::with('articleCategory')
+                ->where('article_category_id', $article->article_category_id)
                 ->where('id', '!=', $article->id)
-                ->where(function($query) use ($article) {
-                    foreach ($article->tags as $tag) {
-                        $query->orWhere('tags', 'like', '%' . $tag . '%');
-                    }
-                })
                 ->active()
                 ->published()
                 ->latest()
+                ->limit(5)
+                ->get();
+
+            // 2. Artikel terbaru
+            $latestArticles = Article::with('articleCategory')
+                ->where('id', '!=', $article->id)
+                ->active()
+                ->published()
+                ->latest()
+                ->limit(5)
+                ->get();
+
+            // 3. Artikel populer
+            $popularArticles = Article::with('articleCategory')
+                ->where('id', '!=', $article->id)
+                ->active()
+                ->published()
+                ->orderBy('views', 'desc')
+                ->limit(5)
+                ->get();
+
+            // 4. Artikel rekomendasi (random)
+            $recommendedArticles = Article::with('articleCategory')
+                ->where('id', '!=', $article->id)
+                ->where('article_category_id', '!=', $article->article_category_id)
+                ->active()
+                ->published()
+                ->inRandomOrder()
                 ->limit(4)
                 ->get();
-        }
 
-        // 🔥 6. SEMUA KATEGORI UNTUK SIDEBAR
-        $categories = ArticleCategory::active()
-            ->withCount('articles')
-            ->sorted()
-            ->get();
+            // 5. Artikel dengan tags sama
+            $tagRelatedArticles = collect();
+            if ($article->tags && count($article->tags) > 0) {
+                $tagRelatedArticles = Article::with('articleCategory')
+                    ->where('id', '!=', $article->id)
+                    ->where(function ($query) use ($article) {
+                        foreach ($article->tags as $tag) {
+                            $query->orWhere('tags', 'like', '%' . $tag . '%');
+                        }
+                    })
+                    ->active()
+                    ->published()
+                    ->latest()
+                    ->limit(4)
+                    ->get();
+            }
 
-        return view('customer.articles.show', compact(
-            'article',
-            'relatedArticles',
-            'latestArticles',
-            'popularArticles',
-            'recommendedArticles',
-            'tagRelatedArticles',
-            'categories'
-        ));
+            // 6. Semua kategori
+            $categories = ArticleCategory::active()
+                ->withCount('articles')
+                ->sorted()
+                ->get();
+
+            return compact(
+                'relatedArticles',
+                'latestArticles',
+                'popularArticles',
+                'recommendedArticles',
+                'tagRelatedArticles',
+                'categories'
+            );
+        });
+
+        // 🔥 Tambahkan artikel ke data (tidak di-cache)
+        $data['article'] = $article;
+
+        return view('customer.articles.show', $data);
     }
 
-    /**
-     * 🔥 API untuk mencatat views (dipanggil via AJAX)
-     */
+    // ============================================
+    // RECORD VIEW (TIDAK DI-CACHE)
+    // ============================================
+
     public function recordView(Request $request)
     {
         $request->validate([
@@ -178,13 +231,10 @@ class CustomerArticleController extends Controller
 
         $article = Article::find($request->article_id);
 
-        // 🔥 Increment total views (kolom `views` di tabel articles)
         $article->increment('views');
 
-        // 🔥 LOG VIEW ke article_views — GUEST BOLEH
         \App\Models\ArticleView::create([
             'article_id' => $article->id,
-            // user_id NULL kalau guest
             'user_id'    => Auth::guard('customer')->id() ?? Auth::id() ?? null,
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 500),
@@ -197,13 +247,16 @@ class CustomerArticleController extends Controller
         ]);
     }
 
+    // ============================================
+    // TOGGLE LIKE (TIDAK DI-CACHE)
+    // ============================================
+
     public function toggleLike(Request $request)
     {
         $request->validate([
             'article_id' => 'required|exists:articles,id',
         ]);
 
-        // 🔥 GUNAKAN GUARD CUSTOMER
         $user = Auth::guard('customer')->user();
 
         if (!$user) {

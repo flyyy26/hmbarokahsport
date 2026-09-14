@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class ProductVariant extends Model
 {
@@ -67,6 +68,39 @@ class ProductVariant extends Model
             'product_variant_id',
             'product_option_value_id'
         )->withTimestamps();
+    }
+
+    /**
+     * 🔥 Get the variant image URL
+     * Priority: 1) variant's own image, 2) option value images, 3) null
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->image) {
+            $imagePath = ltrim($this->image, '/');
+            if (str_starts_with($imagePath, 'storage/')) {
+                $imagePath = substr($imagePath, strlen('storage/'));
+            }
+            if (Storage::disk('public')->exists($imagePath)) {
+                return Storage::url($imagePath);
+            }
+        }
+
+        if ($this->relationLoaded('values')) {
+            foreach ($this->values as $value) {
+                if ($value->image) {
+                    $imagePath = ltrim($value->image, '/');
+                    if (str_starts_with($imagePath, 'storage/')) {
+                        $imagePath = substr($imagePath, strlen('storage/'));
+                    }
+                    if (Storage::disk('public')->exists($imagePath)) {
+                        return Storage::url($imagePath);
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function getCombinationAttribute(): string
